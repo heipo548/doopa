@@ -2,90 +2,317 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>DOOPA — ドーパミン直接摂取マシーン</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DOOPA — ドパガキ向けゲーム実験場</title>
+  <meta name="description" content="DOOPA: TikTok スワイプしすぎた脳に効くゲームを並列に試す実験プロジェクト。" />
+  <style>
+    :root {
+      --bg: #0a0014;
+      --bg2: #14002b;
+      --card-bg: #160029;
+      --card-border: #3a005a;
+      --neon-pink: #ff2bd6;
+      --neon-cyan: #00f7ff;
+      --neon-yellow: #fff200;
+      --neon-green: #4dff88;
+      --text: #f5e9ff;
+      --text-dim: #a98cc4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      background: radial-gradient(circle at 30% 10%, var(--bg2), var(--bg) 70%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+        "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+    }
+    a { color: var(--neon-cyan); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* === ヘッダー === */
+    header.hero {
+      padding: 80px 24px 48px;
+      text-align: center;
+    }
+    .logo {
+      font-size: clamp(64px, 12vw, 128px);
+      font-weight: 900;
+      letter-spacing: 8px;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow:
+        0 0 30px rgba(255, 43, 214, 0.4),
+        0 0 80px rgba(0, 247, 255, 0.2);
+      animation: pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.25); }
+    }
+    .tagline {
+      margin-top: 8px;
+      font-size: clamp(16px, 2.4vw, 22px);
+      color: var(--neon-cyan);
+      letter-spacing: 3px;
+    }
+    .lead {
+      max-width: 680px;
+      margin: 32px auto 0;
+      padding: 0 16px;
+      font-size: clamp(15px, 2vw, 18px);
+      color: var(--text-dim);
+    }
+    .lead strong { color: var(--text); font-weight: 700; }
+
+    /* === セクション共通 === */
+    section.block {
+      max-width: 1080px;
+      margin: 64px auto;
+      padding: 0 24px;
+    }
+    h2.section-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 6px;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    h2.section-title::before,
+    h2.section-title::after {
+      content: '─';
+      margin: 0 16px;
+      color: var(--card-border);
+    }
+
+    /* === プロト一覧 === */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--neon-pink);
+      box-shadow: 0 12px 40px rgba(255, 43, 214, 0.25);
+    }
+    .card-num {
+      position: absolute;
+      top: 12px;
+      right: 18px;
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--card-border);
+      font-variant-numeric: tabular-nums;
+    }
+    .card-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      margin-right: 48px;
+    }
+    .card-slug {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+    .card-desc {
+      font-size: 14px;
+      color: var(--text-dim);
+      flex: 1;
+    }
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid currentColor;
+    }
+    .badge.active   { color: var(--neon-green); }
+    .badge.seed     { color: var(--neon-yellow); }
+    .badge.frozen   { color: var(--neon-cyan); }
+    .badge.archived { color: var(--text-dim); }
+    .card-author {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .card-play {
+      margin-top: 4px;
+      display: inline-block;
+      padding: 10px 16px;
+      text-align: center;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+      color: #0a0014;
+      font-weight: 800;
+      letter-spacing: 2px;
+      font-size: 13px;
+      transition: transform 0.1s;
+    }
+    .card-play:hover { transform: scale(1.04); text-decoration: none; }
+
+    /* "あなたのアイデアもここに" カード */
+    .card.placeholder {
+      border-style: dashed;
+      background: transparent;
+      color: var(--text-dim);
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      min-height: 220px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .card.placeholder:hover {
+      border-color: var(--neon-yellow);
+      color: var(--neon-yellow);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(255, 242, 0, 0.15);
+    }
+    .card.placeholder .plus {
+      font-size: 48px;
+      font-weight: 300;
+      line-height: 1;
+    }
+    .card.placeholder .ph-text {
+      font-size: 14px;
+      letter-spacing: 2px;
+    }
+
+    /* === コンセプトブロック === */
+    .concept {
+      background: rgba(58, 0, 90, 0.25);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 28px 32px;
+    }
+    .concept h3 {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--neon-pink);
+      margin-bottom: 12px;
+    }
+    .concept p { color: var(--text); font-size: 15px; }
+    .concept p + p { margin-top: 10px; }
+    .concept .target {
+      display: inline-block;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-weight: 900;
+    }
+
+    /* === フッター === */
+    footer {
+      padding: 48px 24px 64px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-dim);
+      border-top: 1px solid var(--card-border);
+      margin-top: 64px;
+    }
+    footer .links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    footer .links a {
+      color: var(--text);
+      letter-spacing: 2px;
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body>
-  <!-- スタート画面（クリックすると音声ロック解除＆体験開始） -->
-  <div id="start-screen">
-    <div class="start-inner">
-      <h1 class="logo">DOOPA</h1>
-      <p class="tagline">ドーパミン直接摂取マシーン</p>
-      <p class="note">↓キー or マウス下スワイプで次の刺激へ<br/>
-        💖で気に入る　👎で却下　Spaceで停止</p>
-      <button id="start-btn">TAP TO START</button>
-      <p class="warn">※ 音が鳴ります。中毒にご注意ください。</p>
+  <header class="hero">
+    <h1 class="logo">DOOPA</h1>
+    <p class="tagline">DOPA-GAKI EXPERIMENT LAB</p>
+    <p class="lead">
+      TikTok / YouTube Shorts で常に刺激を求めてしまう若者＝<strong>ドパガキ</strong>に効くゲームを、
+      仲間と一緒に<strong>並列に試し続ける</strong>実験場です。
+    </p>
+  </header>
+
+  <section class="block">
+    <h2 class="section-title">CONCEPT</h2>
+    <div class="concept">
+      <h3>たった一つ決まっていること</h3>
+      <p>ターゲットは <span class="target">ドパガキ</span>。</p>
+      <p>
+        コンセプト・メカニクス・ジャンル・操作・見せ方は <strong>何でも自由</strong>。
+        失敗OK、未完成OK、しょぼいOK。<strong>出した数が偉い</strong>。
+      </p>
+      <p>
+        既存ゲームの枠を超える切り口を試したい人、ぜひ参加してください。
+      </p>
     </div>
-  </div>
+  </section>
 
-  <!-- メイン画面 -->
-  <main id="app" class="hidden">
-    <!-- 上部ヘッダー -->
-    <header id="hud">
-      <div class="hud-left">
-        <span class="brand">DOOPA</span>
-      </div>
-      <div class="hud-center">
-        <div class="meter-wrap" title="ドーパミンメーター">
-          <div class="meter-label">DOPAMINE</div>
-          <div class="meter-bar"><div id="dopamine-fill"></div></div>
+  <section class="block">
+    <h2 class="section-title">PROTOTYPES</h2>
+    <div class="grid">
+
+      <!-- ===== prototype card テンプレ：増えたらコピペして追加 ===== -->
+      <article class="card">
+        <span class="card-num">01</span>
+        <h3 class="card-title">ドーパミン直接摂取マシーン</h3>
+        <p class="card-slug">prototypes/01-dopamine-feed</p>
+        <p class="card-desc">
+          "気持ちいい瞬間" の断片を 3〜10 秒で連続摂取する装置。
+          TikTok 的にスワイプ、アルゴリズムが好みを学習。
+        </p>
+        <div class="card-meta">
+          <span class="badge active">🟢 ACTIVE</span>
+          <span class="card-author">@heipo548</span>
         </div>
-      </div>
-      <div class="hud-right">
-        <span class="counter">×<span id="total-count">0</span></span>
-      </div>
-    </header>
+        <a class="card-play" href="./prototypes/01-dopamine-feed/">▶ PLAY</a>
+      </article>
 
-    <!-- 刺激表示エリア（縦長カード） -->
-    <section id="stage">
-      <!-- 現在の刺激 -->
-      <div id="card-current" class="card">
-        <div class="stimulus-host" id="stimulus-host"></div>
-        <div class="stimulus-label" id="stimulus-label"></div>
-      </div>
-      <!-- スワイプ進行中に見せる "次のカード" のチラ見せ -->
-      <div id="card-next" class="card card-next">
-        <div class="next-hint">↓ もっと刺激を ↓</div>
-      </div>
-    </section>
+      <!-- プレースホルダー：常に最後に置く -->
+      <a class="card placeholder" href="https://github.com/heipo548/doopa/issues/new?template=new_prototype.md" target="_blank" rel="noopener">
+        <div class="plus">+</div>
+        <div class="ph-text">YOUR IDEA HERE</div>
+        <div style="font-size:11px; margin-top:8px; opacity:0.7;">GitHub Issue でアイデア投稿</div>
+      </a>
 
-    <!-- 右側アクションボタン -->
-    <aside id="actions">
-      <button class="act-btn" id="like-btn" title="いいね (L)">
-        <span class="ico">💖</span>
-        <span class="lbl">LIKE</span>
-      </button>
-      <button class="act-btn" id="dislike-btn" title="やだ (D)">
-        <span class="ico">👎</span>
-        <span class="lbl">NOPE</span>
-      </button>
-      <button class="act-btn" id="share-btn" title="シェア（雰囲気のみ）">
-        <span class="ico">📤</span>
-        <span class="lbl">SHARE</span>
-      </button>
-    </aside>
+    </div>
+  </section>
 
-    <!-- 下部の操作ヒント -->
-    <footer id="hint">
-      <span class="hint-swipe">↑↓ スワイプで切替</span>
-    </footer>
-
-    <!-- いいね/やだのトースト -->
-    <div id="toast"></div>
-
-    <!-- パーティクル用キャンバス（前面オーバーレイ） -->
-    <canvas id="fx-canvas"></canvas>
-  </main>
-
-  <!-- スクリプト読み込み（ES Module 不使用、file:// で動く） -->
-  <script src="js/effects.js"></script>
-  <script src="js/algorithm.js"></script>
-  <script src="js/stimuli/balloon.js"></script>
-  <script src="js/stimuli/counter.js"></script>
-  <script src="js/stimuli/coin.js"></script>
-  <script src="js/stimuli/combo.js"></script>
-  <script src="js/stimuli/rare.js"></script>
-  <script src="js/main.js"></script>
+  <footer>
+    <div class="links">
+      <a href="https://github.com/heipo548/doopa" target="_blank" rel="noopener">GITHUB</a>
+      <a href="https://github.com/heipo548/doopa/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING</a>
+      <a href="https://github.com/heipo548/doopa/issues" target="_blank" rel="noopener">ISSUES</a>
+    </div>
+    DOOPA — MIT License — © 2026 heipo548 and contributors
+  </footer>
 </body>
 </html>
