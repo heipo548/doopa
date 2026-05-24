@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>DOOPA — ドーパミン直接摂取マシーン</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- スタート画面（クリックすると音声ロック解除＆体験開始） -->
+  <div id="start-screen">
+    <div class="start-inner">
+      <h1 class="logo">DOOPA</h1>
+      <p class="tagline">ドーパミン直接摂取マシーン</p>
+      <p class="note">↓キー or マウス下スワイプで次の刺激へ<br/>
+        💖で気に入る　👎で却下　Spaceで停止</p>
+      <button id="start-btn">TAP TO START</button>
+      <p class="warn">※ 音が鳴ります。中毒にご注意ください。</p>
+    </div>
+  </div>
+
+  <!-- メイン画面 -->
+  <main id="app" class="hidden">
+    <!-- 上部ヘッダー -->
+    <header id="hud">
+      <div class="hud-left">
+        <span class="brand">DOOPA</span>
+      </div>
+      <div class="hud-center">
+        <div class="meter-wrap" title="ドーパミンメーター">
+          <div class="meter-label">DOPAMINE</div>
+          <div class="meter-bar"><div id="dopamine-fill"></div></div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <span class="counter">×<span id="total-count">0</span></span>
+      </div>
+    </header>
+
+    <!-- 刺激表示エリア（縦長カード） -->
+    <section id="stage">
+      <!-- 現在の刺激 -->
+      <div id="card-current" class="card">
+        <div class="stimulus-host" id="stimulus-host"></div>
+        <div class="stimulus-label" id="stimulus-label"></div>
+      </div>
+      <!-- スワイプ進行中に見せる "次のカード" のチラ見せ -->
+      <div id="card-next" class="card card-next">
+        <div class="next-hint">↓ もっと刺激を ↓</div>
+      </div>
+    </section>
+
+    <!-- 右側アクションボタン -->
+    <aside id="actions">
+      <button class="act-btn" id="like-btn" title="いいね (L)">
+        <span class="ico">💖</span>
+        <span class="lbl">LIKE</span>
+      </button>
+      <button class="act-btn" id="dislike-btn" title="やだ (D)">
+        <span class="ico">👎</span>
+        <span class="lbl">NOPE</span>
+      </button>
+      <button class="act-btn" id="share-btn" title="シェア（雰囲気のみ）">
+        <span class="ico">📤</span>
+        <span class="lbl">SHARE</span>
+      </button>
+    </aside>
+
+    <!-- 下部の操作ヒント -->
+    <footer id="hint">
+      <span class="hint-swipe">↑↓ スワイプで切替</span>
+    </footer>
+
+    <!-- いいね/やだのトースト -->
+    <div id="toast"></div>
+
+    <!-- パーティクル用キャンバス（前面オーバーレイ） -->
+    <canvas id="fx-canvas"></canvas>
+  </main>
+
+  <!-- スクリプト読み込み（ES Module 不使用、file:// で動く） -->
+  <script src="js/effects.js"></script>
+  <script src="js/algorithm.js"></script>
+  <script src="js/stimuli/balloon.js"></script>
+  <script src="js/stimuli/counter.js"></script>
+  <script src="js/stimuli/coin.js"></script>
+  <script src="js/stimuli/combo.js"></script>
+  <script src="js/stimuli/rare.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

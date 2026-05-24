@@ -1,0 +1,599 @@
+/* ============================================================
+   DOOPA — Style
+   ・ダーク背景 × ネオン配色で「夜の TikTok」感
+   ・PC で開く前提だが、縦長カードは固定アスペクト比
+   ============================================================ */
+
+:root {
+  --bg: #0a0014;
+  --bg2: #14002b;
+  --card-bg: #160029;
+  --card-border: #3a005a;
+  --neon-pink: #ff2bd6;
+  --neon-cyan: #00f7ff;
+  --neon-yellow: #fff200;
+  --neon-green: #4dff88;
+  --text: #f5e9ff;
+  --text-dim: #a98cc4;
+  --danger: #ff3860;
+  --card-w: 420px;
+  --card-h: 720px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 20%, var(--bg2), var(--bg) 70%);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+    "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+.hidden { display: none !important; }
+
+/* ============================================================
+   スタート画面
+   ============================================================ */
+#start-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 50%, #1a0033, #000 80%);
+  z-index: 1000;
+}
+.start-inner {
+  text-align: center;
+  padding: 24px;
+}
+.start-inner .logo {
+  font-size: 96px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 0 30px rgba(255, 43, 214, 0.5),
+    0 0 60px rgba(0, 247, 255, 0.3);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+.start-inner .tagline {
+  margin-top: 4px;
+  font-size: 18px;
+  color: var(--neon-cyan);
+  letter-spacing: 2px;
+}
+.start-inner .note {
+  margin: 32px 0 24px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text-dim);
+}
+.start-inner .warn {
+  margin-top: 16px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+#start-btn {
+  padding: 14px 40px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+  color: #0a0014;
+  box-shadow: 0 0 30px rgba(255, 43, 214, 0.6);
+  transition: transform 0.1s;
+}
+#start-btn:hover { transform: scale(1.05); }
+#start-btn:active { transform: scale(0.95); }
+
+@keyframes pulse-glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.3); }
+}
+
+/* ============================================================
+   メイン画面レイアウト
+   ============================================================ */
+#app {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr auto 120px 1fr;
+  grid-template-rows: 60px 1fr 40px;
+  grid-template-areas:
+    "hud hud hud hud"
+    ".   stage actions ."
+    "hint hint hint hint";
+  gap: 0;
+}
+
+/* HUD */
+#hud {
+  grid-area: hud;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  align-items: center;
+  padding: 0 24px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.6), transparent);
+  z-index: 10;
+}
+.hud-left { justify-self: start; }
+.hud-center { justify-self: center; }
+.hud-right { justify-self: end; }
+.brand {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.meter-wrap { text-align: center; }
+.meter-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.meter-bar {
+  width: 220px;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+#dopamine-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--neon-pink), var(--neon-yellow), var(--neon-cyan));
+  transition: width 0.3s;
+  box-shadow: 0 0 12px var(--neon-pink);
+}
+.counter {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+#total-count {
+  color: var(--neon-yellow);
+  font-size: 18px;
+  margin-left: 2px;
+}
+
+/* ステージ（縦長カード） */
+#stage {
+  grid-area: stage;
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  align-self: center;
+  justify-self: center;
+  perspective: 1200px;
+}
+
+.card {
+  position: absolute;
+  inset: 0;
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255, 43, 214, 0.2),
+    0 20px 60px rgba(0,0,0,0.6),
+    inset 0 0 80px rgba(255, 43, 214, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+.card-next {
+  transform: translateY(100%) scale(0.92);
+  opacity: 0.4;
+  filter: blur(2px);
+  z-index: -1;
+}
+
+/* 刺激のホスト要素：各刺激スクリプトが内部に DOM を作る */
+.stimulus-host {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1f003d, #0a0014);
+}
+
+/* 刺激名ラベル */
+.stimulus-label {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text);
+  text-shadow: 0 0 8px rgba(0,0,0,0.8);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.next-hint {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text-dim);
+  letter-spacing: 4px;
+}
+
+/* カード切替アニメーション */
+.swipe-out-up {
+  animation: swipe-up 0.32s ease-in forwards;
+}
+.swipe-in-up {
+  animation: rise-up 0.32s ease-out forwards;
+}
+@keyframes swipe-up {
+  from { transform: translateY(0) scale(1); opacity: 1; }
+  to   { transform: translateY(-110%) scale(0.92); opacity: 0; }
+}
+@keyframes rise-up {
+  from { transform: translateY(100%) scale(0.92); opacity: 0.4; filter: blur(2px); }
+  to   { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
+}
+
+.swipe-out-down {
+  animation: swipe-down 0.32s ease-in forwards;
+}
+.swipe-in-down {
+  animation: fall-down 0.32s ease-out forwards;
+}
+@keyframes swipe-down {
+  from { transform: translateY(0) scale(1); opacity: 1; }
+  to   { transform: translateY(110%) scale(0.92); opacity: 0; }
+}
+@keyframes fall-down {
+  from { transform: translateY(-100%) scale(0.92); opacity: 0.4; filter: blur(2px); }
+  to   { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
+}
+
+/* 右側アクション */
+#actions {
+  grid-area: actions;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px 12px;
+}
+.act-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  transition: transform 0.15s;
+}
+.act-btn .ico {
+  font-size: 36px;
+  display: block;
+  filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));
+  transition: transform 0.15s, filter 0.15s;
+}
+.act-btn:hover .ico { transform: scale(1.15); }
+.act-btn:active { transform: scale(0.9); }
+.act-btn.liked .ico {
+  animation: like-pop 0.5s ease-out;
+  filter: drop-shadow(0 0 20px var(--neon-pink));
+}
+.act-btn.disliked .ico {
+  animation: dislike-shake 0.4s ease-out;
+}
+@keyframes like-pop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.6) rotate(-10deg); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+@keyframes dislike-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px) rotate(-10deg); }
+  75% { transform: translateX(6px) rotate(10deg); }
+}
+
+/* 下部ヒント */
+#hint {
+  grid-area: hint;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 4px;
+}
+
+/* トースト */
+#toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(0,0,0,0.85);
+  color: var(--text);
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 200;
+  transition: opacity 0.2s, transform 0.2s;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+#toast.like { color: var(--neon-pink); box-shadow: 0 0 24px rgba(255, 43, 214, 0.6); }
+#toast.dislike { color: var(--text-dim); }
+#toast.combo { color: var(--neon-yellow); box-shadow: 0 0 24px rgba(255, 242, 0, 0.6); }
+
+/* パーティクル用キャンバス */
+#fx-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 500;
+}
+
+/* ============================================================
+   刺激 ごとの内部スタイル（共通＋個別）
+   ============================================================ */
+
+/* 風船パンッ */
+.balloon {
+  position: absolute;
+  font-size: 56px;
+  cursor: pointer;
+  transition: transform 0.05s;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+}
+.balloon.pop {
+  animation: balloon-pop 0.35s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes balloon-pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.6); filter: brightness(2); }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* 数字爆増 */
+.counter-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.counter-num {
+  font-size: 96px;
+  font-weight: 900;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 30px var(--neon-yellow);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.08s;
+}
+.counter-num.pump { transform: scale(1.15); }
+.counter-hint {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 3px;
+}
+.counter-floater {
+  position: absolute;
+  font-weight: 900;
+  color: var(--neon-yellow);
+  pointer-events: none;
+  animation: floater-rise 0.8s ease-out forwards;
+}
+@keyframes floater-rise {
+  from { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(-80px); opacity: 0; }
+}
+
+/* コイン雨 */
+.coin {
+  position: absolute;
+  font-size: 32px;
+  pointer-events: none;
+  filter: drop-shadow(0 0 8px gold);
+}
+.coin.caught {
+  animation: coin-catch 0.4s ease-out forwards;
+}
+@keyframes coin-catch {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.5); filter: brightness(2) drop-shadow(0 0 16px gold); }
+  100% { transform: scale(0); opacity: 0; }
+}
+.coin-cursor {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border: 2px dashed rgba(255, 215, 0, 0.5);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.coin-score {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 32px;
+  font-weight: 900;
+  color: gold;
+  text-shadow: 0 0 16px gold;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 連打ゲージ */
+.combo-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.combo-text {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: 4px;
+  margin-bottom: 24px;
+}
+.combo-bar {
+  width: 80%;
+  height: 24px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+}
+.combo-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink), var(--neon-yellow));
+  transition: width 0.05s linear;
+}
+.combo-count {
+  margin-top: 16px;
+  font-size: 72px;
+  font-weight: 900;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 24px var(--neon-cyan);
+  font-variant-numeric: tabular-nums;
+}
+.combo-stage.maxed .combo-count {
+  color: var(--neon-yellow);
+  text-shadow: 0 0 36px var(--neon-yellow);
+  animation: max-flash 0.3s ease-out infinite alternate;
+}
+@keyframes max-flash {
+  from { filter: brightness(1); }
+  to   { filter: brightness(1.5); }
+}
+
+/* レアガチャ */
+.rare-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.rare-card {
+  width: 70%;
+  aspect-ratio: 3/4;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  transition: transform 0.2s;
+}
+.rare-card .glyph { font-size: 96px; }
+.rare-card .rank { font-size: 18px; letter-spacing: 6px; }
+.rare-card.tier-N {
+  background: linear-gradient(180deg, #444, #222);
+  color: #ccc;
+}
+.rare-card.tier-R {
+  background: linear-gradient(180deg, #2a5cff, #0a1a55);
+  color: #aaccff;
+  box-shadow: 0 0 30px rgba(42, 92, 255, 0.6);
+}
+.rare-card.tier-SR {
+  background: linear-gradient(180deg, #ff5fdf, #6a009b);
+  color: #fff;
+  box-shadow: 0 0 50px rgba(255, 95, 223, 0.8);
+}
+.rare-card.tier-SSR {
+  background: linear-gradient(135deg, #ffd700, #ff9500, #ffd700);
+  color: #4a2400;
+  box-shadow: 0 0 80px rgba(255, 215, 0, 1);
+  animation: ssr-glow 0.6s ease-in-out infinite alternate;
+}
+@keyframes ssr-glow {
+  from { box-shadow: 0 0 80px rgba(255, 215, 0, 0.8); }
+  to   { box-shadow: 0 0 120px rgba(255, 215, 0, 1), 0 0 200px rgba(255, 215, 0, 0.5); }
+}
+.rare-card.appear {
+  animation: rare-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes rare-pop {
+  from { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* 中央に出るドカン演出（共通） */
+.boom {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 80px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 30px var(--neon-yellow);
+  pointer-events: none;
+  animation: boom-zoom 0.6s ease-out forwards;
+  z-index: 20;
+}
+@keyframes boom-zoom {
+  0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  30%  { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+/* レスポンシブ：縦長スマホ寄りウィンドウでもそれなりに */
+@media (max-height: 800px) {
+  :root { --card-h: 80vh; }
+}
+@media (max-width: 600px) {
+  :root { --card-w: 92vw; }
+  #app { grid-template-columns: 0 1fr 100px 0; }
+}

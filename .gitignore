@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependency dirs（今は使ってないが将来用）
+node_modules/
+.cache/
+
+# 環境変数（万が一作ったとき用、Public リポなので絶対に commit しない）
+.env
+.env.*
+!.env.example
+
+# OS / 一時ファイル
+Thumbs.db
