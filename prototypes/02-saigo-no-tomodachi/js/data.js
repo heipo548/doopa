@@ -1,0 +1,176 @@
+/*
+ * data.js — ゲームの全データ（データ駆動の心臓部）
+ *
+ * 仕様書の「すべてデータ駆動（外部ファイル）にし、数値だけ差し替えられる」方針に従い、
+ * バランスに関わる数字・敵・武器・カードなどを “ここだけ” に集めています。
+ * ゲームの手応えを変えたいときは、原則このファイルの数値をいじるだけでOK。
+ *
+ * ※ ビルドなしで動かすため ES Modules（import/export）は使わず、
+ *   普通の <script> として読み込み、グローバル変数として共有します。
+ *   そのため index.html では data.js を一番最初に読み込みます。
+ */
+
+// ──────────────────────────────────────────
+// プレイヤー初期値（主人公・仮名「ぽち」）
+// ──────────────────────────────────────────
+const PLAYER_INIT = {
+  name: "ぽち",
+  maxHp: 26,          // HP が 0 になると RUN OVER（最初から）
+                      // ※20→26：序盤は群れの被弾が一気にかさむため、立て直す余裕を確保
+  maxKokoro: 10,      // こころ＝救済リソース。こころみる／すくう で消費する
+                      // ※8→10：1ウェーブで“なだめて救う”を複数こなすには燃料がいる
+  startWeapon: "namida", // 開始武器：なみだ砲（単体6）
+  items: { heal: 3 }, // どうぐの初期所持（回復アイテム×3）
+                      // ※2→3：単体武器だと序盤の殲滅に手間取るので回復を1つ増量
+};
+
+// ──────────────────────────────────────────
+// バランス調整値（“迷い”を生むためのコスト設計）
+//   - 祓う＝1ターンで即・強くなる
+//   - 救う＝数ターン＆こころ消費。その間も群れに殴られる
+// この非対称さが本作の核なので、ここの数値で手触りが大きく変わります。
+// ──────────────────────────────────────────
+const BALANCE = {
+  actCost: 1,             // こころみる1回で消費するこころ
+  saveCost: 2,            // すくう1回で消費するこころ（救うのは“重い”）
+  healAmount: 10,         // どうぐ（回復）の回復量
+  defendReduction: 0.7,   // まもる：このターンの被ダメを70%カット
+  weaponMaxLv: 3,         // 武器がこの Lv に達すると進化条件を満たす
+  expPerKill: 3,          // 祓って倒したときの EXP（多い＝早く強くなる）
+  expPerSave: 1,          // すくったときの EXP（少ない。代わりに記憶のカケラ）
+  saveHeal: 3,            // すくう成功で回復する HP。
+                          // ※救済ルートは手数が多く被弾もかさむので“詰む”。
+                          //   「祓い＝EXP/速さ」「救い＝HP/持続」という非対称な見返りにし、
+                          //   慈悲を選ぶほど夜を生き延びられる設計にする（仕様の二択を成立させる核）。
+  expToBonusLevel: 12,    // EXP がこの量たまると、ボーナスでもう1回3択が出る
+  refillKokoroEachWave: true, // 毎ウェーブ開始時にこころを最大まで回復
+                              // （各ウェーブを“誰を救うかのトリアージ”にするため）
+  healOnWaveStartPct: 0.5,    // ウェーブ開始時に最大HPの何割を回復するか（2ウェーブ目以降）
+                              // ※HPはウェーブ間で自然回復しないと、1人で全6波を耐える総HPが
+                              //   足りず数学的に詰む。各波を“立て直して挑む一戦”にするための一息。
+                              //   0 にすれば「回復なし=高難度」、1.0 で毎波全快。
+  eliteHpBonus: 1,        // 強化個体（ウェーブ5）の HP 上乗せ（→1：全体武器が雑魚を一撃で流せる線を残す）
+  eliteAtkBonus: 0,       // 強化個体の 攻撃力 上乗せ（1→0：6体全員が+1だと1人では被弾が過大）
+                          //   ※「強化＝硬い個体」の意味は HP 上乗せで表現。火力増は solo には酷なので外す
+  hayaashiDodgeRate: 0.25,// パッシブ「はやあし」取得時、各被弾を無効化する確率
+  fukaiBonus: 2,          // パッシブ「ふかいかなしみ」：悲しむ敵への与ダメ上乗せ
+  okoriBonus: 1,          // パッシブ「おこりんぼ」：前列攻撃の与ダメ上乗せ
+};
+
+// ──────────────────────────────────────────
+// こころみる（ACT）コマンド
+//   敵ごとに「効くACTが違う」ことで、救済は“正しい手順を探すパズル”になる。
+//   wall: 心の壁を下げる量 ／ atkDown: 相手の攻撃力ダウン ／ silence: 1ターン無力化
+// ──────────────────────────────────────────
+const ACTS = {
+  nade:   { name: "なでる",     wall: 1,            desc: "心の壁 −1" },
+  uta:    { name: "うたう",     wall: 1, atkDown: 1, desc: "心の壁 −1 ／ 相手の攻撃力 −1" },
+  ayasu:  { name: "あやす",     wall: 1,            desc: "心の壁 −1（特定の敵に有効）" },
+  nadame: { name: "なだめる",   wall: 1,            desc: "心の壁 −1（特定の敵に有効）" },
+  yobi:   { name: "よびかける", wall: 1, silence: 1, desc: "心の壁 −1 ／ 相手を1ターン無力化" },
+  negau:  { name: "ねがう",     wall: 1,            desc: "心の壁 −1（ぬしさま向け）" },
+};
+
+// ──────────────────────────────────────────
+// 武器（祓うコマンドの攻撃形）
+//   target: single=単体 / front2=前列2体 / front3=前列3体 / all=全体
+//   power: 基礎威力（実威力 = power + (Lv-1) * perLv）
+//   evolveKey: 進化に必要なパッシブ ／ evolveTo: 進化後の武器ID
+//   進化後の武器は evolved:true（Lvの概念なし）。
+// ──────────────────────────────────────────
+const WEAPONS = {
+  // 基本3種
+  // power 4→6：開幕の「くろまる(HP6)・ふらふら(HP5)」を一撃で祓える＝攻撃役を毎ターン1体減らせる。
+  // 単体武器のままだと群れに削り負けて死ぬため、“決定力”を持たせて祓いルートを成立させる。
+  namida: { name: "なみだ砲",     target: "single", power: 6, perLv: 1, evolveKey: "fukai", evolveTo: "daikouzui" },
+  poyo:   { name: "ぽよぽよ連打", target: "front2", power: 3, perLv: 1, evolveKey: "okori", evolveTo: "bakuretsu" },
+  // perLv 1→2：全体武器は1体あたりが弱く“数を減らせない”と被弾が雪だるま式に増える。
+  // Lvを上げると Lv3 で威力7に届き、雑魚(くろまる6/ふらふら5)を一掃できるようにする。
+  hikari: { name: "ひかりの輪",   target: "all",    power: 3, perLv: 2, evolveKey: "negai", evolveTo: "kyusai" },
+  // 進化形態（究極形態。性能が一段跳ね上がる）
+  // power 3→6：全体6ダメで雑魚を一掃＝“洪水”の手応え。進化が「弱体化の罠」にならないように。
+  daikouzui: { name: "大こうずい",   target: "all",    power: 6, wallDown: 1, evolved: true, desc: "全体に6ダメージ＋心の壁−1" },
+  // power 5→6：前列の雑魚を一撃で流せる威力に。
+  bakuretsu: { name: "ばくれつぽよ", target: "front3", power: 6,             evolved: true, desc: "前列3体に6ダメージ" },
+  // 「救済の光」＝救済を全体化する進化。聖人ビルドも“強く”なれる道。
+  // power 1→2：壁−2が主役。火力は控えめのまま（救済特化の個性を保つ）。
+  kyusai:    { name: "救済の光",     target: "all",    power: 2, wallDown: 2, evolved: true, desc: "全体に2ダメージ＋心の壁−2" },
+};
+
+// ──────────────────────────────────────────
+// 敵（4種＋ボス）
+//   hp: 体力 ／ atk: 攻撃力 ／ target: 攻撃対象（PoCは主人公のみなので主に演出）
+//   wall: 救済に必要な心の壁 ／ acts: この敵に“効く”ACTのID配列
+//   sad: true の敵は「悲しむ敵」。パッシブ「ふかいかなしみ」の与ダメ増対象。
+//   shape/color: 簡易図形の見た目用
+// ──────────────────────────────────────────
+// ※ wall（心の壁）は「すくう」までに必要な“こころみる(ACT)回数”。
+//   壁がほどける(0)と敵はおだやかになり攻撃をやめる＝壁下げ自体が生存手段。
+//   群れ相手だと壁が高いと“1体なだめる間に他全員に殴られて”詰むため、
+//   1〜2手でほどける現実的な値に下げ、救済ルートを成立させている。
+const ENEMIES = {
+  kuro:  { name: "くろまる",     hp: 6,  atk: 2, target: "single", wall: 1, acts: ["nade"],
+           shape: "circle", color: "#5b6b8c", sad: false },
+  fura:  { name: "ふらふら",     hp: 5,  atk: 1, target: "random", wall: 1, acts: ["yobi"],
+           shape: "ghost",  color: "#7a89b0", sad: false },
+  usagi: { name: "なみだうさぎ", hp: 8,  atk: 3, target: "single", wall: 2, acts: ["uta", "nade"],
+           shape: "bunny",  color: "#6c7fc0", sad: true },
+  toge:  { name: "とげぐも",     hp: 12, atk: 4, target: "all",    wall: 3, acts: ["ayasu", "nadame"],
+           shape: "spider", color: "#8a5b8c", sad: false },
+  nushi: { name: "ぬしさま",     hp: 60, atk: 5, target: "all",    wall: 6, acts: ["uta", "nade", "negau"],
+           shape: "boss",   color: "#b04a6a", sad: true, boss: true },
+};
+
+// ──────────────────────────────────────────
+// ウェーブ進行（難易度カーブ）
+//   1ラン＝6ウェーブ＋最終ボス。elite:true は強化個体ウェーブ。
+//   仕様の構成（3→4→5→5→6→BOSS）に合わせています。
+// ──────────────────────────────────────────
+const WAVES = [
+  { enemies: ["kuro", "kuro", "kuro"] },                               // 1: 基本を覚える
+  { enemies: ["kuro", "kuro", "kuro", "fura"] },                       // 2: 複数対象の判断
+  { enemies: ["kuro", "kuro", "fura", "fura", "usagi"] },              // 3: 優先順位／救済初挑戦
+  { enemies: ["kuro", "kuro", "fura", "usagi", "toge"] },              // 4: 守る／回復／リソース管理
+  { enemies: ["kuro", "kuro", "fura", "usagi", "usagi", "toge"], elite: true }, // 5: ビルドの完成度（とげぐも2→1で solo 向けに調整）
+  { enemies: ["nushi"], boss: true },                                  // 6: 祓う即殺 or 手間でも救う
+];
+
+// ──────────────────────────────────────────
+// どうぐ（ITEM）
+// ──────────────────────────────────────────
+const ITEMS = {
+  heal: { name: "なみだのおまもり", effect: "heal", amount: BALANCE.healAmount, desc: "HPを回復する" },
+};
+
+// ──────────────────────────────────────────
+// 3択カードプール
+//   毎レベルアップで3枚提示し1枚取得。引きと選択でビルドが分岐する。
+//   仕様の8種に加え、進化テーブルを全3種“到達可能”にするため
+//   進化キー（おこりんぼ／ねがい）も後半に足しています。
+// ──────────────────────────────────────────
+const CARDS = [
+  { id: "w_poyo",   type: "weapon",    weapon: "poyo",   name: "新武器：ぽよぽよ連打", desc: "前列2体に攻撃する武器を入手" },
+  { id: "w_hikari", type: "weapon",    weapon: "hikari", name: "新武器：ひかりの輪",   desc: "全体に攻撃する武器を入手" },
+  { id: "w_up",     type: "weaponLv",                    name: "武器強化 Lv＋1",       desc: "武器を1つ選んで1段強化する" },
+  { id: "hp",       type: "maxHp",     amount: 5,        name: "＋たいりょく",         desc: "最大HP＋5（その分すぐ回復）" },
+  { id: "kokoro",   type: "maxKokoro", amount: 3,        name: "＋こころ",             desc: "最大こころ＋3（救済リソース）" },
+  { id: "fukai",    type: "passive",   key: "fukai",     name: "ふかいかなしみ",       desc: "悲しむ敵への与ダメ＋。なみだ砲の進化キー" },
+  { id: "yasashii", type: "passive",   key: "yasashii",  name: "やさしいて",           desc: "すくう成功時、隣の1体の壁−1（連鎖）" },
+  { id: "hayaashi", type: "passive",   key: "hayaashi",  name: "はやあし",             desc: "毎ウェーブ先手＋被弾を一定確率で回避" },
+  { id: "okori",    type: "passive",   key: "okori",     name: "おこりんぼ",           desc: "前列攻撃の与ダメ＋。ぽよぽよ連打の進化キー" },
+  { id: "negai",    type: "passive",   key: "negai",     name: "ねがい",               desc: "ひかりの輪を「救済の光」へ進化させるキー" },
+];
+
+// ──────────────────────────────────────────
+// ラン終了時の結末分岐（救済率 ＝ 救済数 ÷ (救済数＋殲滅数)）
+//   閾値の高い順に並べ、最初に満たしたものを採用します。
+//   theme は背景色・BGM の切替に使用（warm=暖色／gray=中間／cold=寒色）。
+// ──────────────────────────────────────────
+const ENDINGS = [
+  { min: 0.70, id: "hikari",  title: "ひかりの朝",   theme: "warm",
+    text: "救った友が集まってくる。\n暖かい光に包まれた、希望の朝。" },
+  { min: 0.30, id: "nibi",    title: "にび色の朝",   theme: "gray",
+    text: "救えた者と、失った者と。\n中間の、ほろ苦い朝がきた。" },
+  { min: 0.00, id: "shizuka", title: "しずかな朝",   theme: "cold",
+    text: "誰もいない、しずかな島。\n最強だけれど、どこか空っぽな朝。" },
+];

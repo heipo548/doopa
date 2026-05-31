@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>さいごのともだち — Core Combat PoC</title>
+  <meta name="description" content="コマンド選択型サバイバーRPG「さいごのともだち」のコア戦闘PoC。祓うか、救うか。" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="theme-night">
+  <div id="game">
+    <!-- 上部バー：ウェーブ・カウンタ・ミュート -->
+    <header id="topbar">
+      <div id="wave-info">WAVE 1 / 6</div>
+      <div id="counters">
+        <span class="ct kill">殲滅 <b id="c-kill">0</b></span>
+        <span class="ct save">救済 <b id="c-save">0</b></span>
+        <span class="ct memory">記憶 <b id="c-memory">0</b></span>
+      </div>
+      <button id="mute-btn" title="音のON/OFF">♪</button>
+    </header>
+
+    <!-- 敵エリア -->
+    <section id="enemy-area"></section>
+
+    <!-- 戦闘ログ -->
+    <section id="log" aria-live="polite"></section>
+
+    <!-- プレイヤーステータス -->
+    <section id="player-bar"></section>
+
+    <!-- サブ操作（武器/ACT/対象/どうぐ の案内） -->
+    <section id="prompt"></section>
+
+    <!-- コマンドバー -->
+    <nav id="command-bar"></nav>
+  </div>
+
+  <!-- 一時メッセージ -->
+  <div id="toast"></div>
+
+  <!-- タイトル画面 -->
+  <div id="overlay-title" class="overlay">
+    <div class="ov-panel title-panel">
+      <h1 class="game-title">さいごのともだち</h1>
+      <p class="game-subtitle">LAST FRIEND STANDING ― Core Combat PoC</p>
+      <p class="title-lead">
+        コマンドを選んで群れと戦う、ひと晩のサバイバル。<br />
+        敵は<b>祓う</b>と一瞬で消える。でも<b>救う</b>には手間がかかる。<br />
+        手が止まらないのに、心が止まる――その選択を、何度でも。
+      </p>
+      <div class="title-how">
+        <div><b>祓う</b>：武器で攻撃。早く強くなるが、二度と会えない。</div>
+        <div><b>こころみる</b>：心の壁を下げる。敵ごとに効くやり方が違う。</div>
+        <div><b>すくう</b>：壁が消えた相手を救う。遅くて弱いが、誰も死なない。</div>
+        <div><b>どうぐ / まもる</b>：回復・被ダメ減で、つらい夜をしのぐ。</div>
+      </div>
+      <button id="start-btn" class="start-btn">▶ はじめる</button>
+    </div>
+  </div>
+
+  <!-- レベルアップ（3択） -->
+  <div id="overlay-levelup" class="overlay hidden">
+    <div class="ov-panel"><div class="ov-body"></div></div>
+  </div>
+
+  <!-- 結末 / RUN OVER -->
+  <div id="overlay-result" class="overlay hidden">
+    <div class="ov-panel"><div class="ov-body"></div></div>
+  </div>
+
+  <!-- スクリプト：データ→音→状態→戦闘→カード→UI→起動 の順で読み込む -->
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/battle.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
