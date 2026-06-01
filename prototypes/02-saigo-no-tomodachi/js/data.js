@@ -55,6 +55,14 @@ const BALANCE = {
   hayaashiDodgeRate: 0.25,// パッシブ「はやあし」取得時、各被弾を無効化する確率
   fukaiBonus: 2,          // パッシブ「ふかいかなしみ」：悲しむ敵への与ダメ上乗せ
   okoriBonus: 1,          // パッシブ「おこりんぼ」：前列攻撃の与ダメ上乗せ
+
+  // ── きずな（救った友の“恩返し”）＝救うメリットを手触りにする核 ──
+  // 記憶のカケラ（＝これまで救った数）が、夜のあいだ群れの反撃をやわらげる。
+  // 「祓い＝敵を消して被弾を減らす」のに対し、「救い＝友が増えて被弾を減らす」。
+  //   どちらの道も“生き延びやすくなる”形をそろえることで、救う選択に明確な見返りを与える。
+  //   救うほど効きが積み上がる＝ダダサバ的な「雪だるま」の気持ちよさを救済ルートにも。
+  bondReducePerSave: 1,   // 救った友1人につき、群れの反撃の合計ダメージを 1 減らす
+  bondReduceMax: 5,       // 軽減の上限（祓いを完全な下位互換にしないためのキャップ）
 };
 
 // ──────────────────────────────────────────
@@ -84,12 +92,13 @@ const WEAPONS = {
   // 単体武器のままだと群れに削り負けて死ぬため、“決定力”を持たせて祓いルートを成立させる。
   namida: { name: "なみだ砲",     target: "single", power: 6, perLv: 1, evolveKey: "fukai", evolveTo: "daikouzui" },
   poyo:   { name: "ぽよぽよ連打", target: "front2", power: 3, perLv: 1, evolveKey: "okori", evolveTo: "bakuretsu" },
-  // perLv 1→2：全体武器は1体あたりが弱く“数を減らせない”と被弾が雪だるま式に増える。
-  // Lvを上げると Lv3 で威力7に届き、雑魚(くろまる6/ふらふら5)を一掃できるようにする。
-  hikari: { name: "ひかりの輪",   target: "all",    power: 3, perLv: 2, evolveKey: "negai", evolveTo: "kyusai" },
+  // perLv 2→1（ナーフ）：全体攻撃が“1ボタンで全部片付く”と緊張が消え、祓い一強になる。
+  //   Lv3 でも威力5に抑え、「全体で削る→単体/前列でとどめ」の段取りを残す。全体は万能解にしない。
+  hikari: { name: "ひかりの輪",   target: "all",    power: 3, perLv: 1, evolveKey: "negai", evolveTo: "kyusai" },
   // 進化形態（究極形態。性能が一段跳ね上がる）
-  // power 3→6：全体6ダメで雑魚を一掃＝“洪水”の手応え。進化が「弱体化の罠」にならないように。
-  daikouzui: { name: "大こうずい",   target: "all",    power: 6, wallDown: 1, evolved: true, desc: "全体に6ダメージ＋心の壁−1" },
+  // power 6→5（ナーフ）：進化の達成感は残しつつ、雑魚(くろまる6)を一撃全消しはさせない。
+  //   壁−1も付くので“祓いながら救済準備”の個性は維持。
+  daikouzui: { name: "大こうずい",   target: "all",    power: 5, wallDown: 1, evolved: true, desc: "全体に5ダメージ＋心の壁−1" },
   // power 5→6：前列の雑魚を一撃で流せる威力に。
   bakuretsu: { name: "ばくれつぽよ", target: "front3", power: 6,             evolved: true, desc: "前列3体に6ダメージ" },
   // 「救済の光」＝救済を全体化する進化。聖人ビルドも“強く”なれる道。
@@ -108,17 +117,29 @@ const WEAPONS = {
 //   壁がほどける(0)と敵はおだやかになり攻撃をやめる＝壁下げ自体が生存手段。
 //   群れ相手だと壁が高いと“1体なだめる間に他全員に殴られて”詰むため、
 //   1〜2手でほどける現実的な値に下げ、救済ルートを成立させている。
+//   hint: 「どう こころみる？」の手がかり（選択肢の総当たりを避けるための“におわせ”）。
+//   flavor: 初めて出会ったときに一度だけ流れる、その子の素性（物語の手触り）。
 const ENEMIES = {
   kuro:  { name: "くろまる",     hp: 6,  atk: 2, target: "single", wall: 1, acts: ["nade"],
-           shape: "circle", color: "#5b6b8c", sad: false },
+           shape: "circle", color: "#7d8bc4", sad: false,
+           hint: "そっと なでてほしそう",
+           flavor: "夜にこぼれた ちいさな影。ほんとは、さわると あったかい。" },
   fura:  { name: "ふらふら",     hp: 5,  atk: 1, target: "random", wall: 1, acts: ["yobi"],
-           shape: "ghost",  color: "#7a89b0", sad: false },
+           shape: "ghost",  color: "#93a0cf", sad: false,
+           hint: "よびかけたら ふりむくかも",
+           flavor: "ふわふわ さまよっている。名前を呼ぶと、すこしだけ 止まる。" },
   usagi: { name: "なみだうさぎ", hp: 8,  atk: 3, target: "single", wall: 2, acts: ["uta", "nade"],
-           shape: "bunny",  color: "#6c7fc0", sad: true },
+           shape: "bunny",  color: "#8f9ee0", sad: true,
+           hint: "きれいな音に 耳がうごく（うた？）",
+           flavor: "ずっと 泣いている子。やさしい音が、すこし 涙をとめる。" },
   toge:  { name: "とげぐも",     hp: 12, atk: 4, target: "all",    wall: 3, acts: ["ayasu", "nadame"],
-           shape: "spider", color: "#8a5b8c", sad: false },
+           shape: "spider", color: "#a877b0", sad: false,
+           hint: "とげの奥で こわがってる（あやす／なだめる）",
+           flavor: "とげで身を守っている。ほんとは、さわられるのが こわいだけ。" },
   nushi: { name: "ぬしさま",     hp: 60, atk: 5, target: "all",    wall: 6, acts: ["uta", "nade", "negau"],
-           shape: "boss",   color: "#b04a6a", sad: true, boss: true },
+           shape: "boss",   color: "#c25a7a", sad: true, boss: true,
+           hint: "群れの ねがいを 束ねている（いろいろ 試して）",
+           flavor: "群れの いちばん おく。その願いを ことばにできるのは、たぶん きみだけ。" },
 };
 
 // ──────────────────────────────────────────
@@ -168,9 +189,9 @@ const CARDS = [
 // ──────────────────────────────────────────
 const ENDINGS = [
   { min: 0.70, id: "hikari",  title: "ひかりの朝",   theme: "warm",
-    text: "救った友が集まってくる。\n暖かい光に包まれた、希望の朝。" },
+    text: "助けた友が、ひとり、またひとり、となりに来る。\nまぶしくて、ちょっと泣きそうな朝。\nきみは つよくないけど、もう ひとりじゃない。" },
   { min: 0.30, id: "nibi",    title: "にび色の朝",   theme: "gray",
-    text: "救えた者と、失った者と。\n中間の、ほろ苦い朝がきた。" },
+    text: "救えた子と、救えなかった子。\nおぼえている名前と、もう呼べない名前。\nにび色の空の下で、きみは すこし大人になった。" },
   { min: 0.00, id: "shizuka", title: "しずかな朝",   theme: "cold",
-    text: "誰もいない、しずかな島。\n最強だけれど、どこか空っぽな朝。" },
+    text: "だれもいない島に、朝が来た。\nきみは いちばん つよい。\n…しずかすぎて、かぜの音しか きこえない。" },
 ];

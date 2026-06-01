@@ -54,6 +54,9 @@ function newGame() {
     startTime: Date.now(),   // ラン所要時間の計測用
     pendingCards: null,      // 現在提示中の3択（[card,card,card]）
     ending: null,            // 確定した結末
+    seenTypes: {},           // 既に出会った敵タイプ（flavor を一度だけ流すため）
+    tips: {},                // 初見チュートリアルで“もう見せた”ヒントの記録
+    fx: [],                  // 演出イベントの一時キュー（ダメージ数字・揺れ等。UIが描画後に消費）
   };
   return game;
 }
@@ -110,6 +113,15 @@ function startWave() {
   game.state = STATES.PLAYER_TURN;
   log(`── WAVE ${waveNumber()} / ${totalWaves()} ──`);
   if (wave.boss) log("ぬしさま が あらわれた…！");
+
+  // はじめて出会う子だけ、その素性（flavor）を一度だけ流す＝物語の手触り。
+  for (const e of game.enemies) {
+    if (!game.seenTypes[e.type]) {
+      game.seenTypes[e.type] = true;
+      const base = ENEMIES[e.type];
+      if (base && base.flavor) log(`  〔${base.name}〕${base.flavor}`);
+    }
+  }
 }
 
 // ──────────────────────────────────────────
@@ -142,6 +154,12 @@ function weaponPower(id) {
   return w.power + (weaponLevel(id) - 1) * (w.perLv || 0);
 }
 function hasPassive(key) { return !!game.player.passives[key]; }
+
+// きずな：これまで救った友の数ぶん、群れの反撃をやわらげる（上限あり）。
+//   救うほど夜を生き延びやすくなる＝「救う」の見返りを“数字に出る形”で返すための関数。
+function bondReduction() {
+  return Math.min(BALANCE.bondReduceMax, game.counters.save * BALANCE.bondReducePerSave);
+}
 
 // ──────────────────────────────────────────
 // 戦闘ログ（古いものは捨てて、画面が重くならないように）

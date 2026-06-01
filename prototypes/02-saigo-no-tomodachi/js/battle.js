@@ -17,6 +17,15 @@ function flash(msg) {
   if (typeof showToast === "function") showToast(msg);
 }
 
+// ──────────────────────────────────────────
+// 演出イベントを積む（UI が render 後に消費して、数字のフロートや画面の揺れを出す）。
+// battle.js は DOM を触らない（JXA でのコア検証を壊さない）ため、
+// 「何が起きたか」だけを game.fx に残し、見せ方は ui.js に任せる。
+// ──────────────────────────────────────────
+function pushFx(ev) {
+  if (game && Array.isArray(game.fx)) game.fx.push(ev);
+}
+
 // uid から “まだ場にいる” 敵を探す
 function findEnemy(uid) {
   return game.enemies.find((e) => e.uid === uid && !e.dead && !e.saved) || null;
@@ -34,9 +43,11 @@ function applyDamage(enemy, dmg) {
       game.counters.kill++;
       game.player.exp += BALANCE.expPerKill; // 祓うと EXP 多め＝早く強くなる
       log(`  ${enemy.name} を 祓った（殲滅 +1）`);
+      pushFx({ t: "hit", uid: enemy.uid, dmg: dmg, dead: true }); // とどめ＝消える演出
     }
   } else {
     log(`  ${enemy.name} に ${dmg} ダメージ（HP ${enemy.hp}/${enemy.maxHp}）`);
+    pushFx({ t: "hit", uid: enemy.uid, dmg: dmg, dead: false }); // ダメージ数字＋ゆれ
   }
 }
 
@@ -47,6 +58,7 @@ function reduceWall(enemy, amount) {
   enemy.wall = Math.max(0, enemy.wall - amount);
   if (enemy.wall === 0 && before > 0) {
     log(`  ${enemy.name} の心の壁が ほどけた…「すくえそう」`);
+    pushFx({ t: "calm", uid: enemy.uid }); // おだやかになった瞬間の演出
   }
 }
 
@@ -144,15 +156,22 @@ function cmdSave(targetUid) {
   t.saved = true;
   game.counters.save++;
   game.counters.memory++;
-  game.player.exp += BALANCE.expPerSave; // 救うと EXP 少なめ（代わりに記憶のカケラ）
-  log(`▶ ${t.name} を すくった！（救済 +1・記憶のカケラ +1）`);
+  game.player.exp += BALANCE.expPerSave; // 救うと EXP 少なめ（代わりに きずな が積み上がる）
+  log(`▶ ${t.name} を すくった！（救済 +1・きずな +1）`);
+  pushFx({ t: "save", uid: t.uid }); // すくった瞬間の やわらかい演出
 
   // すくう と少し回復＝救済ルート固有の“持続力”。慈悲を重ねるほど夜を生き延びられる。
   if (BALANCE.saveHeal > 0 && game.player.hp < game.player.maxHp) {
     const before = game.player.hp;
     game.player.hp = Math.min(game.player.maxHp, game.player.hp + BALANCE.saveHeal);
-    log(`  つながりがあたたかい（HP +${game.player.hp - before}）`);
+    const got = game.player.hp - before;
+    log(`  つながりがあたたかい（HP +${got}）`);
+    pushFx({ t: "pheal", amount: got });
   }
+
+  // いま「きずな」が群れの反撃をどれだけ和らげているかを、その場で見せる＝救う見返りの可視化。
+  const bondNow = (typeof bondReduction === "function") ? bondReduction() : 0;
+  if (bondNow > 0) log(`  きずな：助けた友が 反撃を −${bondNow} かばってくれる`);
 
   // パッシブ「やさしいて」：隣（pos差1）の1体の壁を連鎖で−1
   if (hasPassive("yasashii")) {
@@ -250,10 +269,20 @@ function runEnemyTurn() {
     }
     total += dmg;
   }
+  // きずな：これまで救った友が、夜のあいだ かばってくれる＝群れの反撃をやわらげる。
+  //   「救う」に“あとで効いてくる”見返りを与え、慈悲を重ねるほど生き延びやすくする核。
+  const bond = (typeof bondReduction === "function") ? bondReduction() : 0;
+  if (total > 0 && bond > 0) {
+    const before = total;
+    total = Math.max(0, total - bond);
+    if (before > total) log(`  きずな：助けた友が かばってくれた（−${before - total}）`);
+  }
+
   game.player.hp -= total;
   if (game.player.hp < 0) game.player.hp = 0;
   if (total > 0) {
     log(`  ${game.player.name} は ${total} ダメージ（HP ${game.player.hp}/${game.player.maxHp}）`);
+    pushFx({ t: "pdmg", dmg: total }); // 画面の揺れ＋赤フラッシュで“被弾した感”を出す
   } else {
     log(`  …攻撃は とどかなかった`);
   }
