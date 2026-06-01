@@ -286,6 +286,30 @@ function runEnemyTurn() {
   } else {
     log(`  …攻撃は とどかなかった`);
   }
+
+  // しずけさの回復：このターン被弾0（total===0）かつ まだ救うべき敵が残っていて、
+  //   こころに空きがあるなら、待つほど主人公が少しずつ こころを取り戻す。
+  // なぜここか：こころは startWave でしか満タンに戻らないので、ウェーブ途中でこころが枯れ、
+  //   残るのが「壁0＝おだやかで殴ってこない友」だけになると平和ルートが詰む（救う燃料が二度と戻らない）。
+  //   被弾しているターンは回復しない＝祓う即殺の速さの優位は保ったまま、
+  //   「静かな夜に待てば必ず救える」をデータ駆動の小さな加点で成立させる。
+  if (
+    total === 0 &&
+    living.length > 0 &&
+    BALANCE.calmKokoroRegen > 0 &&
+    game.player.kokoro < game.player.maxKokoro
+  ) {
+    const before = game.player.kokoro;
+    game.player.kokoro = Math.min(
+      game.player.maxKokoro,
+      game.player.kokoro + BALANCE.calmKokoroRegen
+    );
+    const got = game.player.kokoro - before;
+    if (got > 0) {
+      log(`  静けさに、こころが すこし もどる（＋${got}）`);
+      pushFx({ t: "kregen", amount: got }); // UI が拾えれば こころ回復の演出に使える（無ければ無視される）
+    }
+  }
 }
 
 // ──────────────────────────────────────────

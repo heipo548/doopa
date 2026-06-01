@@ -92,7 +92,7 @@ body.theme-over  { background: radial-gradient(circle at 50% 20%, #3a0e1a, #0a05
   align-items: center;
   gap: 4px;
   padding: 8px 6px;
-  border-radius: 12px;
+  border-radius: 18px;            /* もっと丸く＝やわらかい囲み */
   border: 2px solid transparent;
   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
@@ -107,24 +107,38 @@ body.theme-over  { background: radial-gradient(circle at 50% 20%, #3a0e1a, #0a05
 @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 
 /* 敵の体（簡易図形＋顔） */
+/* なぜ：ちいかわ味を底上げ。やわらかいグラデの“もち感”、ふんわり影、淡い縁取りで
+   簡易図形でも“可愛い生きもの”に見せる。HTML構造は変えず見た目だけ。 */
 .enemy-fig {
   position: relative;
-  width: 56px; height: 56px;
-  background: var(--c, #5b6b8c);
+  width: 58px; height: 58px;
+  /* 上が明るく下が地色＝ぷにっとした立体。--c は各敵の色（JSがstyleで注入） */
+  background:
+    radial-gradient(120% 110% at 32% 22%, rgba(255,255,255,0.55), rgba(255,255,255,0) 42%),
+    var(--c, #5b6b8c);
   border-radius: 50%;
-  box-shadow: inset -6px -8px 0 rgba(0,0,0,0.18), 0 4px 10px rgba(0,0,0,0.3);
+  box-shadow:
+    inset -5px -7px 8px rgba(0,0,0,0.14),   /* 下側の陰：やわらかいぼかし影に */
+    inset 0 0 0 2px rgba(255,255,255,0.18), /* 内側の淡い白縁＝ふちどりやわらか */
+    0 5px 12px rgba(0,0,0,0.22);            /* 接地のふんわり影 */
+  transition: box-shadow 0.2s, filter 0.2s;
 }
 .enemy.boss .enemy-fig { width: 96px; height: 96px; }
 .enemy-fig .eye {
-  position: absolute; top: 38%; width: 8px; height: 8px;
-  background: #fff; border-radius: 50%;
-  box-shadow: inset 0 0 0 2px #1a1a2a;
+  position: absolute; top: 40%; width: 9px; height: 9px;
+  background: #2a2740; border-radius: 50%;   /* 黒目を濃いめの紺に＝やさしい目 */
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.25);
 }
-.enemy-fig .eye.l { left: 28%; }
-.enemy-fig .eye.r { right: 28%; }
+/* つぶらな瞳のハイライト（白い光点）＝ちいかわ的なうるうる感 */
+.enemy-fig .eye::before {
+  content: ""; position: absolute; top: 1px; left: 1.5px;
+  width: 3.5px; height: 3.5px; background: #fff; border-radius: 50%;
+}
+.enemy-fig .eye.l { left: 27%; }
+.enemy-fig .eye.r { right: 27%; }
 .enemy-fig .mouth {
-  position: absolute; bottom: 24%; left: 50%; transform: translateX(-50%);
-  width: 14px; height: 5px; border-radius: 0 0 8px 8px; background: #1a1a2a;
+  position: absolute; bottom: 23%; left: 50%; transform: translateX(-50%);
+  width: 12px; height: 6px; border-radius: 0 0 10px 10px; background: #2a2740;
 }
 /* 悲しむ敵：口は小さく、青いなみだ */
 .enemy-fig.sad .mouth { width: 8px; height: 8px; border-radius: 50%; bottom: 20%; }
@@ -159,10 +173,13 @@ body.theme-over  { background: radial-gradient(circle at 50% 20%, #3a0e1a, #0a05
 .enemy-tags { font-size: 10px; color: var(--gold); }
 
 /* バー（HP/こころ共通） */
-.bar { width: 100%; height: 7px; background: rgba(0,0,0,0.4); border-radius: 6px; overflow: hidden; }
-.bar .fill { height: 100%; border-radius: 6px; transition: width 0.3s ease; }
-.bar.hp .fill { background: linear-gradient(90deg, #ff7d93, var(--hp)); }
-.bar.kokoro .fill { background: linear-gradient(90deg, #7df0e4, var(--kokoro)); }
+/* なぜ：可愛さ底上げ。完全な丸端（pill）にして、内側に淡いハイライトを乗せ“つやっと”見せる。 */
+.bar { width: 100%; height: 8px; background: rgba(0,0,0,0.34); border-radius: 999px; overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3); }
+.bar .fill { height: 100%; border-radius: 999px; transition: width 0.3s ease;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45); } /* 上辺のハイライトでぷっくり感 */
+.bar.hp .fill { background: linear-gradient(90deg, #ffa0b2, var(--hp)); }
+.bar.kokoro .fill { background: linear-gradient(90deg, #9ff3e9, var(--kokoro)); }
 .enemy .bar { width: 64px; }
 
 /* 心の壁（♥） */
@@ -220,10 +237,13 @@ body.theme-over  { background: radial-gradient(circle at 50% 20%, #3a0e1a, #0a05
 .prompt-hint { width: 100%; font-size: 12px; color: var(--text-dim); }
 .sub-btn {
   background: var(--panel2); color: var(--text);
-  border: 1px solid var(--line); border-radius: 9px;
+  border: 1px solid var(--line); border-radius: 12px;   /* 丸めてやわらかく */
   padding: 7px 12px; cursor: pointer; font-size: 13px;
   display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.16);
+  transition: transform 0.1s, border-color 0.12s, background 0.12s;
 }
+.sub-btn:active { transform: translateY(1px); } /* 押した手応え */
 .sub-btn small { color: var(--text-dim); font-size: 10.5px; }
 .sub-btn:hover { border-color: var(--accent); background: #2a3258; }
 
@@ -235,10 +255,12 @@ body.theme-over  { background: radial-gradient(circle at 50% 20%, #3a0e1a, #0a05
   padding: 12px 14px 18px;
 }
 .cmd {
-  border: none; border-radius: 12px; cursor: pointer;
+  border: none; border-radius: 16px; cursor: pointer;   /* 角を丸く＝やわらかい印象 */
   padding: 12px 6px; color: #0c0e1a;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   font-weight: 800; transition: transform 0.1s, filter 0.1s, box-shadow 0.1s;
+  /* ふんわり影＋上辺の淡い白で“つまみたくなる”ぷっくりボタンに（可愛さ底上げ） */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.4);
 }
 .cmd .cmd-label { font-size: 14px; }
 .cmd .cmd-sub { font-size: 9px; font-weight: 700; opacity: 0.7; letter-spacing: 0.5px; }
@@ -300,10 +322,11 @@ body.theme-over  { background: radial-gradient(circle at 50% 20%, #3a0e1a, #0a05
 .cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 @media (max-width: 520px) { .cards { grid-template-columns: 1fr; } }
 .card-pick {
-  background: var(--panel2); border: 2px solid var(--line); border-radius: 14px;
+  background: var(--panel2); border: 2px solid var(--line); border-radius: 18px;
   padding: 16px 12px; cursor: pointer; text-align: center; color: var(--text);
   transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
   display: flex; flex-direction: column; gap: 8px; min-height: 110px; justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* ふんわり浮かせて選びたくなるカードに */
 }
 .card-pick:hover {
   transform: translateY(-4px); border-color: var(--gold);
@@ -351,11 +374,27 @@ body.theme-over  { background: radial-gradient(circle at 50% 20%, #3a0e1a, #0a05
 .wave-text { margin-left: 6px; font-size: 11px; font-weight: 700; color: var(--text-dim); letter-spacing: 1px; }
 
 /* おだやか（すくえる）状態：もう攻撃してこない＝やわらかい光 */
+/* なぜ：救える相手は“ほっとする”見た目に。発光をやわらかな青緑のオーラにし、
+   ふわっと呼吸するように明滅させて「もう怖くないよ」という安心感を出す。 */
 .enemy.calm { animation: calmbob 2.6s ease-in-out infinite; }
 @keyframes calmbob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
 .enemy-fig.calm {
-  box-shadow: inset -6px -8px 0 rgba(0,0,0,0.10), 0 0 16px rgba(79,214,200,0.55);
-  filter: saturate(0.9) brightness(1.08);
+  box-shadow:
+    inset -4px -6px 8px rgba(0,0,0,0.06),
+    inset 0 0 0 2px rgba(255,255,255,0.35),
+    0 0 18px 4px rgba(79,214,200,0.55);
+  filter: saturate(0.85) brightness(1.12);
+  animation: calmaura 2.6s ease-in-out infinite;
+}
+/* やわらかなオーラの呼吸（強→弱→強）。安心感のための“ゆらぎ” */
+@keyframes calmaura {
+  0%,100% { box-shadow: inset -4px -6px 8px rgba(0,0,0,0.06), inset 0 0 0 2px rgba(255,255,255,0.35), 0 0 14px 3px rgba(79,214,200,0.45); }
+  50%     { box-shadow: inset -4px -6px 8px rgba(0,0,0,0.06), inset 0 0 0 2px rgba(255,255,255,0.45), 0 0 24px 7px rgba(79,214,200,0.7); }
+}
+/* おだやかな子は口もとをやさしいニコッに（半円の笑顔）。色も角もやわらかく。 */
+.enemy-fig.calm .mouth {
+  width: 14px; height: 7px; bottom: 22%;
+  border-radius: 0 0 12px 12px; background: #2f8f86;
 }
 
 /* こころみる時のヒント吹き出し（総当たり防止＝感想#3） */
@@ -370,20 +409,32 @@ body.theme-over  { background: radial-gradient(circle at 50% 20%, #3a0e1a, #0a05
 .p-detail.bond b { color: #fff; font-variant-numeric: tabular-nums; }
 
 /* 浮かぶダメージ数字／ことば（与ダメ・救い・なだめ＝感想#6） */
+/* なぜ：ログを見なくても“何が起きたか”が伝わるよう、数字を大きく・縁取りでくっきりに。
+   おだやか敵はパステルで明るいので、暗い縁取り＋淡い発光の二重影で背景を選ばず読めるようにする。 */
 .float-num {
   position: absolute; transform: translateX(-50%);
-  font-weight: 900; font-size: 18px; pointer-events: none; z-index: 40;
-  white-space: nowrap; text-shadow: 0 2px 6px rgba(0,0,0,0.5);
-  animation: floatup 0.85s ease-out forwards;
+  font-weight: 900; font-size: 24px; pointer-events: none; z-index: 40;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  /* 縁取り：太字を四方の影で囲って“ふちどり文字”に。最後の影でふんわり浮かせる */
+  text-shadow:
+    -2px 0 0 rgba(10,8,22,0.92), 2px 0 0 rgba(10,8,22,0.92),
+    0 -2px 0 rgba(10,8,22,0.92), 0 2px 0 rgba(10,8,22,0.92),
+    -1px -1px 0 rgba(10,8,22,0.92), 1px 1px 0 rgba(10,8,22,0.92),
+    0 4px 10px rgba(0,0,0,0.55);
+  animation: floatup 0.82s cubic-bezier(.2,.9,.25,1) forwards;
 }
 @keyframes floatup {
-  0%   { opacity: 0; transform: translate(-50%, 4px) scale(0.8); }
-  20%  { opacity: 1; transform: translate(-50%, -6px) scale(1.1); }
-  100% { opacity: 0; transform: translate(-50%, -34px) scale(1.0); }
+  /* 上昇量を増やし（-34→-48px）、出だしのポンッと弾む感じを強めて手応えを上げる */
+  0%   { opacity: 0; transform: translate(-50%, 6px) scale(0.7); }
+  18%  { opacity: 1; transform: translate(-50%, -8px) scale(1.18); }
+  32%  { opacity: 1; transform: translate(-50%, -16px) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -48px) scale(0.98); }
 }
-.float-num.dmg  { color: #ff8aa0; }
-.float-num.dead { color: var(--hp); font-size: 22px; }
-.float-num.calm { color: var(--kokoro); }
+.float-num.dmg  { color: #ff9db0; }
+/* 撃破は一番大きく＝決着が一目で分かる（JSでは .dmg と一緒に付く） */
+.float-num.dead { color: #ff6d88; font-size: 30px; letter-spacing: 1px; }
+.float-num.calm { color: #6ff0e2; }
 .float-num.save { color: var(--gold); }
 
 /* 被弾した敵の揺れ */
@@ -397,33 +448,48 @@ body.theme-over  { background: radial-gradient(circle at 50% 20%, #3a0e1a, #0a05
 }
 
 /* 自分が被弾＝画面が揺れて、ふちが赤くにじむ（感想#6） */
-#game.screenshake { animation: screenshake 0.36s ease; }
+/* なぜ：被弾を“体に来る”手応えに。横揺れに軽い縦と傾きを足し、ログを見ずとも殴られた感が出る。
+   ただし眩しさ・酔いを避けるため尺は0.36sのまま（JSの削除タイミング内）。 */
+#game.screenshake { animation: screenshake 0.36s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes screenshake {
-  0%,100% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  50% { transform: translateX(5px); }
-  75% { transform: translateX(-3px); }
+  0%,100% { transform: translate(0,0) rotate(0); }
+  15% { transform: translate(-7px,2px) rotate(-0.6deg); }
+  30% { transform: translate(6px,-2px) rotate(0.6deg); }
+  50% { transform: translate(-5px,1px) rotate(-0.4deg); }
+  70% { transform: translate(4px,-1px) rotate(0.3deg); }
+  85% { transform: translate(-2px,0) rotate(0); }
 }
 .hit-vignette {
   position: fixed; inset: 0; z-index: 45; pointer-events: none;
-  box-shadow: inset 0 0 90px 20px rgba(255,60,90,0.55);
+  /* 内側の濃い赤＋外周のにじみの二段で“ふちが赤く脈打つ”手応えに。眩しすぎないよう中心は素抜け。 */
+  box-shadow:
+    inset 0 0 70px 8px rgba(255,46,80,0.45),
+    inset 0 0 150px 40px rgba(200,20,55,0.35);
   animation: vigfade 0.38s ease-out forwards;
 }
-@keyframes vigfade { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+/* 立ち上がりを速く・ピークを少し強めて“ドクッ”と来る感じに（尺は据え置き） */
+@keyframes vigfade { 0% { opacity: 0; } 22% { opacity: 1; } 55% { opacity: 0.85; } 100% { opacity: 0; } }
 
 /* 選んだ行動を中央に一瞬大きく（何をしたか直感的に＝感想#6） */
+/* なぜ：敵が並ぶ上に文字が重なって読みにくかったので、行動色の“やわらかい座布団”を敷いて視認性UP。
+   縁取り＋丸い半透明背景で、ログを見なくても祓う/すくう等が一瞬で分かる。尺は0.65s据え置き（JSの削除に合わせる）。 */
 .act-flash {
   position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%);
   font-size: clamp(34px, 9vw, 58px); font-weight: 900; letter-spacing: 4px;
   pointer-events: none; z-index: 42; white-space: nowrap;
-  text-shadow: 0 4px 16px rgba(0,0,0,0.5);
-  animation: actflash 0.65s ease-out forwards;
+  padding: 10px 26px; border-radius: 999px;       /* 丸い座布団 */
+  background: rgba(14,11,28,0.42);                 /* 文字色は各 fx-* が継承。背景は共通の暗幕で読みやすく */
+  backdrop-filter: blur(2px);                       /* 後ろの敵を少しぼかして主役を立てる */
+  /* 縁取り＝color と同色の薄縁で“発光ステッカー”風に。currentColor で各行動色に追従 */
+  text-shadow: 0 0 1px currentColor, 0 3px 14px rgba(0,0,0,0.55);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.06) inset, 0 8px 26px rgba(0,0,0,0.35);
+  animation: actflash 0.65s cubic-bezier(.2,.85,.3,1) forwards;
 }
 @keyframes actflash {
-  0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.6); }
-  25%  { opacity: 1; transform: translate(-50%,-50%) scale(1.08); }
-  70%  { opacity: 1; transform: translate(-50%,-50%) scale(1.0); }
-  100% { opacity: 0; transform: translate(-50%,-58%) scale(1.0); }
+  0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.5); }
+  22%  { opacity: 1; transform: translate(-50%,-50%) scale(1.12); }
+  62%  { opacity: 1; transform: translate(-50%,-50%) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%,-62%) scale(1.0); }
 }
 .act-flash.fx-fight  { color: #ff8aa0; }
 .act-flash.fx-act    { color: var(--kokoro); }
@@ -447,7 +513,9 @@ body.theme-over  { background: radial-gradient(circle at 50% 20%, #3a0e1a, #0a05
 }
 
 /* 動きを減らす設定では演出を控える（酔い対策） */
+/* なぜ：今回 .enemy-fig.calm に呼吸アニメ（calmaura）を足したので、ここにも追加して
+   reduced-motion 環境では止める。演出が消えても“色・縁取り”で意味は伝わるよう設計済み。 */
 @media (prefers-reduced-motion: reduce) {
-  .enemy.calm, .float-num, .enemy.hitshake, #game.screenshake,
+  .enemy.calm, .enemy-fig.calm, .float-num, .enemy.hitshake, #game.screenshake,
   .hit-vignette, .act-flash, #player-bar.healpulse, .wd.now { animation: none !important; }
 }

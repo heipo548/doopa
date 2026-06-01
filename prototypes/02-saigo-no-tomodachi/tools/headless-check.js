@@ -39,6 +39,27 @@ var test = [
   "__o.push('ending(0.5)=' + determineEnding(0.5).id);",
   "__o.push('ending(0.9)=' + determineEnding(0.9).id);",
   "__o.push('AoE hikari perLv=' + (WEAPONS.hikari ? WEAPONS.hikari.perLv : 'NA') + ' daikouzui power=' + (WEAPONS.daikouzui ? WEAPONS.daikouzui.power : 'NA'));",
+
+  // ── ソフトロック修正の再現テスト（純・救いルートの詰み解消）──
+  // 「おだやかな友(壁0)しか残らず・こころ0」の状況を作り、敵ターンを回すと
+  // calmKokoroRegen ぶん こころが戻ることを確認する（待てば救える＝詰まない の根拠）。
+  "newGame(); startWave();",
+  "game.enemies.forEach(function(e){ e.wall = 0; });",  // 全敵を おだやか(壁0)=被弾0 に
+  "game.player.kokoro = 0;",                             // こころ枯れ（途中で燃料切れの再現）
+  "var __k0 = game.player.kokoro;",
+  "runEnemyTurn();",                                     // 静かな夜の敵ターン
+  "__o.push('calmRegen: kokoro ' + __k0 + ' -> ' + game.player.kokoro + ' (期待: +' + BALANCE.calmKokoroRegen + ', max ' + game.player.maxKokoro + ')');",
+  "__o.push('calmRegen OK? ' + (game.player.kokoro === Math.min(game.player.maxKokoro, __k0 + BALANCE.calmKokoroRegen)));",
+  // 被弾しているターンは回復しないこと（祓う即殺の優位を壊さない）も確認：
+  // 敵を1体だけ壁ありに戻し、こころを0にしてから敵ターン→ regen しない想定。
+  "newGame(); startWave();",
+  "game.enemies.forEach(function(e){ e.wall = 0; });",
+  "if (game.enemies[0]) game.enemies[0].wall = 5;",      // 1体だけ壁あり＝殴ってくる
+  "game.player.kokoro = 0;",
+  "var __k1 = game.player.kokoro;",
+  "runEnemyTurn();",
+  "__o.push('hitTurnNoRegen OK? ' + (game.player.kokoro === __k1) + ' (被弾ターンは回復しない / kokoro=' + game.player.kokoro + ')');",
+
   "__o.join('\\n');"
 ].join("\n");
 
