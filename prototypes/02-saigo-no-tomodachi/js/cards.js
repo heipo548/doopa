@@ -31,6 +31,7 @@ function drawCards() {
   const p = game.player;
   const valid = CARDS.filter((c) => {
     if (c.type === "weapon") return !p.weapons.includes(c.weapon);
+    if (c.type === "word") return !knowsWord(c.word);    // すでに覚えたことばは出さない（死にカード防止）
     if (c.type === "passive") return !p.passives[c.key];
     if (c.type === "weaponLv") return canUpgradeAnyWeapon();
     return true; // maxHp / maxKokoro は重ねがけOK
@@ -62,7 +63,11 @@ function chooseCard(card, param) {
       p.weapons.push(card.weapon);
       p.weaponLv[card.weapon] = 1;
     }
-    log(`カード獲得：新武器「${WEAPONS[card.weapon].name}」`);
+    log(`カード獲得：きついことば「${WEAPONS[card.weapon].name}」`);
+
+  } else if (card.type === "word") {
+    // やさしいことばを覚える＝きいてみる の語彙が増える（言えることが増える成長）
+    learnWord(card.word);
 
   } else if (card.type === "weaponLv") {
     // param が無ければ「進化前の武器」から自動で1つ選ぶ

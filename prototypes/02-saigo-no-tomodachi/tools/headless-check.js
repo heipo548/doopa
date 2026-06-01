@@ -60,6 +60,34 @@ var test = [
   "runEnemyTurn();",
   "__o.push('hitTurnNoRegen OK? ' + (game.player.kokoro === __k1) + ' (被弾ターンは回復しない / kokoro=' + game.player.kokoro + ')');",
 
+  // ── 口喧嘩バトル：語彙（ことば）と 狂気/ぬくもり ゲージのテスト ──",
+  "newGame(); startWave();",
+  "__o.push('words: knows nade(生まれつき)=' + knowsWord('nade') + ' / knows gomen(初期)=' + knowsWord('gomen'));",
+  "__o.push('learnWord gomen=' + learnWord('gomen') + ' -> knows gomen=' + knowsWord('gomen') + ' / learnedKind=' + JSON.stringify(learnedKindWords()));",
+
+  // 狂気が高いほど ことばダメージが伸びる（ボスで測る：単体6 × (1+10×scale)）",
+  "newGame(); game.waveIndex = 5; startWave();",
+  "var __nushi = game.enemies[0]; var __hp0 = __nushi.hp; game.player.kyoki = 10;",
+  "cmdFight('namida', __nushi.uid);",
+  "var __expDmg = Math.round(6 * (1 + 10 * BALANCE.kyokiDmgScale));",
+  "__o.push('kyokiDmg: nushi ' + __hp0 + ' -> ' + __nushi.hp + ' / 期待 -' + __expDmg + ' OK? ' + (__nushi.hp === __hp0 - __expDmg));",
+
+  // きついことばを言うと 狂気が積み上がる",
+  "newGame(); startWave(); var __kg = game.player.kyoki; cmdFight('namida', game.enemies[0].uid);",
+  "__o.push('kyokiGain: ' + __kg + ' -> ' + game.player.kyoki + ' / 期待 +' + (WEAPONS.namida.kyoki||0) + ' OK? ' + (game.player.kyoki === __kg + (WEAPONS.namida.kyoki||0)));",
+
+  // ぬくもり閾値ごとに 最大HPが伸びる（やさしく言うほど夜に強くなる）",
+  "newGame(); startWave(); var __mh = game.player.maxHp; gainNukumori(BALANCE.nukumoriStep);",
+  "__o.push('nukumoriThresh: maxHp ' + __mh + ' -> ' + game.player.maxHp + ' applied=' + game.player.nukumoriApplied + ' / 期待 +' + BALANCE.nukumoriHpBonus + ' OK? ' + (game.player.maxHp === __mh + BALANCE.nukumoriHpBonus));",
+
+  // 手をのばして むかえると、その子のことばを覚える（救済→語彙の接続）",
+  "newGame(); startWave(); game.enemies[0].wall = 0; var __gift = ENEMIES[game.enemies[0].type].gift; cmdSave(game.enemies[0].uid);",
+  "__o.push('saveTeaches: gift=' + __gift + ' learned=' + knowsWord(__gift) + ' save=' + game.counters.save + ' OK? ' + (knowsWord(__gift) && game.counters.save === 1));",
+
+  // 学んだ やさしい汎用語は 壁を割らない（手順パズルは保持）が ぬくもりは増える",
+  "newGame(); startWave(); learnWord('gomen'); var __w0 = game.enemies[0].wall; var __n0 = game.player.nukumori; cmdAct('gomen', game.enemies[0].uid);",
+  "__o.push('kindWordPuzzle: wall ' + __w0 + ' -> ' + game.enemies[0].wall + ' (期待 同じ) / nukumori ' + __n0 + ' -> ' + game.player.nukumori + ' OK? ' + (game.enemies[0].wall === __w0 && game.player.nukumori === __n0 + 1));",
+
   "__o.join('\\n');"
 ].join("\n");
 

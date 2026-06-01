@@ -38,13 +38,18 @@ function newGame() {
       maxHp: PLAYER_INIT.maxHp,
       kokoro: PLAYER_INIT.maxKokoro,
       maxKokoro: PLAYER_INIT.maxKokoro,
-      weapons: [PLAYER_INIT.startWeapon], // 所持武器（祓うで使える）
-      weaponLv: { [PLAYER_INIT.startWeapon]: 1 }, // 武器ごとのLv
+      weapons: [PLAYER_INIT.startWeapon], // 持っている きついことば（ぶつけるで使う）
+      weaponLv: { [PLAYER_INIT.startWeapon]: 1 }, // ことばごとの Lv（とがり具合）
+      words: (PLAYER_INIT.startWords || []).slice(), // 覚えた やさしいことば（KIND_WORDS の id。増えていく）
       passives: {},          // 取得済みパッシブ key -> true
-      items: Object.assign({}, PLAYER_INIT.items), // どうぐ所持数
+      items: Object.assign({}, PLAYER_INIT.items), // もちもの所持数
       level: 1,
-      exp: 0,                // 祓う/すくうでたまる。一定で“ボーナス3択”
-      defending: false,      // このターン「まもる」中か
+      exp: 0,                // ぶつける/手をのばす でたまる。一定で“ボーナス3択”
+      defending: false,      // このターン「こらえる」中か
+      // ── 口喧嘩バトルの2ゲージ（ことばの積み方＝ビルド）──
+      kyoki: 0,              // 狂気：きついことばを言うほど上がる（与ダメ↑・世界が翳る）
+      nukumori: 0,           // ぬくもり：やさしいことばを言うほど上がる（最大HP↑・回復）
+      nukumoriApplied: 0,    // ぬくもり閾値の発火済み回数（恩恵を二重に与えないため）
     },
     waveIndex: 0,            // 0始まり（ウェーブ番号 = waveIndex + 1）
     enemies: [],             // 現ウェーブの敵インスタンス
@@ -57,6 +62,8 @@ function newGame() {
     seenTypes: {},           // 既に出会った敵タイプ（flavor を一度だけ流すため）
     tips: {},                // 初見チュートリアルで“もう見せた”ヒントの記録
     fx: [],                  // 演出イベントの一時キュー（ダメージ数字・揺れ等。UIが描画後に消費）
+    lastWord: null,          // 最後に言ったことば（結末で「さいごに のこった ことば」に使う）
+    newWords: [],            // このランで新しく覚えたことば（語彙が増えた手応えの可視化用）
   };
   return game;
 }
@@ -159,6 +166,63 @@ function hasPassive(key) { return !!game.player.passives[key]; }
 //   救うほど夜を生き延びやすくなる＝「救う」の見返りを“数字に出る形”で返すための関数。
 function bondReduction() {
   return Math.min(BALANCE.bondReduceMax, game.counters.save * BALANCE.bondReducePerSave);
+}
+
+// ──────────────────────────────────────────
+// ことば（語彙）まわりのヘルパー
+//   ALL_WORDS は data.js で ACTS（敵ごとに効く問いかけ/やさしい）＋ KIND_WORDS（学べる汎用）を
+//   ひとつに見たテーブル。id からことばの定義を引く。
+// ──────────────────────────────────────────
+function wordById(id) { return ALL_WORDS[id] || null; }
+
+// 「このことばを いま使えるか」：生まれつき知っている問いかけ(ACTS)か、学んで覚えた汎用語(words)か。
+function knowsWord(id) {
+  if (ACTS[id]) return true;                 // 生まれつきの問いかけ／やさしいことば
+  return game.player.words.includes(id);     // 学んで増えた語彙
+}
+
+// 学んだ汎用語の id 一覧（きいてみる の選択肢に足す＝言えることが増える手触り）。
+function learnedKindWords() {
+  return game.player.words.filter((id) => !!KIND_WORDS[id]);
+}
+
+// 新しいことばを覚える（3択カード／友をむかえた時の gift から呼ぶ）。
+//   すでに知っていれば何もしない。覚えたら newWords に積んで“増えた”ことを可視化。
+function learnWord(id) {
+  if (!KIND_WORDS[id]) return false;         // 汎用語以外は対象外（問いかけは生まれつき）
+  if (game.player.words.includes(id)) return false;
+  game.player.words.push(id);
+  game.newWords.push(id);
+  const w = KIND_WORDS[id];
+  log(`＋ ことばを おぼえた：「${w.word}」`);
+  return true;
+}
+
+// 狂気を積む（上限でクランプ）。きついことばを言うほど高まる。
+function gainKyoki(n) {
+  if (!n) return;
+  game.player.kyoki = Math.min(BALANCE.kyokiMax, game.player.kyoki + n);
+}
+
+// ぬくもりを積み、閾値（nukumoriStep ごと）を新たに跨いだぶんだけ
+//   最大HP＋／即時回復 の恩恵を与える。やさしく言うほど夜に強くなる＝救いルートの雪だるま。
+//   戻り値：{ hpUp, healed } 今回の発火ぶん（UI 演出のため）。
+function gainNukumori(n) {
+  const out = { hpUp: 0, healed: 0 };
+  if (!n) return out;
+  game.player.nukumori += n;
+  // いまのぬくもりで何回ぶんの閾値を超えているか。まだ恩恵を渡していない回数だけ発火する。
+  const reached = Math.floor(game.player.nukumori / BALANCE.nukumoriStep);
+  while (game.player.nukumoriApplied < reached) {
+    game.player.nukumoriApplied++;
+    game.player.maxHp += BALANCE.nukumoriHpBonus;
+    out.hpUp += BALANCE.nukumoriHpBonus;
+    const before = game.player.hp;
+    game.player.hp = Math.min(game.player.maxHp, game.player.hp + BALANCE.nukumoriHealBonus);
+    out.healed += game.player.hp - before;
+  }
+  if (out.hpUp > 0) log(`  ぬくもりが あふれた（最大HP＋${out.hpUp}・HP＋${out.healed}）`);
+  return out;
 }
 
 // ──────────────────────────────────────────

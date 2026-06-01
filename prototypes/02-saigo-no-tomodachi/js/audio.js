@@ -48,14 +48,32 @@ function _t(offset) {
   return (audioCtx ? audioCtx.currentTime : 0) + (offset || 0);
 }
 
+// いまの 狂気／ぬくもり を安全に読む（タイトル中など game 未生成でも 0 を返す）
+function _kyoki() { return (typeof game !== "undefined" && game && game.player) ? game.player.kyoki : 0; }
+function _nukumori() { return (typeof game !== "undefined" && game && game.player) ? game.player.nukumori : 0; }
+
 // 効果音の定義（コマンドや結果に対応）
+//   口喧嘩バトル：きついことば＝濁って鋭い（狂気で不協和が増す）／
+//                 やさしい・問いかけ＝やわらかい（ぬくもりで明るくなる）。音の質感で2つの道を描き分ける。
 const SE = {
   select() { tone(440, 0.05, "sine", 0.10); },                         // ボタン選択
-  fight()  { tone(220, 0.12, "square", 0.18); tone(150, 0.16, "square", 0.14, _t(0.04)); }, // 祓う
-  act()    { tone(540, 0.20, "sine", 0.16); },                         // こころみる
-  save()   { [523, 659, 784].forEach((f, i) => tone(f, 0.32, "sine", 0.16, _t(i * 0.09))); }, // すくう（上昇チャイム）
-  item()   { tone(660, 0.10, "triangle", 0.16); tone(880, 0.12, "triangle", 0.14, _t(0.06)); }, // どうぐ
-  defend() { tone(120, 0.24, "sine", 0.22); },                         // まもる
+  fight()  {
+    // ぶつける（きついことば）：短く濁った音。狂気が高いほど ピッチをずらして不協和を強める。
+    const det = 1 + Math.min(0.07, _kyoki() * 0.007);
+    tone(220, 0.12, "square", 0.18);
+    tone(150 * det, 0.16, "square", 0.14, _t(0.04));
+    if (_kyoki() >= 5) tone(108 * det, 0.18, "sawtooth", 0.09, _t(0.02)); // 高狂気＝濁りを足す
+  },
+  act()    {
+    // きいてみる（やさしい/問いかけ）：やわらかい音。ぬくもりが高いほど 上の倍音で明るく。
+    const n = _nukumori();
+    tone(540, 0.20, "sine", 0.16);
+    if (n >= 3) tone(810, 0.22, "sine", 0.07, _t(0.05));
+    if (n >= 9) tone(1080, 0.24, "sine", 0.05, _t(0.09));
+  },
+  save()   { [523, 659, 784].forEach((f, i) => tone(f, 0.32, "sine", 0.16, _t(i * 0.09))); }, // 手をのばす（上昇チャイム）
+  item()   { tone(660, 0.10, "triangle", 0.16); tone(880, 0.12, "triangle", 0.14, _t(0.06)); }, // もちもの
+  defend() { tone(120, 0.24, "sine", 0.22); },                         // こらえる
   hit()    { tone(90, 0.20, "sawtooth", 0.16); },                      // 被弾
   die()    { tone(200, 0.16, "square", 0.12); tone(110, 0.22, "square", 0.10, _t(0.07)); }, // 敵を祓った
   evolve() { [659, 880, 1175, 1318].forEach((f, i) => tone(f, 0.42, "triangle", 0.18, _t(i * 0.07))); }, // 進化
@@ -89,7 +107,14 @@ function startBgm(theme) {
   bgmTimer = setInterval(() => {
     if (_muted || !audioCtx) return;
     const scale = BGM_SCALES[bgmTheme] || BGM_SCALES.night;
-    const f = scale[bgmStep % scale.length];
+    let f = scale[bgmStep % scale.length];
+    // 夜の戦いのあいだは、狂気が高いと旋律が わずかに軋み（デチューン）、
+    // ぬくもりが高いと やわらかい上の倍音が重なって子守唄寄りになる＝同じ曲を2変数で揺らす。
+    if (bgmTheme === "night") {
+      const det = 1 + Math.min(0.02, _kyoki() * 0.002); // 高狂気で半音未満のうねり
+      f = f * det;
+      if (_nukumori() >= 6) tone(f * 2, 1.2, "sine", 0.025, _t(0.2)); // ぬくもりで明るい倍音
+    }
     tone(f, 1.4, "sine", 0.06);      // 主旋律（やわらかい）
     tone(f / 2, 1.6, "triangle", 0.04); // 低い支え
     bgmStep++;

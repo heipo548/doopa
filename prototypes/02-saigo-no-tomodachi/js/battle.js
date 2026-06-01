@@ -41,8 +41,8 @@ function applyDamage(enemy, dmg) {
     if (!enemy.dead && !enemy.saved) {
       enemy.dead = true;
       game.counters.kill++;
-      game.player.exp += BALANCE.expPerKill; // 祓うと EXP 多め＝早く強くなる
-      log(`  ${enemy.name} を 祓った（殲滅 +1）`);
+      game.player.exp += BALANCE.expPerKill; // ぶつけて退けると EXP 多め＝早く強くなる
+      log(`  ${enemy.name} は ことばに 背を向けて 消えた…（おいはらった +1）`);
       pushFx({ t: "hit", uid: enemy.uid, dmg: dmg, dead: true }); // とどめ＝消える演出
     }
   } else {
@@ -63,8 +63,9 @@ function reduceWall(enemy, amount) {
 }
 
 // ──────────────────────────────────────────
-// 祓う（FIGHT/KILL）：装備中の武器で攻撃。武器ごとに対象が違う。
-//   weaponId: 使う武器 ／ targetUid: 単体武器のときの対象
+// ぶつける（FIGHT/KILL）：きついことばを相手にぶつける。ことばごとに対象が違う。
+//   ※武器で殴るのではなく、言えなかった/とげとげした言葉をぶつける行動。
+//   weaponId: 使う きついことば の id ／ targetUid: 単体ことばのときの対象
 // ──────────────────────────────────────────
 function cmdFight(weaponId, targetUid) {
   if (game.state !== STATES.PLAYER_TURN) return false;
@@ -86,66 +87,120 @@ function cmdFight(weaponId, targetUid) {
   }
   if (targets.length === 0) return false;
 
+  // 狂気が高いほど ことばが鋭くなる（雪だるま）。倍率は控えめ＝“ぶつける一強”を避ける。
+  const kyokiMul = 1 + game.player.kyoki * BALANCE.kyokiDmgScale;
   const base = weaponPower(weaponId);
-  log(`▶ ${game.player.name} の「${w.name}」！`);
+  const said = w.word || w.name;
+  game.lastWord = said;
+  log(`▶ ${game.player.name}「${said}」！`);
+  // 言ったことばを吹き出しで見せる（とげとげ＝不穏なトーン）
+  pushFx({ t: "speak", text: said, cat: w.category || "toge" });
   for (const t of targets) {
     let dmg = base;
-    // パッシブ「ふかいかなしみ」：悲しむ敵への与ダメ＋
+    // パッシブ「ふかいかなしみ」：悲しむ相手への与ダメ＋
     if (hasPassive("fukai") && t.sad) dmg += BALANCE.fukaiBonus;
-    // パッシブ「おこりんぼ」：前列攻撃の与ダメ＋
+    // パッシブ「おこりんぼ」：前列ことばの与ダメ＋
     if (hasPassive("okori") && (w.target === "front2" || w.target === "front3")) {
       dmg += BALANCE.okoriBonus;
     }
+    dmg = Math.max(1, Math.round(dmg * kyokiMul)); // 狂気倍率を最後に乗せる（最低1）
     applyDamage(t, dmg);
-    // 進化武器（大こうずい/救済の光）は壁も下げる＝祓いながら救済準備
+    // 進化ことば（もう みんな きらい／いっしょに かえろう）は壁も下げる
     if (w.wallDown) reduceWall(t, w.wallDown);
   }
+  // ことばの性質に応じて 狂気／ぬくもり を積む（「いっしょに かえろう」は ぬくもり側）
+  if (w.kyoki) { gainKyoki(w.kyoki); pushFx({ t: "kyoki", amount: w.kyoki }); }
+  if (w.nukumori) { const r = gainNukumori(w.nukumori); pushFx({ t: "nukumori", amount: w.nukumori, bonus: r }); }
   endPlayerTurn();
   return true;
 }
 
 // ──────────────────────────────────────────
-// こころみる（ACT）：心の壁を下げる。敵ごとに効くACTが違う＝手順パズル。
+// きいてみる（ACT）：相手に問いかける／やさしいことばをかける。
+//   相手の声をきこうとする行動。敵ごとに「効くことばが違う」＝相手の声をきく手順パズル。
+//   ・生まれつきの問いかけ(ACTS)：その相手に効けば 心の壁を下げる（atkDown/とめる も）。
+//   ・学んで覚えた やさしいことば(KIND_WORDS)：相手を選ばず ことば固有の効果（回復/とげ↓/沈黙）が届く。
+//   どちらも やさしく言えたぶん “ぬくもり” がたまる（救いルートの雪だるま）。
 // ──────────────────────────────────────────
 function cmdAct(actId, targetUid) {
   if (game.state !== STATES.PLAYER_TURN) return false;
   const t = findEnemy(targetUid);
   if (!t) return false;
+  if (!knowsWord(actId)) return false;         // まだ覚えていないことばは使えない
   if (game.player.kokoro < BALANCE.actCost) {
     flash("こころが足りない");
     return false;
   }
-  const act = ACTS[actId];
+  const word = wordById(actId);
+  if (!word) return false;
   game.player.kokoro -= BALANCE.actCost; // 効いても外しても こころは減る（＝手探りのコスト）
-  log(`▶ ${game.player.name} は ${t.name} に「${act.name}」`);
+  const said = word.word || word.name;
+  game.lastWord = said;
+  log(`▶ ${game.player.name}「${said}」（${t.name}へ）`);
+  pushFx({ t: "speak", text: said, cat: word.category || "toi" });
 
-  if (t.acts.includes(actId)) {
-    reduceWall(t, act.wall || 1);
-    if (act.atkDown) {
-      t.atk = Math.max(0, t.atk - act.atkDown);
-      log(`  ${t.name} の攻撃力が さがった（${t.atk}）`);
+  const isKind = !!KIND_WORDS[actId];          // 学んだ汎用語かどうか
+  const effective = t.acts.includes(actId);    // 生まれつきの問いかけが、この相手に効くか
+  let didSomething = false;
+
+  // 生まれつきの問いかけ：効く相手にだけ 壁・とめる・とげ↓（手順パズルを保つ）
+  if (effective) {
+    reduceWall(t, word.wall || 1);
+    if (word.atkDown) {
+      t.atk = Math.max(0, t.atk - word.atkDown);
+      log(`  ${t.name} の とげが すこし やわらいだ（攻撃 ${t.atk}）`);
     }
-    if (act.silence) {
-      t.status.silence = Math.max(t.status.silence, act.silence);
-      log(`  ${t.name} は ひるんでいる（次ターン無力化）`);
+    if (word.silence) {
+      t.status.silence = Math.max(t.status.silence, word.silence);
+      log(`  ${t.name} は ことばに 立ちどまっている（次ターン うごけない）`);
     }
-  } else {
-    // 効かないACT＝壁は下がらないが、こころとターンは消費済み
-    log(`  …${t.name} には 響いていない（このACTは効かない）`);
+    didSomething = true;
   }
+
+  // 学んだ やさしいことば：相手を選ばず “ことば固有の効果” が届く
+  if (isKind) {
+    if (word.heal && game.player.hp < game.player.maxHp) {
+      const before = game.player.hp;
+      game.player.hp = Math.min(game.player.maxHp, game.player.hp + word.heal);
+      log(`  じぶんの こころも すこし軽くなった（HP＋${game.player.hp - before}）`);
+      pushFx({ t: "pheal", amount: game.player.hp - before });
+      didSomething = true;
+    }
+    if (word.atkDown) {
+      t.atk = Math.max(0, t.atk - word.atkDown);
+      log(`  ${t.name} の とげが やわらいだ（攻撃 ${t.atk}）`);
+      didSomething = true;
+    }
+    // 沈黙（…）は、さみしい子の壁だけ そっと ほどく
+    if (word.sadWall && t.sad) {
+      reduceWall(t, word.sadWall);
+      didSomething = true;
+    }
+  }
+
+  if (!didSomething) {
+    if (word.category === "silence") log(`  …しずかな間が ながれた`);
+    else log(`  …${t.name} には 響いていない（このことばは いまの相手に効かない）`);
+  }
+
+  // やさしさ／とげ のゲージ（ことばの性質に応じて）
+  if (word.nukumori) { const r = gainNukumori(word.nukumori); pushFx({ t: "nukumori", amount: word.nukumori, bonus: r }); }
+  if (word.kyoki) { gainKyoki(word.kyoki); pushFx({ t: "kyoki", amount: word.kyoki }); }
+
   endPlayerTurn();
   return true;
 }
 
 // ──────────────────────────────────────────
-// すくう（SAVE/MERCY）：心の壁0の敵を戦線から外す。救済+1・記憶のカケラ+1。
+// 手をのばす（SAVE/MERCY）：もう攻撃せず、心の壁0の相手を こちら側に迎える。
+//   救済+1・きずな+1。そして その子の“ことば”を教わる＝語彙が増える（救済→成長の接続）。
 // ──────────────────────────────────────────
 function cmdSave(targetUid) {
   if (game.state !== STATES.PLAYER_TURN) return false;
   const t = findEnemy(targetUid);
   if (!t) return false;
   if (t.wall > 0) {
-    flash("まだ心の壁がある");
+    flash("まだ心の壁がある（先に きいてみる）");
     return false;
   }
   if (game.player.kokoro < BALANCE.saveCost) {
@@ -156,9 +211,18 @@ function cmdSave(targetUid) {
   t.saved = true;
   game.counters.save++;
   game.counters.memory++;
-  game.player.exp += BALANCE.expPerSave; // 救うと EXP 少なめ（代わりに きずな が積み上がる）
-  log(`▶ ${t.name} を すくった！（救済 +1・きずな +1）`);
-  pushFx({ t: "save", uid: t.uid }); // すくった瞬間の やわらかい演出
+  game.player.exp += BALANCE.expPerSave; // むかえると EXP 少なめ（代わりに きずな と ことば が積み上がる）
+  game.lastWord = "いっしょに かえろう";
+  log(`▶ ${game.player.name}「いっしょに かえろう」 — ${t.name} に 手をのばした（むかえた +1・きずな +1）`);
+  pushFx({ t: "speak", text: "いっしょに かえろう", cat: "yasashii" });
+  pushFx({ t: "save", uid: t.uid }); // むかえた瞬間の やわらかい演出
+
+  // むかえた友から “ことば” を教わる＝言えることが増える（救済→語彙の接続）。
+  const base = ENEMIES[t.type] || {};
+  if (base.gift) learnWord(base.gift);
+
+  // 手をのばす行為そのものにも ぬくもりが宿る（救いルートの雪だるまを後押し）
+  { const r = gainNukumori(1); pushFx({ t: "nukumori", amount: 1, bonus: r }); }
 
   // すくう と少し回復＝救済ルート固有の“持続力”。慈悲を重ねるほど夜を生き延びられる。
   if (BALANCE.saveHeal > 0 && game.player.hp < game.player.maxHp) {
@@ -186,12 +250,12 @@ function cmdSave(targetUid) {
 }
 
 // ──────────────────────────────────────────
-// どうぐ（ITEM）：回復など。所持数制限あり（リソース管理）。
+// もちもの（ITEM）：おまもり・思い出など、小さな持ち物。回復など。所持数制限あり。
 // ──────────────────────────────────────────
 function cmdItem(itemId) {
   if (game.state !== STATES.PLAYER_TURN) return false;
   if (!game.player.items[itemId] || game.player.items[itemId] <= 0) {
-    flash("そのどうぐが無い");
+    flash("その もちものが 無い");
     return false;
   }
   const item = ITEMS[itemId];
@@ -206,12 +270,13 @@ function cmdItem(itemId) {
 }
 
 // ──────────────────────────────────────────
-// まもる（DEFEND）：このターンの被ダメ大幅減。全体攻撃ウェーブのしのぎ手段。
+// こらえる（DEFEND）：傷ついても耐える／ことばを飲み込む。このターンの被ダメ大幅減。
+//   全体攻撃ウェーブのしのぎ手段。静かに待てば こころも すこし戻る（runEnemyTurn 参照）。
 // ──────────────────────────────────────────
 function cmdDefend() {
   if (game.state !== STATES.PLAYER_TURN) return false;
   game.player.defending = true;
-  log(`▶ ${game.player.name} は 身をかまえた（このターン被ダメ減）`);
+  log(`▶ ${game.player.name} は ことばを のみこんで こらえた（このターン被ダメ減）`);
   endPlayerTurn();
   return true;
 }

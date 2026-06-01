@@ -17,11 +17,12 @@ const PLAYER_INIT = {
   name: "ぽち",
   maxHp: 26,          // HP が 0 になると RUN OVER（最初から）
                       // ※20→26：序盤は群れの被弾が一気にかさむため、立て直す余裕を確保
-  maxKokoro: 10,      // こころ＝救済リソース。こころみる／すくう で消費する
-                      // ※8→10：1ウェーブで“なだめて救う”を複数こなすには燃料がいる
-  startWeapon: "namida", // 開始武器：なみだ砲（単体6）
-  items: { heal: 3 }, // どうぐの初期所持（回復アイテム×3）
-                      // ※2→3：単体武器だと序盤の殲滅に手間取るので回復を1つ増量
+  maxKokoro: 10,      // こころ＝やさしさ/問いかけのリソース。きいてみる／手をのばす で消費
+                      // ※8→10：1ウェーブで“きいて、むかえる”を複数こなすには燃料がいる
+  startWeapon: "namida", // 開始の きついことば：「バカ」（単体6）。internal id は据え置き（互換のため）
+  startWords: [],     // 開始時に持っている“やさしいことば”（最初はまだ少ない＝言えることが増えていく成長）
+  items: { heal: 3 }, // もちもの（おまもり）の初期所持
+                      // ※2→3：単体ことばだと序盤の処理に手間取るので回復を1つ増量
 };
 
 // ──────────────────────────────────────────
@@ -74,47 +75,80 @@ const BALANCE = {
   //   合計3こころ要る。regen=1 なら数ターン待てば1体救える“ゆっくりだが確実”な早さ。
   //   被弾しているターンは回復しない（下の runEnemyTurn 参照）ので、祓う即殺の速さの優位は保つ。
   calmKokoroRegen: 1,     // 被弾0のターン終わりに、こころ < maxKokoro なら回復する量（max でクランプ）
+
+  // ── 口喧嘩バトル：2つの“雪だるまゲージ”（ことばの積み方＝ビルド）──
+  // この夜の戦いは武器ではなく「ことば」で行う。
+  //   ・きついことば（ぶつける）＝とげとげ → 速く強いが、世界がすこし翳る（狂気）
+  //   ・やさしいことば（きいてみる/手をのばす）＝あたたかい → 遅いが誰も死なせない（ぬくもり）
+  // ダダサバ的に「積むほど効く」スノーボールを救う側にも用意し、どちらの道も成立させる。
+  kyokiDmgScale: 0.05,    // きついことばの与ダメ倍率＝(1 + 狂気 × これ)。0.05なら狂気10で+50%。
+                          //   ※強くしすぎると“ぶつける一強”になるので控えめ。暫定値（要バランス検証）。
+  kyokiPerHarsh: 1,       // きついことば1回で上がる狂気（ことば側で個別上書き可）
+  kyokiMax: 12,           // 狂気の上限（与ダメ倍率の上限＝暴走しすぎ防止）
+  nukumoriStep: 3,        // ぬくもりがこの数たまるごとに、下の恩恵が1回発火
+  nukumoriHpBonus: 2,     // ぬくもり閾値ごとに 最大HP＋（やさしく言うほど夜に強くなる＝救いの見返り）
+  nukumoriHealBonus: 2,   // ぬくもり閾値ごとに 即時HP回復（その場のあたたかさ）
 };
 
 // ──────────────────────────────────────────
-// こころみる（ACT）コマンド
-//   敵ごとに「効くACTが違う」ことで、救済は“正しい手順を探すパズル”になる。
+// きいてみる（ACT）で使う “ことば” ＝ 問いかけ／やさしいことば
+//   敵ごとに「効くことばが違う」ことで、救済は“相手の声をきく手順パズル”になる。
+//   word: 画面に出る実際のセリフ ／ category: toi=問いかけ / yasashii=やさしい
 //   wall: 心の壁を下げる量 ／ atkDown: 相手の攻撃力ダウン ／ silence: 1ターン無力化
+//   nukumori: やさしく言えたぶん たまる“ぬくもり”（救いルートの雪だるま）
+//   ※ name には word を入れている（UI は name を表示するため）。internal id は据え置き。
 // ──────────────────────────────────────────
 const ACTS = {
-  nade:   { name: "なでる",     wall: 1,            desc: "心の壁 −1" },
-  uta:    { name: "うたう",     wall: 1, atkDown: 1, desc: "心の壁 −1 ／ 相手の攻撃力 −1" },
-  ayasu:  { name: "あやす",     wall: 1,            desc: "心の壁 −1（特定の敵に有効）" },
-  nadame: { name: "なだめる",   wall: 1,            desc: "心の壁 −1（特定の敵に有効）" },
-  yobi:   { name: "よびかける", wall: 1, silence: 1, desc: "心の壁 −1 ／ 相手を1ターン無力化" },
-  negau:  { name: "ねがう",     wall: 1,            desc: "心の壁 −1（ぬしさま向け）" },
+  nade:   { name: "どうしたの？",     word: "どうしたの？",     category: "toi",      wall: 1,             nukumori: 0, desc: "問いかけ：心の壁 −1（効く相手に）" },
+  uta:    { name: "こわかったね",     word: "こわかったね",     category: "yasashii", wall: 1, atkDown: 1, nukumori: 1, desc: "やさしい：壁 −1 ／ 相手の とげ −1 ／ ぬくもり＋" },
+  ayasu:  { name: "ここに いるよ",   word: "ここに いるよ",   category: "yasashii", wall: 1,             nukumori: 1, desc: "やさしい：壁 −1（こわがりに効く）／ ぬくもり＋" },
+  nadame: { name: "もう だいじょうぶ", word: "もう だいじょうぶ", category: "yasashii", wall: 1,           nukumori: 1, desc: "やさしい：壁 −1（こわがりに効く）／ ぬくもり＋" },
+  yobi:   { name: "ねえ、きこえる？", word: "ねえ、きこえる？", category: "toi",      wall: 1, silence: 1, nukumori: 0, desc: "問いかけ：壁 −1 ／ 相手を1ターン とめる" },
+  negau:  { name: "おねがい、きかせて", word: "おねがい、きかせて", category: "toi",   wall: 1,             nukumori: 1, desc: "問いかけ：壁 −1（ぬしさまの声を きく）／ ぬくもり＋" },
 };
 
 // ──────────────────────────────────────────
-// 武器（祓うコマンドの攻撃形）
+// やさしいことば（学んで増えていく“語彙”）＝ きいてみる で誰にでも使える汎用ことば
+//   敵の acts には含まれない＝壁は基本下げない（手順パズルは壊さない）が、
+//   ことば固有の効果（回復・とげ↓・ぬくもり）は「いつでも」効く。
+//   こうして“言えることが増える”＝主人公の成長を、戦術の広がりとして手触りにする。
+//   解放：3択カード／友を「手をのばして」むかえると、その子のことばを教わる（ENEMIES.gift）。
+//   sadWall:true は「沈黙」など、悲しんでいる相手にだけ壁が −1 届く特別ルール。
+// ──────────────────────────────────────────
+const KIND_WORDS = {
+  gomen:     { name: "ごめんね",       word: "ごめんね",       category: "yasashii", heal: 3,    nukumori: 1, desc: "やさしい：自分の HP＋3 ／ ぬくもり＋" },
+  arigatou:  { name: "ありがとう",     word: "ありがとう",     category: "yasashii", atkDown: 1, nukumori: 1, desc: "やさしい：相手の とげ −1 ／ ぬくもり＋" },
+  kowakunai: { name: "こわくないよ",   word: "こわくないよ",   category: "yasashii", atkDown: 1, nukumori: 1, desc: "やさしい：相手の とげ −1 ／ ぬくもり＋" },
+  shizuka:   { name: "……（だまる）",  word: "……",            category: "silence",  sadWall: 1, nukumori: 1, desc: "沈黙：なにも言わない。さみしい子の壁が すこしほどける ／ ぬくもり＋" },
+  mataaeru:  { name: "また あえるよ",  word: "また あえるよ",  category: "yasashii", heal: 4,    nukumori: 2, desc: "やさしい：HP＋4 ／ ぬくもり＋＋（むかえた友の とくべつなことば）" },
+};
+
+// ことばを id から引く（ACTS と KIND_WORDS を一つに見るためのヘルパー用テーブル）。
+const ALL_WORDS = Object.assign({}, ACTS, KIND_WORDS);
+
+// ──────────────────────────────────────────
+// きついことば（ぶつけるコマンドの攻撃形）＝とげとげした言葉を相手にぶつける
+//   ※「武器」ではなく“ことば”。internal id（namida/poyo…）は互換のため据え置き、
+//     name に実際のセリフを入れている（UI は name を表示するため）。
 //   target: single=単体 / front2=前列2体 / front3=前列3体 / all=全体
-//   power: 基礎威力（実威力 = power + (Lv-1) * perLv）
-//   evolveKey: 進化に必要なパッシブ ／ evolveTo: 進化後の武器ID
-//   進化後の武器は evolved:true（Lvの概念なし）。
+//   power: 基礎威力（実威力 = power + (Lv-1) * perLv） ／ category: toge=きつい
+//   kyoki: このことばで上がる“狂気”（とげを言うほど世界が翳る）
+//   evolveKey: 進化に必要なパッシブ ／ evolveTo: 進化後の id
+//   進化後は evolved:true（Lvの概念なし）。
 // ──────────────────────────────────────────
 const WEAPONS = {
-  // 基本3種
-  // power 4→6：開幕の「くろまる(HP6)・ふらふら(HP5)」を一撃で祓える＝攻撃役を毎ターン1体減らせる。
-  // 単体武器のままだと群れに削り負けて死ぬため、“決定力”を持たせて祓いルートを成立させる。
-  namida: { name: "なみだ砲",     target: "single", power: 6, perLv: 1, evolveKey: "fukai", evolveTo: "daikouzui" },
-  poyo:   { name: "ぽよぽよ連打", target: "front2", power: 3, perLv: 1, evolveKey: "okori", evolveTo: "bakuretsu" },
-  // perLv 2→1（ナーフ）：全体攻撃が“1ボタンで全部片付く”と緊張が消え、祓い一強になる。
-  //   Lv3 でも威力5に抑え、「全体で削る→単体/前列でとどめ」の段取りを残す。全体は万能解にしない。
-  hikari: { name: "ひかりの輪",   target: "all",    power: 3, perLv: 1, evolveKey: "negai", evolveTo: "kyusai" },
-  // 進化形態（究極形態。性能が一段跳ね上がる）
-  // power 6→5（ナーフ）：進化の達成感は残しつつ、雑魚(くろまる6)を一撃全消しはさせない。
-  //   壁−1も付くので“祓いながら救済準備”の個性は維持。
-  daikouzui: { name: "大こうずい",   target: "all",    power: 5, wallDown: 1, evolved: true, desc: "全体に5ダメージ＋心の壁−1" },
-  // power 5→6：前列の雑魚を一撃で流せる威力に。
-  bakuretsu: { name: "ばくれつぽよ", target: "front3", power: 6,             evolved: true, desc: "前列3体に6ダメージ" },
-  // 「救済の光」＝救済を全体化する進化。聖人ビルドも“強く”なれる道。
-  // power 1→2：壁−2が主役。火力は控えめのまま（救済特化の個性を保つ）。
-  kyusai:    { name: "救済の光",     target: "all",    power: 2, wallDown: 2, evolved: true, desc: "全体に2ダメージ＋心の壁−2" },
+  // 基本3種（きついことば）
+  // power 6：開幕の「くろまる(HP6)・ふらふら(HP5)」を一撃で退けられる＝攻撃役を毎ターン1体減らせる。
+  namida: { name: "バカ",       word: "バカ",       target: "single", power: 6, perLv: 1, category: "toge", kyoki: 1, evolveKey: "fukai", evolveTo: "daikouzui" },
+  poyo:   { name: "うるさい",   word: "うるさい",   target: "front2", power: 3, perLv: 1, category: "toge", kyoki: 1, evolveKey: "okori", evolveTo: "bakuretsu" },
+  // perLv 1：全体ことばが“1ボタンで全部片付く”と緊張が消え、ぶつける一強になる。Lv3 でも威力5に抑える。
+  hikari: { name: "あっちいけ", word: "あっちいけ", target: "all",    power: 3, perLv: 1, category: "toge", kyoki: 2, evolveKey: "negai", evolveTo: "kyusai" },
+  // 進化形態（とげの極み。性能が一段跳ね上がるが、狂気も大きく積む）
+  daikouzui: { name: "もう みんな きらい", word: "もう みんな きらい", target: "all", power: 5, wallDown: 1, category: "toge", kyoki: 3, evolved: true, desc: "全体に5ダメージ＋心の壁−1（狂気＋＋＋）" },
+  bakuretsu: { name: "しつこいしつこい！", word: "しつこいしつこい！", target: "front3", power: 6,        category: "toge", kyoki: 2, evolved: true, desc: "前列3体に6ダメージ（狂気＋＋）" },
+  // 「救済の光」＝あっちいけ が“ねがい”で反転した進化。とげではなく、群れ全員へ手をのばすことば。
+  //   救いビルドも“強く”なれる道：火力は控えめ・壁−2が主役・狂気は積まず、むしろ ぬくもり＋。
+  kyusai:    { name: "いっしょに かえろう", word: "いっしょに かえろう", target: "all", power: 2, wallDown: 2, category: "yasashii", kyoki: 0, nukumori: 1, evolved: true, desc: "全体の心の壁−2＋2ダメージ（ぬくもり＋・狂気なし）" },
 };
 
 // ──────────────────────────────────────────
@@ -130,26 +164,28 @@ const WEAPONS = {
 //   1〜2手でほどける現実的な値に下げ、救済ルートを成立させている。
 //   hint: 「どう こころみる？」の手がかり（選択肢の総当たりを避けるための“におわせ”）。
 //   flavor: 初めて出会ったときに一度だけ流れる、その子の素性（物語の手触り）。
+//   gift: 「手をのばして」むかえると、その子から教わる“やさしいことば”の id（KIND_WORDS）。
+//         ＝救うほど、言えることばが増えていく（救済→語彙の接続）。
 const ENEMIES = {
   kuro:  { name: "くろまる",     hp: 6,  atk: 2, target: "single", wall: 1, acts: ["nade"],
-           shape: "circle", color: "#7d8bc4", sad: false,
-           hint: "そっと なでてほしそう",
-           flavor: "夜にこぼれた ちいさな影。ほんとは、さわると あったかい。" },
+           shape: "circle", color: "#7d8bc4", sad: false, gift: "arigatou",
+           hint: "なにかを 言いたそう（どうしたの？）",
+           flavor: "夜にこぼれた ちいさな影。ほんとは、ことばを かわしたいだけ。" },
   fura:  { name: "ふらふら",     hp: 5,  atk: 1, target: "random", wall: 1, acts: ["yobi"],
-           shape: "ghost",  color: "#93a0cf", sad: false,
-           hint: "よびかけたら ふりむくかも",
+           shape: "ghost",  color: "#93a0cf", sad: false, gift: "shizuka",
+           hint: "よびかけたら ふりむくかも（きこえる？）",
            flavor: "ふわふわ さまよっている。名前を呼ぶと、すこしだけ 止まる。" },
   usagi: { name: "なみだうさぎ", hp: 8,  atk: 3, target: "single", wall: 2, acts: ["uta", "nade"],
-           shape: "bunny",  color: "#8f9ee0", sad: true,
-           hint: "きれいな音に 耳がうごく（うた？）",
-           flavor: "ずっと 泣いている子。やさしい音が、すこし 涙をとめる。" },
+           shape: "bunny",  color: "#8f9ee0", sad: true, gift: "gomen",
+           hint: "やさしい ことばに 耳がうごく（こわかったね？）",
+           flavor: "ずっと 泣いている子。やさしい ことばが、すこし 涙をとめる。" },
   toge:  { name: "とげぐも",     hp: 12, atk: 4, target: "all",    wall: 3, acts: ["ayasu", "nadame"],
-           shape: "spider", color: "#a877b0", sad: false,
-           hint: "とげの奥で こわがってる（あやす／なだめる）",
-           flavor: "とげで身を守っている。ほんとは、さわられるのが こわいだけ。" },
+           shape: "spider", color: "#a877b0", sad: false, gift: "kowakunai",
+           hint: "とげの奥で こわがってる（ここにいるよ／もうだいじょうぶ）",
+           flavor: "とげで身を守っている。ほんとは、ことばが こわいだけ。" },
   nushi: { name: "ぬしさま",     hp: 60, atk: 5, target: "all",    wall: 6, acts: ["uta", "nade", "negau"],
-           shape: "boss",   color: "#c25a7a", sad: true, boss: true,
-           hint: "群れの ねがいを 束ねている（いろいろ 試して）",
+           shape: "boss",   color: "#c25a7a", sad: true, boss: true, gift: "mataaeru",
+           hint: "群れの ねがいを 束ねている（いろいろ ことばを かけて）",
            flavor: "群れの いちばん おく。その願いを ことばにできるのは、たぶん きみだけ。" },
 };
 
@@ -181,16 +217,21 @@ const ITEMS = {
 //   進化キー（おこりんぼ／ねがい）も後半に足しています。
 // ──────────────────────────────────────────
 const CARDS = [
-  { id: "w_poyo",   type: "weapon",    weapon: "poyo",   name: "新武器：ぽよぽよ連打", desc: "前列2体に攻撃する武器を入手" },
-  { id: "w_hikari", type: "weapon",    weapon: "hikari", name: "新武器：ひかりの輪",   desc: "全体に攻撃する武器を入手" },
-  { id: "w_up",     type: "weaponLv",                    name: "武器強化 Lv＋1",       desc: "武器を1つ選んで1段強化する" },
+  // 新しい きついことば（ぶつける の択が増える）
+  { id: "w_poyo",   type: "weapon",    weapon: "poyo",   name: "おぼえる：「うるさい」",     desc: "前列2体に ぶつける きついことば" },
+  { id: "w_hikari", type: "weapon",    weapon: "hikari", name: "おぼえる：「あっちいけ」",   desc: "全体に ぶつける きついことば" },
+  // 新しい やさしいことば（きいてみる の語彙が増える＝言えることが増える成長）
+  { id: "word_arigatou", type: "word", word: "arigatou", name: "おぼえる：「ありがとう」",   desc: "やさしいことば：相手の とげ −1・ぬくもり＋" },
+  { id: "word_shizuka",  type: "word", word: "shizuka",  name: "おぼえる：「……（だまる）」", desc: "沈黙：さみしい子の壁が ほどける・ぬくもり＋" },
+  // 強化・成長
+  { id: "w_up",     type: "weaponLv",                    name: "ことばを とがらせる（Lv＋1）", desc: "きついことばを1つ選んで1段 強める" },
   { id: "hp",       type: "maxHp",     amount: 5,        name: "＋たいりょく",         desc: "最大HP＋5（その分すぐ回復）" },
-  { id: "kokoro",   type: "maxKokoro", amount: 3,        name: "＋こころ",             desc: "最大こころ＋3（救済リソース）" },
-  { id: "fukai",    type: "passive",   key: "fukai",     name: "ふかいかなしみ",       desc: "悲しむ敵への与ダメ＋。なみだ砲の進化キー" },
-  { id: "yasashii", type: "passive",   key: "yasashii",  name: "やさしいて",           desc: "すくう成功時、隣の1体の壁−1（連鎖）" },
+  { id: "kokoro",   type: "maxKokoro", amount: 3,        name: "＋こころ",             desc: "最大こころ＋3（きく／むかえる の燃料）" },
+  { id: "fukai",    type: "passive",   key: "fukai",     name: "ふかいかなしみ",       desc: "悲しむ相手への与ダメ＋。「バカ」を「もう みんな きらい」へ進化させるキー" },
+  { id: "yasashii", type: "passive",   key: "yasashii",  name: "やさしいて",           desc: "手をのばした成功時、隣の1体の壁−1（連鎖）" },
   { id: "hayaashi", type: "passive",   key: "hayaashi",  name: "はやあし",             desc: "毎ウェーブ先手＋被弾を一定確率で回避" },
-  { id: "okori",    type: "passive",   key: "okori",     name: "おこりんぼ",           desc: "前列攻撃の与ダメ＋。ぽよぽよ連打の進化キー" },
-  { id: "negai",    type: "passive",   key: "negai",     name: "ねがい",               desc: "ひかりの輪を「救済の光」へ進化させるキー" },
+  { id: "okori",    type: "passive",   key: "okori",     name: "おこりんぼ",           desc: "前列ことばの与ダメ＋。「うるさい」を「しつこいしつこい！」へ進化させるキー" },
+  { id: "negai",    type: "passive",   key: "negai",     name: "ねがい",               desc: "「あっちいけ」を「いっしょに かえろう」へ反転進化させるキー" },
 ];
 
 // ──────────────────────────────────────────

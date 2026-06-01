@@ -3,19 +3,44 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>さいごのともだち — Core Combat PoC</title>
-  <meta name="description" content="コマンド選択型サバイバーRPG「さいごのともだち」のコア戦闘PoC。祓うか、救うか。" />
+  <title>さいごのともだち — ことばで、たたかう夜</title>
+  <meta name="description" content="ことばで戦う口喧嘩バトルのサバイバーRPG「さいごのともだち」。ぶつけるか、きいてみるか、手をのばすか。言えなかった言葉が、言えるようになる。" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="theme-night">
+  <!-- 背景：夜明け前の山道（ドット絵風）。空・尾根3層・ランタンの灯り・小さな仲間の列。
+       添付リファレンスの“寒色の夜＋暖色の灯り”を、素材なしのCSSピクセルアートで再構築。 -->
+  <div id="scene" aria-hidden="true">
+    <div class="scene-sky"></div>
+    <div class="scene-stars"></div>
+    <div class="scene-ridge ridge-back"></div>
+    <div class="scene-ridge ridge-mid"></div>
+    <div class="scene-ridge ridge-front"></div>
+    <div class="scene-ground"></div>
+    <div class="scene-lanterns">
+      <span class="lantern" style="left:8%"></span>
+      <span class="lantern" style="left:21%"></span>
+      <span class="lantern" style="left:39%"></span>
+      <span class="lantern" style="left:58%"></span>
+      <span class="lantern" style="left:74%"></span>
+      <span class="lantern" style="left:90%"></span>
+    </div>
+    <div class="scene-walkers">
+      <span class="walker" style="left:30%"></span>
+      <span class="walker" style="left:44%"></span>
+      <span class="walker lead" style="left:55%"></span>
+      <span class="walker" style="left:67%"></span>
+    </div>
+  </div>
+
   <div id="game">
     <!-- 上部バー：ウェーブ・カウンタ・ミュート -->
     <header id="topbar">
       <div id="wave-info">WAVE 1 / 6</div>
       <div id="counters">
-        <span class="ct kill">殲滅 <b id="c-kill">0</b></span>
-        <span class="ct save">救済 <b id="c-save">0</b></span>
-        <span class="ct memory">記憶 <b id="c-memory">0</b></span>
+        <span class="ct kill">おいはらった <b id="c-kill">0</b></span>
+        <span class="ct save">むかえた <b id="c-save">0</b></span>
+        <span class="ct memory">きずな <b id="c-memory">0</b></span>
       </div>
       <button id="mute-btn" title="音のON/OFF">♪</button>
     </header>
@@ -43,23 +68,24 @@
   <div id="overlay-title" class="overlay">
     <div class="ov-panel title-panel">
       <h1 class="game-title">さいごのともだち</h1>
-      <p class="game-subtitle">LAST FRIEND STANDING ― Core Combat PoC</p>
-      <!-- プロローグ：物語の入口（ちいかわ的な可愛さ × さみしい夜 × 救うか否か）。
-           演出は .title-prologue（style.css）。傷つける/わかりあう の二択は今後の口喧嘩バトルとも地続き。 -->
+      <p class="game-subtitle">LAST FRIEND STANDING ― ことばで、たたかう夜</p>
+      <!-- プロローグ：物語の入口（ちいかわ的な可愛さ × さみしい夜 × ことばで戦う）。
+           演出は .title-prologue（style.css）。傷つける/わかりあう の二択が、口喧嘩バトルの核。 -->
       <p class="title-prologue">ながい よるの はなし。
 ともだちは みんな いなくなった。
 それでも 夜は、だれかを つれてくる。
+ここでは ことばが、ぶきになる。
 きずつける？ それとも、わかりあう？</p>
       <p class="title-lead">
-        コマンドを選んで群れと戦う、ひと晩のサバイバル。<br />
-        敵は<b>祓う</b>と一瞬で消える。でも<b>救う</b>には手間がかかる。<br />
-        手が止まらないのに、心が止まる――その選択を、何度でも。
+        武器ではなく、<b>ことば</b>で群れと向きあう ひと晩の口喧嘩。<br />
+        <b>ぶつける</b>と早く退けられる。でも<b>手をのばす</b>には、聞いて、待つ手間がいる。<br />
+        手が止まらないのに、心が止まる――そして、<b>言えなかった言葉が言えるようになる</b>。
       </p>
       <div class="title-how">
-        <div><b>祓う</b>：武器で攻撃。早く強くなるが、二度と会えない。</div>
-        <div><b>こころみる</b>：心の壁を下げる。敵ごとに効くやり方が違う。</div>
-        <div><b>すくう</b>：壁が消えた相手を救う。遅くて弱いが、誰も死なない。</div>
-        <div><b>どうぐ / まもる</b>：回復・被ダメ減で、つらい夜をしのぐ。</div>
+        <div><b>ぶつける</b>：きついことばを ぶつける。早く退けられるが、狂気がたまる。</div>
+        <div><b>きいてみる</b>：相手の声をきく。心の壁を下げ、効くことばを探す。</div>
+        <div><b>手をのばす</b>：壁が消えた相手を むかえる。遅いが、誰も失わない＝ことばを教わる。</div>
+        <div><b>こらえる / もちもの</b>：耐える・おまもりで、つらい夜をしのぐ。</div>
       </div>
       <button id="start-btn" class="start-btn">▶ はじめる</button>
     </div>
