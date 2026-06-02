@@ -43,7 +43,7 @@ function applyDamage(enemy, dmg) {
       game.counters.kill++;
       game.player.exp += BALANCE.expPerKill; // ぶつけて退けると EXP 多め＝早く強くなる
       log(`  ${enemy.name} は ことばに 背を向けて 消えた…（おいはらった +1）`);
-      pushFx({ t: "hit", uid: enemy.uid, dmg: dmg, dead: true }); // とどめ＝消える演出
+      pushFx({ t: "hit", uid: enemy.uid, dmg: dmg, dead: true, color: enemy.color }); // とどめ＝はじけて消える演出
     }
   } else {
     log(`  ${enemy.name} に ${dmg} ダメージ（HP ${enemy.hp}/${enemy.maxHp}）`);

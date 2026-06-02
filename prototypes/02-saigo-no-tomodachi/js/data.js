@@ -174,7 +174,7 @@ const WEAPONS = {
 //         ＝救うほど、言えることばが増えていく（救済→語彙の接続）。
 const ENEMIES = {
   kuro:  { name: "くろまる",     hp: 6,  atk: 2, target: "single", wall: 1, acts: ["nade"],
-           shape: "circle", color: "#7d8bc4", sad: false, gift: "arigatou",
+           shape: "circle", color: "#5d7bd0", sad: false, gift: "arigatou",
            hint: "なにかを 言いたそう（どうしたの？）",
            flavor: "夜にこぼれた ちいさな影。ほんとは、ことばを かわしたいだけ。" },
   fura:  { name: "ふらふら",     hp: 5,  atk: 1, target: "random", wall: 1, acts: ["yobi"],
@@ -182,11 +182,11 @@ const ENEMIES = {
            hint: "よびかけたら ふりむくかも（きこえる？）",
            flavor: "ふわふわ さまよっている。名前を呼ぶと、すこしだけ 止まる。" },
   usagi: { name: "なみだうさぎ", hp: 8,  atk: 3, target: "single", wall: 2, acts: ["uta", "nade"],
-           shape: "bunny",  color: "#8f9ee0", sad: true, gift: "gomen",
+           shape: "bunny",  color: "#e89ab8", sad: true, gift: "gomen",
            hint: "やさしい ことばに 耳がうごく（こわかったね？）",
            flavor: "ずっと 泣いている子。やさしい ことばが、すこし 涙をとめる。" },
   toge:  { name: "とげぐも",     hp: 12, atk: 4, target: "all",    wall: 3, acts: ["ayasu", "nadame"],
-           shape: "spider", color: "#a877b0", sad: false, gift: "kowakunai",
+           shape: "spider", color: "#9a6fd0", sad: false, gift: "kowakunai",
            hint: "とげの奥で こわがってる（ここにいるよ／もうだいじょうぶ）",
            flavor: "とげで身を守っている。ほんとは、ことばが こわいだけ。" },
   nushi: { name: "ぬしさま",     hp: 60, atk: 5, target: "all",    wall: 6, acts: ["uta", "nade", "negau"],

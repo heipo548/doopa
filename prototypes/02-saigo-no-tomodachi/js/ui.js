@@ -38,6 +38,15 @@ function _rgb2hex(a) {
 function shade(hex, f) { const [r, g, b] = _hex2rgb(hex); return _rgb2hex([r * (1 - f), g * (1 - f), b * (1 - f)]); } // 暗く
 function tint(hex, f) { const [r, g, b] = _hex2rgb(hex); return _rgb2hex([r + (255 - r) * f, g + (255 - g) * f, b + (255 - b) * f]); } // 明るく
 function _inC(x, y, cx, cy, r) { const dx = x - cx + 0.5, dy = y - cy + 0.5; return dx * dx + dy * dy <= r * r; }
+// 形ごとの体型（楕円）。全部おなじ丸を脱却し、シルエットで描き分ける。
+const SHAPE_BODY = {
+  circle: { cx: 8, cy: 9, rx: 6, ry: 6 },   // まる
+  bunny:  { cx: 8, cy: 9, rx: 5, ry: 6 },   // 縦長
+  ghost:  { cx: 8, cy: 8, rx: 6, ry: 6 },   // 下を波打たせる
+  spider: { cx: 8, cy: 9, rx: 7, ry: 5 },   // 横広
+  boss:   { cx: 8, cy: 9, rx: 7, ry: 7 },   // 一回り大きい
+};
+function _inE(x, y, b) { const dx = (x - b.cx + 0.5) / b.rx, dy = (y - b.cy + 0.5) / b.ry; return dx * dx + dy * dy <= 1; }
 
 // 16×16 のカラーグリッド（null=透明）から、横方向の連続を1つの<rect>にまとめてSVG文字列を作る。
 function _gridToRects(grid) {
@@ -74,8 +83,12 @@ function _accent(grid, shape, col) {
     [[5, 1], [7, 0], [9, 1]].forEach(([x, y]) => put(x, y, "#ffd86b"));
     [[5, 2], [6, 2], [7, 2], [8, 2], [9, 2]].forEach(([x, y]) => put(x, y, "#e0b24a"));
   } else if (shape === "ghost") {
-    // 裾をギザギザ（透明を交互に抜く）＝ふわふわ感
-    for (let x = 2; x < 14; x++) { if (x % 2 === 0) { grid[14][x] = null; grid[15] && (grid[15][x] = null); } }
+    // 裾をギザギザに（足なし・ふわふわ）。下2行を互い違いに抜いて“おばけの裾”に。
+    for (let x = 0; x < SPR; x++) {
+      if (grid[14] && x % 2 === 0) grid[14][x] = null;
+      if (grid[13] && x % 2 === 1 && grid[13][x] === null) { /* keep */ }
+    }
+    if (grid[13]) { grid[13][2] = null; grid[13][13] = null; }
   }
 }
 
@@ -112,13 +125,13 @@ function creatureSVG(color, shape, expr) {
   for (let y = 0; y < SPR; y++) grid.push(new Array(SPR).fill(null));
   const OUT = "#241a40";
   const body = color, dark = shade(color, 0.3), light = tint(color, 0.42);
-  const cx = 8, cy = 9, r = 6;
+  const b = SHAPE_BODY[shape] || SHAPE_BODY.circle;
   for (let y = 0; y < SPR; y++) for (let x = 0; x < SPR; x++) {
-    if (!_inC(x, y, cx, cy, r)) continue;
-    const edge = !_inC(x - 1, y, cx, cy, r) || !_inC(x + 1, y, cx, cy, r) || !_inC(x, y - 1, cx, cy, r) || !_inC(x, y + 1, cx, cy, r);
+    if (!_inE(x, y, b)) continue;
+    const edge = !_inE(x - 1, y, b) || !_inE(x + 1, y, b) || !_inE(x, y - 1, b) || !_inE(x, y + 1, b);
     if (edge) grid[y][x] = OUT;
-    else if (y <= cy - 3) grid[y][x] = light;  // 上＝ハイライト
-    else if (y >= cy + 3) grid[y][x] = dark;   // 下＝シェード
+    else if (y <= b.cy - 3) grid[y][x] = light;  // 上＝ハイライト
+    else if (y >= b.cy + 3) grid[y][x] = dark;   // 下＝シェード
     else grid[y][x] = body;
   }
   _accent(grid, shape, { body, dark, OUT });
@@ -162,6 +175,8 @@ function applyTone() {
   g.classList.remove("kyoki-1", "kyoki-2", "kyoki-3", "nukumori-1", "nukumori-2", "nukumori-3");
   if (kLv) g.classList.add("kyoki-" + kLv);
   if (nLv) g.classList.add("nukumori-" + nLv);
+  // ウェーブ1のあいだは「きもち」「なかま」を隠して画面を3段に＝最初の30秒の情報量を絞る。
+  g.classList.toggle("first-wave", waveNumber() === 1);
 }
 
 // ── 上部バー（ウェーブ進行ドット・カウンタ） ─────────────
@@ -390,8 +405,9 @@ function renderPrompt() {
       const pow = w.evolved ? w.power : weaponPower(id);
       // とげのことばは「とげとげ＋」、反転進化「いっしょに かえろう」は やさしい＋ を明記
       const meter = w.kyoki ? `・とげとげ+${w.kyoki}` : (w.nukumori ? `・やさしい+${w.nukumori}` : "");
-      const b = addBtn(`「${w.name}」`, `${tgt}・威力${pow}${w.wallDown ? `・壁-${w.wallDown}` : ""}${meter}`, () => selectWeapon(id));
-      if (b) b.classList.add(w.category === "yasashii" ? "word-yasashii" : "word-toge");
+      const icon = WORD_ICON[id] || (w.category === "yasashii" ? "🌱" : "💢");
+      const b = addBtn(`${icon}「${w.name}」`, `${tgt}・威力${pow}${w.wallDown ? `・壁-${w.wallDown}` : ""}${meter}`, () => selectWeapon(id));
+      if (b) { b.classList.add(w.category === "yasashii" ? "word-yasashii" : "word-toge"); if (pow >= 6) b.classList.add("strong"); }
     }
     addCancel();
   } else if (ui.mode === "act") {
@@ -449,6 +465,11 @@ function actOptionsFor(uid) {
 function catClass(cat) {
   return { toge: "word-toge", yasashii: "word-yasashii", toi: "word-toi", silence: "word-silence" }[cat] || "word-toi";
 }
+// 罵声（きついことば）の役割アイコン＝読まずに違いが伝わる（選ぶ楽しさ）。
+const WORD_ICON = {
+  namida: "💢", damare: "🤐", poyo: "💢💢", hikari: "💨", kiero: "💥",
+  daikouzui: "🌊", bakuretsu: "💥💥", kyusai: "🤝",
+};
 
 // 小さな配列シャッフル（cards.js の shuffle はあるが、依存順の都合でこちらにも軽量版を置く）
 function shuffleArr(arr) {
@@ -492,8 +513,16 @@ function onCommand(cmd) {
     if (ws.length === 1) selectWeapon(ws[0]);
     else { ui.mode = "weapon"; renderPrompt(); renderCommands(); }
   } else if (cmd === "act") {
-    // まず「だれを」こころみるか選ぶ → その子向けに候補ACTを絞る（6択総当たりの解消）
-    ui.mode = "actTarget"; renderPrompt(); renderEnemies(); renderCommands();
+    // 相手が1体なら「だれを」を飛ばして そのまま ことば選びへ（fightは1タップなのにactだけ重い非対称を解消）
+    const living = livingEnemies();
+    if (living.length === 1) {
+      ui.pendingActTarget = living[0].uid;
+      ui.pendingActList = actOptionsFor(living[0].uid);
+      ui.mode = "act";
+    } else {
+      ui.mode = "actTarget"; // まず「だれを」選ぶ → その子向けに候補を絞る
+    }
+    renderPrompt(); renderEnemies(); renderCommands();
   } else if (cmd === "save") {
     const savable = livingEnemies().filter((e) => e.wall === 0);
     if (savable.length === 0) { showToast("まだ むかえられる子が いない（さきに「きいてみる」）"); return; }
@@ -608,7 +637,7 @@ function playFx(prevRects) {
     if (ev.t === "hit") {
       // 与ダメは大きく。撃破は数字に「！」＋ポフ（消えた手応え）、通常はゆれ＋ピカッ
       floatOnEnemy(ev.uid, ev.dead ? `${ev.dmg}!` : `${ev.dmg}`, ev.dead ? "dmg dead" : "dmg", prevRects);
-      if (ev.dead) { deadPoof(ev.uid, prevRects); }
+      if (ev.dead) { deadPoof(ev.uid, prevRects, ev.color); playSe("die"); } // パンッ！＝退けた手応え
       else { shakeEnemy(ev.uid); flashEnemy(ev.uid); }
     } else if (ev.t === "calm") {
       floatOnEnemy(ev.uid, "ほっ…", "calm", prevRects);
@@ -624,7 +653,10 @@ function playFx(prevRects) {
       floatOnEnemy(ev.uid, "…？", "miss", prevRects); // 響かなかった＝“外した”手応え
       playSe("miss");
     } else if (ev.t === "learn") {
-      showToast(`「${ev.text}」が 言えるように なった`); // 本作の核を即時の快感に
+      // 本作の核「言えなかった言葉が言えた」を、なかまスプライト発の大きな手応えに格上げ
+      const lastN = document.querySelector("#nakama-tray .nakama:last-child");
+      if (lastN) { lastN.classList.add("pop"); }
+      wordBubble(`「${ev.text}」が 言えた！`, "yasashii");
       playSe("learn");
     } else if (ev.t === "pdmg") {
       pdmg += ev.dmg; // 群れの反撃ぶんは ②へ回す
@@ -738,16 +770,30 @@ function flashEnemy(uid) {
   const fig = document.querySelector(`.enemy[data-uid="${uid}"] .enemy-fig`);
   if (fig) { fig.classList.add("hitpop"); setTimeout(() => fig.classList.remove("hitpop"), 260); }
 }
-// 退けた瞬間の“ポフッ”（敵は render で消えているので、居た場所に出す）。
-function deadPoof(uid, prevRects) {
+// 退けた瞬間の“パンッ！”（敵は render で消えているので、居た場所に出す）＝ポフ＋ピクセルのかけら飛散。
+function deadPoof(uid, prevRects, color) {
   const host = $("game");
   if (!host || !prevRects || !prevRects[uid]) return;
+  const x = prevRects[uid].x, y = prevRects[uid].y;
   const el = document.createElement("div");
   el.className = "poof";
-  el.style.left = prevRects[uid].x + "px";
-  el.style.top = prevRects[uid].y + "px";
+  el.style.left = x + "px";
+  el.style.top = y + "px";
   host.appendChild(el);
   setTimeout(() => el.remove(), 560);
+  // かけら（ピクセル割れ）を4方向へ。色は退けた相手の色＝“その子がはじけた”手応え。
+  const dirs = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+  dirs.forEach((d) => {
+    const s = document.createElement("div");
+    s.className = "shard";
+    s.style.left = x + "px";
+    s.style.top = y + "px";
+    s.style.background = color || "#cfc4e6";
+    s.style.setProperty("--dx", (d[0] * 18) + "px");
+    s.style.setProperty("--dy", (d[1] * 18) + "px");
+    host.appendChild(s);
+    setTimeout(() => s.remove(), 520);
+  });
 }
 // むかえた瞬間の あたたかい光のひろがり（“救った感”）。
 function saveBurst(uid, prevRects) {

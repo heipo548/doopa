@@ -864,3 +864,26 @@ html, body {
   50%     { box-shadow: 0 3px 0 rgba(0,0,0,0.45), 0 0 0 4px rgba(255,216,107,0.75); transform: translateY(-2px); }
 }
 @media (prefers-reduced-motion: reduce) { .cmd.pulse { animation: none !important; } }
+
+/* ============================================================
+   v0.3 cycle3：撃破の“パンッ”・序盤の段数削減・罵声ボタンの強弱
+   ============================================================ */
+/* 撃破ポフを大きく＋ピクセルのかけら飛散（退けた手応えを底上げ） */
+.poof { width: 48px !important; height: 48px !important; }
+@keyframes poof { 0% { transform: translate(-50%,-50%) scale(0.4); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(3.2); opacity: 0; } }
+.shard {
+  position: absolute; width: 4px; height: 4px; transform: translate(-50%,-50%);
+  pointer-events: none; z-index: 40; image-rendering: pixelated;
+  animation: shardfly 0.5s ease-out forwards;
+}
+@keyframes shardfly {
+  0%   { transform: translate(-50%,-50%); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))); opacity: 0; }
+}
+/* 罵声ボタン：威力が高いほど 大きく・濃く（読まずに強さが伝わる） */
+.sub-btn.strong { transform: scale(1.06); font-weight: 900; filter: brightness(1.08); }
+.sub-btn.strong:hover { transform: scale(1.09) translateY(-1px); }
+/* ウェーブ1は「きもち」「きずな」「なかま」を隠して画面を3段に（最初の情報量を絞る） */
+.first-wave .mood-row, .first-wave .bond-line, .first-wave #nakama-tray { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) { .shard { animation: none !important; opacity: 0; } }

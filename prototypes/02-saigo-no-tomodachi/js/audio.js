@@ -118,10 +118,16 @@ function startBgm(theme) {
   bgmTimer = setInterval(() => {
     if (_muted || !audioCtx) return;
     const scale = BGM_SCALES[bgmTheme] || BGM_SCALES.night;
-    let f = scale[bgmStep % scale.length];
-    // 夜でも明るめに。狂気が高いときだけ ほんの少し翳らせる（半音未満のうねり）。
+    let f;
     if (bgmTheme === "night") {
-      f = f * (1 + Math.min(0.015, _kyoki() * 0.0015));
+      // 単純な順送りをやめ、上り下りの“旋律”で往復＝かわいい子守唄に（ループ感を減らす）。
+      const seq = [0, 1, 2, 3, 4, 3, 2, 1, 2, 4, 3, 1];
+      f = scale[seq[bgmStep % seq.length] % scale.length];
+      f = f * (1 + Math.min(0.015, _kyoki() * 0.0015));      // 高狂気でだけ ほんの少し翳る
+      if (bgmStep % 4 === 0) tone(f * 2, 0.4, "triangle", 0.02, _t(0.0));  // オクターブ上の装飾音
+      if (bgmStep % 8 === 3) tone(f * 1.25, 0.7, "sine", 0.02, _t(0.12));  // ときどき3度のハモリ
+    } else {
+      f = scale[bgmStep % scale.length];
     }
     // やわらかいオルゴール風：主音(三角)＋上の倍音できらきら、低音は軽く1つおき。
     tone(f, 0.9, "triangle", 0.06);                          // 主旋律（オルゴール風）
