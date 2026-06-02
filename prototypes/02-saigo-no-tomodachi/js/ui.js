@@ -95,26 +95,24 @@ function _accent(grid, shape, col) {
 }
 
 // 顔（表情）：neutral=つぶら / happy=ニコッ（むかえた・おだやか）/ sad=泣き
-//   ちいかわ味：ほっぺの赤み＋目の白いきらめき で“かわいい”を底上げ。
-function _face(grid, expr, sad) {
+//   ちいかわ味：ほっぺの赤み＋目の白いきらめき。座標は体型 b 基準で置き、shapeごとのズレを防ぐ。
+function _face(grid, expr, sad, b) {
+  b = b || SHAPE_BODY.circle;
   const OUT = "#20203a", W = "#ffffff", TEAR = "#7fd0ff", M = "#20203a", BLUSH = "#ff9ab0";
   const put = (x, y, c) => { if (x >= 0 && x < SPR && y >= 0 && y < SPR) grid[y][x] = c; };
-  // ほっぺ（左右のチーク）＝常に。やわらかい赤みで生きものらしさを出す。
-  put(3, 9, BLUSH); put(12, 9, BLUSH);
+  const lx = b.cx - 4, rx = b.cx + 2, ey = b.cy - 2, my = b.cy + 1; // 左目/右目/目の高さ/口の高さ
+  put(b.cx - 5, b.cy - 1, BLUSH); put(b.cx + 4, b.cy - 1, BLUSH);   // ほっぺ
   if (expr === "happy") {
-    // 閉じたニコニコ目（＾ ＾）＋大きめの笑い口
-    [[4, 8], [5, 7], [6, 8], [9, 8], [10, 7], [11, 8]].forEach(([x, y]) => put(x, y, OUT));
-    [[5, 11], [6, 12], [7, 12], [8, 12], [9, 12], [10, 11]].forEach(([x, y]) => put(x, y, M));
+    [[lx, ey + 1], [lx + 1, ey], [rx, ey], [rx + 1, ey + 1]].forEach(([x, y]) => put(x, y, OUT)); // ＾ ＾
+    [[b.cx - 3, my], [b.cx - 2, my + 1], [b.cx - 1, my + 1], [b.cx, my + 1], [b.cx + 1, my + 1], [b.cx + 2, my]].forEach(([x, y]) => put(x, y, M));
   } else {
-    // つぶらな大きい目（2×2）＋白いきらめき2点（うるうる感）
-    [[4, 7], [5, 7], [4, 8], [5, 8], [10, 7], [11, 7], [10, 8], [11, 8]].forEach(([x, y]) => put(x, y, OUT));
-    put(4, 7, W); put(10, 7, W); put(5, 8, W); put(11, 8, W);
+    [[lx, ey], [lx + 1, ey], [lx, ey + 1], [lx + 1, ey + 1], [rx, ey], [rx + 1, ey], [rx, ey + 1], [rx + 1, ey + 1]].forEach(([x, y]) => put(x, y, OUT));
+    put(lx, ey, W); put(rx, ey, W); put(lx + 1, ey + 1, W); put(rx + 1, ey + 1, W); // きらめき
     if (sad || expr === "sad") {
-      // 小さい口＋ぽろっとなみだ（悲しむ子）
-      [[7, 11], [8, 11], [7, 12], [8, 12]].forEach(([x, y]) => put(x, y, M));
-      put(5, 9, TEAR); put(5, 10, TEAR); put(3, 9, TEAR);
+      [[b.cx - 1, my], [b.cx, my], [b.cx - 1, my + 1], [b.cx, my + 1]].forEach(([x, y]) => put(x, y, M));
+      put(lx, ey + 2, TEAR); put(lx, ey + 3, TEAR); // なみだ
     } else {
-      [[7, 11], [8, 11]].forEach(([x, y]) => put(x, y, M)); // ちいさな口
+      [[b.cx - 1, my], [b.cx, my]].forEach(([x, y]) => put(x, y, M)); // ちいさな口
     }
   }
 }
@@ -137,7 +135,7 @@ function creatureSVG(color, shape, expr) {
     else grid[y][x] = body;
   }
   _accent(grid, shape, { body, dark, OUT });
-  _face(grid, expr, false);
+  _face(grid, expr, false, b);
   const svg = `<svg class="spr" viewBox="0 0 ${SPR} ${SPR}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${_gridToRects(grid)}</svg>`;
   _spriteCache[key] = svg;
   return svg;
@@ -348,8 +346,8 @@ function renderCommands() {
   const hasItem = Object.keys(p.items).some((k) => p.items[k] > 0);
   const savableExists = livingEnemies().some((e) => e.wall === 0); // 「手をのばす」が押せる状況か
   const w1 = waveNumber() === 1; // ウェーブ1は最小コマンドに絞る（最初の認知コストを下げる）
-  // ごく最初の一手だけ、まず押すボタン（ぶつける）を脈動させて“入口”を体で示す。
-  const firstTurn = w1 && game.turn === 0 && game.counters.kill === 0 && game.counters.save === 0;
+  // ウェーブ1で まだ何もしていない間は ずっと「ぶつける」を脈動＝入口を見失わせない（turn条件は外す）。
+  const firstTurn = w1 && game.counters.kill === 0 && game.counters.save === 0;
 
   // プレイヤーに見える名前は“ことばで戦う口喧嘩”に寄せる（内部の cmd キーは据え置き）。
   //   ぶつける＝とげとげした言葉 ／ きいてみる＝相手の声をきく ／ 手をのばす＝迎える ／ こらえる＝耐える
@@ -472,8 +470,8 @@ function catClass(cat) {
 }
 // 罵声（きついことば）の役割アイコン＝読まずに違いが伝わる（選ぶ楽しさ）。
 const WORD_ICON = {
-  namida: "💢", damare: "🤐", poyo: "💢💢", hikari: "💨", kiero: "💥",
-  daikouzui: "🌊", bakuretsu: "💥💥", kyusai: "🤝",
+  namida: "💢", damare: "🤐", poyo: "🌀", hikari: "💨", kiero: "💥",
+  daikouzui: "🌊", bakuretsu: "🌀💥", kyusai: "🤝",
 };
 
 // 小さな配列シャッフル（cards.js の shuffle はあるが、依存順の都合でこちらにも軽量版を置く）
@@ -615,7 +613,7 @@ function doAction(fn, seName) {
   // ことば系（ぶつける/きいてみる/手をのばす）は “言ったことばの吹き出し”が主役なので
   // 中央の大きな動詞フラッシュは出さない。もちもの／こらえる だけ動詞を出す。
   if (seName === "item" || seName === "defend") bigFlash(seName);
-  if (game.player.hp < hpBefore) playSe("hit");       // 被弾
+  // 被弾音は playFx の「群れの反撃」フェーズで鳴らす（音→-N数字→赤ふち を1拍に揃える）
   if (game.state === STATES.LEVEL_UP) playSe("levelup");
   else if (game.state === STATES.DAWN) playSe("dawn");
 
@@ -683,8 +681,8 @@ function playFx(prevRects) {
   }, tail + 260);
   // ── ④ 群れの反撃は ぜんぶの後に＝「自分が言った→刺さる→殴られた」の順で因果が体に来る ──
   if (pdmg > 0) setTimeout(() => {
-    screenShake(); hitVignette();
-    floatOnPlayer(`-${pdmg}`, "pdmg"); // 与ダメだけ見える非対称を解消
+    playSe("hit"); screenShake(); hitVignette();
+    floatOnPlayer(`-${pdmg}`, "pdmg"); // 被弾音→数字→赤ふち を同時に（与ダメだけ見える非対称も解消）
   }, tail + 180);
   game.fx = [];
 }

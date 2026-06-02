@@ -887,3 +887,19 @@ html, body {
 .first-wave .mood-row, .first-wave .bond-line, .first-wave #nakama-tray { display: none !important; }
 
 @media (prefers-reduced-motion: reduce) { .shard { animation: none !important; opacity: 0; } }
+
+/* ============================================================
+   v0.3 cycle5：地面の影で“立つ”／むかえた光を一回り大きく
+   ============================================================ */
+/* 足元の硬いドット影＝スプライトが宙に浮かず ドット世界に立つ */
+.enemy-fig { position: relative; }
+.enemy-fig::after {
+  content: ""; position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%);
+  width: 58%; height: 3px; background: rgba(10,8,22,0.34); border-radius: 0;
+}
+.enemy.boss .enemy-fig::after { width: 64%; height: 4px; }
+/* なかまトレイのスプライトには影は不要（小さいので） */
+.nakama .enemy-fig::after { display: none; }
+/* むかえた光を一回り大きく＝“救った”を他コマンドより格上げ */
+.save-burst { width: 58px; height: 58px; }
+@keyframes saveburst { 0% { transform: translate(-50%,-50%) scale(0.3); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(3.2); opacity: 0; } }

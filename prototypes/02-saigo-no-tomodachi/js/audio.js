@@ -133,6 +133,7 @@ function startBgm(theme) {
     tone(f, 0.9, "triangle", 0.06);                          // 主旋律（オルゴール風）
     tone(f * 2, 0.7, "sine", 0.022, _t(0.04));               // きらきら（明るさ）
     if (bgmStep % 2 === 0) tone(f / 2, 1.0, "sine", 0.03);   // 軽い支え（1つおき＝重くしない）
+    if (bgmStep % 4 === 0) tone(2100, 0.025, "square", 0.03); // 拍頭の軽いクリック＝“ノリ”を立てる
     bgmStep++;
   }, 760);
 }

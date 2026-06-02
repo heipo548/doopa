@@ -60,6 +60,9 @@ var drive = [
   // 結末画面（dawn）＋ RUN OVER 画面
   "newGame(); startWave(); game.lastWord='いっしょに かえろう'; game.newWords=['arigatou']; game.ending=ENDINGS[0]; game.state=STATES.DAWN; render(); __o.push('showResult(dawn) ok');",
   "game.state=STATES.RUN_OVER; render(); __o.push('showResult(over) ok');",
+  // 全shapeのピクセルスプライトが壊れず生成されるか（rect数で簡易検証）",
+  "['circle','ghost','bunny','spider','boss'].forEach(function(sh){ ['neutral','happy','sad'].forEach(function(ex){ var s=creatureSVG('#8f9ee0',sh,ex); if(!/^<svg/.test(s)||(s.match(/<rect/g)||[]).length<18) throw 'sprite broken: '+sh+'/'+ex; }); });",
+  "__o.push('sprites: 全shape×表情 生成OK');",
   "return __o.join('\\n');"
 ].join("\n");
 
