@@ -38,7 +38,8 @@ var stub = [
   "  querySelector:function(){return __el();},querySelectorAll:function(){return [];},",
   "  body:__el(),addEventListener:function(){}};",
   "var window={addEventListener:function(){},AudioContext:undefined,webkitAudioContext:undefined};",
-  "function setTimeout(){return 0;} function clearTimeout(){} function setInterval(){return 0;} function clearInterval(){}",
+  // setTimeout はコールバックを“その場で”実行＝遅延演出(playFxのstagger等)の参照エラーも検出する",
+  "function setTimeout(fn){ if(typeof fn==='function'){ fn(); } return 0; } function clearTimeout(){} function setInterval(){return 0;} function clearInterval(){}",
 ].join("\n");
 
 // ── 各画面・演出を実際に呼んで、落ちないか確認する ──

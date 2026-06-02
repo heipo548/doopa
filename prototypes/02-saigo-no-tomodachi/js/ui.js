@@ -40,11 +40,11 @@ function tint(hex, f) { const [r, g, b] = _hex2rgb(hex); return _rgb2hex([r + (2
 function _inC(x, y, cx, cy, r) { const dx = x - cx + 0.5, dy = y - cy + 0.5; return dx * dx + dy * dy <= r * r; }
 // 形ごとの体型（楕円）。全部おなじ丸を脱却し、シルエットで描き分ける。
 const SHAPE_BODY = {
-  circle: { cx: 8, cy: 9, rx: 6, ry: 6 },   // まる
+  circle: { cx: 8, cy: 10, rx: 6, ry: 5 },  // ずんぐり丸（かわいい・低い）
   bunny:  { cx: 8, cy: 9, rx: 5, ry: 6 },   // 縦長
   ghost:  { cx: 8, cy: 8, rx: 6, ry: 6 },   // 下を波打たせる
-  spider: { cx: 8, cy: 9, rx: 7, ry: 5 },   // 横広
-  boss:   { cx: 8, cy: 9, rx: 7, ry: 7 },   // 一回り大きい
+  spider: { cx: 8, cy: 9, rx: 7, ry: 5 },   // 横広・平たい
+  boss:   { cx: 8, cy: 9, rx: 7, ry: 8 },   // 大きく縦に伸びて 威圧的
 };
 function _inE(x, y, b) { const dx = (x - b.cx + 0.5) / b.rx, dy = (y - b.cy + 0.5) / b.ry; return dx * dx + dy * dy <= 1; }
 
@@ -80,8 +80,10 @@ function _accent(grid, shape, col) {
   } else if (shape === "spider") {
     [[0, 9], [1, 9], [0, 11], [1, 11], [14, 9], [15, 9], [14, 11], [15, 11]].forEach(([x, y]) => put(x, y, col.OUT));
   } else if (shape === "boss") {
+    // 冠＋とがった角＝“ぬし”の威圧感（ただ大きい丸からの脱却）
     [[5, 1], [7, 0], [9, 1]].forEach(([x, y]) => put(x, y, "#ffd86b"));
     [[5, 2], [6, 2], [7, 2], [8, 2], [9, 2]].forEach(([x, y]) => put(x, y, "#e0b24a"));
+    [[2, 2], [2, 1], [13, 2], [13, 1]].forEach(([x, y]) => put(x, y, col.OUT)); // 左右の角
   } else if (shape === "ghost") {
     // 裾をギザギザに（足なし・ふわふわ）。下2行を互い違いに抜いて“おばけの裾”に。
     for (let x = 0; x < SPR; x++) {
@@ -345,22 +347,25 @@ function renderCommands() {
   const p = game.player;
   const hasItem = Object.keys(p.items).some((k) => p.items[k] > 0);
   const savableExists = livingEnemies().some((e) => e.wall === 0); // 「手をのばす」が押せる状況か
+  const w1 = waveNumber() === 1; // ウェーブ1は最小コマンドに絞る（最初の認知コストを下げる）
   // ごく最初の一手だけ、まず押すボタン（ぶつける）を脈動させて“入口”を体で示す。
-  const firstTurn = waveNumber() === 1 && game.turn === 0 && game.counters.kill === 0 && game.counters.save === 0;
+  const firstTurn = w1 && game.turn === 0 && game.counters.kill === 0 && game.counters.save === 0;
 
   // プレイヤーに見える名前は“ことばで戦う口喧嘩”に寄せる（内部の cmd キーは据え置き）。
   //   ぶつける＝とげとげした言葉 ／ きいてみる＝相手の声をきく ／ 手をのばす＝迎える ／ こらえる＝耐える
+  //   show: ウェーブ1では ぶつける/きいてみる ＋（むかえられる時だけ）手をのばす だけ。もちもの/こらえる は2波目から。
   const defs = [
-    { cmd: "fight", label: "ぶつける", sub: "きついことば", cls: "c-fight", on: active },
-    { cmd: "act", label: "きいてみる", sub: `きく・こころ-${BALANCE.actCost}`, cls: "c-act", on: active && p.kokoro >= BALANCE.actCost },
-    // 壁0の子がいない時は「さきに きいてみる」と理由を出し、“押せない謎”を消す
-    { cmd: "save", label: "手をのばす", sub: savableExists ? `むかえる・こころ-${BALANCE.saveCost}` : "さきに きいてみる", cls: "c-save", on: active && p.kokoro >= BALANCE.saveCost && savableExists },
-    { cmd: "item", label: "もちもの", sub: "おまもり", cls: "c-item", on: active && hasItem },
-    { cmd: "defend", label: "こらえる", sub: "まもる", cls: "c-defend", on: active },
+    { cmd: "fight", label: "ぶつける", sub: "きついことば", cls: "c-fight", on: active, show: true },
+    { cmd: "act", label: "きいてみる", sub: w1 ? "きく" : `きく・こころ-${BALANCE.actCost}`, cls: "c-act", on: active && p.kokoro >= BALANCE.actCost, show: true },
+    { cmd: "save", label: "手をのばす", sub: savableExists ? (w1 ? "むかえる" : `むかえる・こころ-${BALANCE.saveCost}`) : "さきに きいてみる", cls: "c-save", on: active && p.kokoro >= BALANCE.saveCost && savableExists, show: !w1 || savableExists },
+    { cmd: "item", label: "もちもの", sub: "おまもり", cls: "c-item", on: active && hasItem, show: !w1 },
+    { cmd: "defend", label: "こらえる", sub: "まもる", cls: "c-defend", on: active, show: !w1 },
   ];
 
+  const shown = defs.filter((d) => d.show);
+  bar.style.gridTemplateColumns = `repeat(${shown.length}, 1fr)`; // 表示数に合わせて中央寄せ
   bar.innerHTML = "";
-  for (const d of defs) {
+  for (const d of shown) {
     const b = document.createElement("button");
     b.className = "cmd " + d.cls;
     if (ui.mode === d.cmd || (d.cmd === "fight" && (ui.mode === "weapon" || ui.mode === "fightTarget")) ||
@@ -631,58 +636,56 @@ function doAction(fn, seName) {
 function playFx(prevRects) {
   prevRects = prevRects || {};
   if (!Array.isArray(game.fx) || !game.fx.length) return;
-  let pdmg = 0, calmed = false, healed = false;
-  // ── ① まず「自分が言った／効いた」ぶんを すぐ出す（プレイヤーの番の手応え）──
+  let pdmg = 0;
+  const impacts = [];  // 相手に“刺さる”系（少し遅らせ、複数は順に出して頭数を見せる）
+  let learnEv = null;
+  // ── ① プレイヤーが「言った／自分に起きた」ぶんは すぐ ──
   for (const ev of game.fx) {
-    if (ev.t === "hit") {
-      // 与ダメは大きく。撃破は数字に「！」＋ポフ（消えた手応え）、通常はゆれ＋ピカッ
-      floatOnEnemy(ev.uid, ev.dead ? `${ev.dmg}!` : `${ev.dmg}`, ev.dead ? "dmg dead" : "dmg", prevRects);
-      if (ev.dead) { deadPoof(ev.uid, prevRects, ev.color); playSe("die"); } // パンッ！＝退けた手応え
-      else { shakeEnemy(ev.uid); flashEnemy(ev.uid); }
-    } else if (ev.t === "calm") {
-      floatOnEnemy(ev.uid, "ほっ…", "calm", prevRects);
-      calmed = true;
-    } else if (ev.t === "save") {
-      floatOnEnemy(ev.uid, "なかまに なった！", "save", prevRects);
-      saveBurst(ev.uid, prevRects); // あたたかい光がふわっと広がる＝救った手応え
-    } else if (ev.t === "wallhit") {
-      // きいてみる が効いて壁が下がった＝その場で「効いた」を見せる（救済ループの毎手に手応え）
-      floatOnEnemy(ev.uid, `♡ −${ev.amount}`, "calm", prevRects);
-      flashEnemy(ev.uid);
-    } else if (ev.t === "noeffect") {
-      floatOnEnemy(ev.uid, "…？", "miss", prevRects); // 響かなかった＝“外した”手応え
-      playSe("miss");
-    } else if (ev.t === "learn") {
-      // 本作の核「言えなかった言葉が言えた」を、なかまスプライト発の大きな手応えに格上げ
-      const lastN = document.querySelector("#nakama-tray .nakama:last-child");
-      if (lastN) { lastN.classList.add("pop"); }
-      wordBubble(`「${ev.text}」が 言えた！`, "yasashii");
-      playSe("learn");
-    } else if (ev.t === "pdmg") {
-      pdmg += ev.dmg; // 群れの反撃ぶんは ②へ回す
-    } else if (ev.t === "pheal") {
-      healed = true; pulsePlayerBar(); floatOnPlayer(`HP＋${ev.amount}`, "pheal");
-    } else if (ev.t === "kregen") {
-      // 静かな夜に こころが戻る＝救いルートの燃料。見えないと効果が伝わらないので可視化。
-      pulseKokoro(); floatOnPlayer(`こころ＋${ev.amount}`, "kregen");
-    } else if (ev.t === "speak") {
-      wordBubble(ev.text, ev.cat); // 言ったことばを吹き出しで（カテゴリで色とトーンが変わる）
-    } else if (ev.t === "kyoki") {
-      meterFloat("kyoki", "とげとげ＋");
-    } else if (ev.t === "nukumori") {
-      meterFloat("nukumori", "やさしい＋");
-      if (ev.bonus && ev.bonus.hpUp > 0) pulsePlayerBar();
-    }
+    if (ev.t === "speak") wordBubble(ev.text, ev.cat);
+    else if (ev.t === "kyoki") meterFloat("kyoki", "とげとげ＋");
+    else if (ev.t === "nukumori") { meterFloat("nukumori", "やさしい＋"); if (ev.bonus && ev.bonus.hpUp > 0) pulsePlayerBar(); }
+    else if (ev.t === "pheal") { pulsePlayerBar(); floatOnPlayer(`HP＋${ev.amount}`, "pheal"); playSe("heal"); }
+    else if (ev.t === "kregen") { pulseKokoro(); floatOnPlayer(`こころ＋${ev.amount}`, "kregen"); }
+    else if (ev.t === "pdmg") pdmg += ev.dmg;
+    else if (ev.t === "learn") learnEv = ev;
+    else impacts.push(ev); // hit / calm / save / wallhit / noeffect
   }
-  if (calmed) playSe("calm");
-  if (healed) playSe("heal");
-  // ── ② 群れの反撃は ひと呼吸おいて出す＝「自分が言った→（間）→殴られた」の因果が体で分かる ──
-  if (pdmg > 0) {
+  // ── ② 「言った→（ため）→刺さる」：相手への効果は少し遅らせ、複数は i*70ms で順に ──
+  let calmPlayed = false;
+  impacts.forEach((ev, i) => {
+    const yoff = i * 12; // 複数体は少し縦にずらして“何体に効いたか”を見せる
     setTimeout(() => {
-      screenShake(); hitVignette();
-      floatOnPlayer(`-${pdmg}`, "pdmg"); // 被弾した数字を自分側に（与ダメだけ見える非対称を解消）
-    }, 200);
-  }
+      if (ev.t === "hit") {
+        floatOnEnemy(ev.uid, ev.dead ? `${ev.dmg}!` : `${ev.dmg}`, ev.dead ? "dmg dead" : "dmg", prevRects, yoff);
+        if (ev.dead) { deadPoof(ev.uid, prevRects, ev.color); }
+        else { shakeEnemy(ev.uid); flashEnemy(ev.uid); }
+      } else if (ev.t === "wallhit") {
+        floatOnEnemy(ev.uid, `♡ −${ev.amount}`, "calm", prevRects, yoff); flashEnemy(ev.uid);
+      } else if (ev.t === "calm") {
+        floatOnEnemy(ev.uid, "ほっ…", "calm", prevRects, yoff);
+        if (!calmPlayed) { playSe("calm"); calmPlayed = true; }
+      } else if (ev.t === "save") {
+        floatOnEnemy(ev.uid, "なかまに なった！", "save", prevRects, yoff); saveBurst(ev.uid, prevRects);
+      } else if (ev.t === "noeffect") {
+        floatOnEnemy(ev.uid, "…？", "miss", prevRects, yoff); playSe("miss");
+      }
+    }, 120 + i * 70);
+  });
+  // 撃破音は 1バッチ1回だけ（多重撃破で濁らない）
+  if (impacts.some((e) => e.t === "hit" && e.dead)) setTimeout(() => playSe("die"), 130);
+  const tail = 120 + impacts.length * 70;
+  // ── ③ 「言えた！」は 救済の光が引いたあと、単独で立たせる（本作の核を一拍おいて刺す） ──
+  if (learnEv) setTimeout(() => {
+    const lastN = document.querySelector("#nakama-tray .nakama:last-child");
+    if (lastN) lastN.classList.add("pop");
+    wordBubble(`「${learnEv.text}」が 言えた！`, "yasashii");
+    playSe("learn");
+  }, tail + 260);
+  // ── ④ 群れの反撃は ぜんぶの後に＝「自分が言った→刺さる→殴られた」の順で因果が体に来る ──
+  if (pdmg > 0) setTimeout(() => {
+    screenShake(); hitVignette();
+    floatOnPlayer(`-${pdmg}`, "pdmg"); // 与ダメだけ見える非対称を解消
+  }, tail + 180);
   game.fx = [];
 }
 
@@ -741,7 +744,7 @@ function meterFloat(which, text) {
 }
 
 // 敵カード（または“居た場所”prevRects）の上に、数字や言葉をふわっと浮かせて消す。
-function floatOnEnemy(uid, text, cls, prevRects) {
+function floatOnEnemy(uid, text, cls, prevRects, yoff) {
   const host = $("game");
   if (!host) return;
   let x, y;
@@ -752,6 +755,7 @@ function floatOnEnemy(uid, text, cls, prevRects) {
   } else if (prevRects && prevRects[uid]) {
     x = prevRects[uid].x; y = prevRects[uid].y - 14; // 消えた敵は控えた中心の少し上に
   } else { return; }
+  y -= (yoff || 0); // 複数同時ヒットを少し縦にずらす
   const el = document.createElement("div");
   el.className = "float-num " + cls;
   el.textContent = text;
