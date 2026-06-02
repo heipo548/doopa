@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>さいごのともだち — ことばで、たたかう夜</title>
   <meta name="description" content="ことばで戦う口喧嘩バトルのサバイバーRPG「さいごのともだち」。ぶつけるか、きいてみるか、手をのばすか。言えなかった言葉が、言えるようになる。" />
+  <!-- 日本語ピクセルフォント（DotGothic16）。ドット絵の雰囲気を一気に上げる。
+       読み込めない/オフライン時は下の system フォントへ自動フォールバックするので動作には影響しない。 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="theme-night">
@@ -45,6 +50,9 @@
       <button id="mute-btn" title="音のON/OFF">♪</button>
     </header>
 
+    <!-- なかま：手をのばして むかえた友が ここに並んで増えていく（救った手応え） -->
+    <section id="nakama-tray" aria-label="なかま"></section>
+
     <!-- 敵エリア -->
     <section id="enemy-area"></section>
 
@@ -73,21 +81,11 @@
            演出は .title-prologue（style.css）。傷つける/わかりあう の二択が、口喧嘩バトルの核。 -->
       <p class="title-prologue">ながい よるの はなし。
 ともだちは みんな いなくなった。
-それでも 夜は、だれかを つれてくる。
-ここでは ことばが、ぶきになる。
-きずつける？ それとも、わかりあう？</p>
-      <p class="title-lead">
-        武器ではなく、<b>ことば</b>で群れと向きあう ひと晩の口喧嘩。<br />
-        <b>ぶつける</b>と早く退けられる。でも<b>手をのばす</b>には、聞いて、待つ手間がいる。<br />
-        手が止まらないのに、心が止まる――そして、<b>言えなかった言葉が言えるようになる</b>。
-      </p>
-      <div class="title-how">
-        <div><b>ぶつける</b>：きついことばを ぶつける。早く退けられるが、狂気がたまる。</div>
-        <div><b>きいてみる</b>：相手の声をきく。心の壁を下げ、効くことばを探す。</div>
-        <div><b>手をのばす</b>：壁が消えた相手を むかえる。遅いが、誰も失わない＝ことばを教わる。</div>
-        <div><b>こらえる / もちもの</b>：耐える・おまもりで、つらい夜をしのぐ。</div>
-      </div>
+それでも 夜は、だれかを つれてくる。</p>
+      <p class="title-lead">ことばで、ひと晩を生きのびる。<br />
+        きついことばで <b>おいはらう</b> か、やさしいことばで <b>ともだち</b> にするか。</p>
       <button id="start-btn" class="start-btn">▶ はじめる</button>
+      <p class="title-foot">遊びかたは ゲーム内で やさしく案内します</p>
     </div>
   </div>
 

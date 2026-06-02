@@ -705,3 +705,162 @@ body.theme-over  { background: radial-gradient(circle at 50% 20%, #3a0e1a, #0a05
 @media (prefers-reduced-motion: reduce) {
   .scene-stars, .lantern, .walker, .word-bubble, .meter.bump, .meter-float { animation: none !important; }
 }
+
+/* ============================================================
+   v0.3 ピクセルリニューアル
+   指摘：①ドット絵に見えない ②BGM暗い ③要素が多い ④手応え/救った感が薄い ⑤罵声を増やしたい
+   ここでは ①③④の見た目側を担当。後勝ちで上書きする。
+   方針：実スプライト(SVG)＋日本語ピクセルフォント＋平面パレット＋硬い縁＋オフセット影。
+        やわらかグラデ・大きな角丸を抑え、手応えはアクター上の数字・光・なかまの増加で見せる。
+   ============================================================ */
+
+/* 日本語ピクセルフォント（DotGothic16）。未読込/オフライン時は system へ自動フォールバック。 */
+html, body {
+  font-family: "DotGothic16", -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+}
+/* すべてのドット絵をくっきり（拡大してもにじませない） */
+.spr, #scene, #scene *, .enemy-fig svg, .nakama svg { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+/* 敵スプライトの器：古い“もち感”の円（グラデ・影・丸み）をやめ、ピクセルスプライトだけを見せる */
+.enemy-fig {
+  width: 64px; height: 64px;
+  background: none !important; border-radius: 0 !important; box-shadow: none !important;
+  animation: none !important;
+}
+.enemy.boss .enemy-fig { width: 104px; height: 104px; }
+.enemy-fig svg { display: block; width: 100%; height: 100%; }
+.enemy-fig.calm { filter: drop-shadow(0 0 7px rgba(255,200,110,0.8)); } /* おだやか＝あたたかい光 */
+/* 被弾：一瞬 白くピカッ＆ぐっと縮む（ことばが刺さった手応え） */
+.enemy-fig.hitpop { animation: hitpop 0.26s steps(2, end) !important; }
+@keyframes hitpop {
+  0%   { transform: scale(1); filter: brightness(3.5) saturate(0.2); }
+  50%  { transform: scale(0.82) translateX(-2px); }
+  100% { transform: scale(1); filter: none; }
+}
+/* 敵カードの“もち”ゆれ等は止め、ドット然とした静けさに（選択時だけ光る） */
+.enemy.calm { animation: none !important; }
+.enemy.selectable { animation: none !important; box-shadow: 0 0 0 2px var(--gold); }
+
+/* ── なかまトレイ（むかえた友が並んで増える＝救った手応え）── */
+#nakama-tray {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 4px 12px; min-height: 30px;
+  border-bottom: 2px solid var(--line); background: rgba(0,0,0,0.22);
+}
+.nakama-label { font-size: 11px; color: var(--gold); margin-right: 4px; letter-spacing: 1px; }
+.nakama-empty { font-size: 11px; color: var(--text-dim); }
+.nakama { width: 26px; height: 26px; display: inline-block; }
+.nakama svg { width: 100%; height: 100%; display: block; }
+.nakama.pop { animation: nakamapop 0.5s cubic-bezier(.2,.9,.3,1.25); }
+@keyframes nakamapop {
+  0%   { transform: translateY(-16px) scale(0.2); opacity: 0; }
+  60%  { transform: translateY(0) scale(1.25); opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+
+/* ── 「きもち」バー（左＝とげとげ／中央＝0／右＝やさしい）。2本→1本で要素削減 ── */
+.mood-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.mood-end { font-size: 10px; width: 50px; text-align: center; }
+.mood-end.toge { color: #e08ab2; } .mood-end.yasashii { color: #ffc98a; }
+.mood-track { position: relative; flex: 1; height: 12px; background: rgba(0,0,0,0.4); border: 2px solid var(--line); overflow: hidden; }
+.mood-fill { position: absolute; top: 0; bottom: 0; transition: width 0.35s ease; }
+.mood-fill.kyoki { right: 50%; background: linear-gradient(90deg, #7a3b6e, #c0457f); }
+.mood-fill.nukumori { left: 50%; background: linear-gradient(90deg, #ffcf8a, #ff9f6b); }
+.mood-center { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: var(--text); transform: translateX(-50%); }
+.mood-track.bump { animation: meterbump 0.3s ease; }
+.bond-line { font-size: 11px; color: var(--kokoro); margin-top: 3px; }
+
+/* ── 撃破ポフ＆むかえた光（アクター上の手応え）── */
+.poof {
+  position: absolute; transform: translate(-50%,-50%); width: 32px; height: 32px;
+  pointer-events: none; z-index: 40;
+  background: radial-gradient(circle, rgba(255,255,255,0.9), rgba(180,160,220,0) 70%);
+  animation: poof 0.5s ease-out forwards;
+}
+@keyframes poof { 0% { transform: translate(-50%,-50%) scale(0.4); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(2.4); opacity: 0; } }
+.save-burst {
+  position: absolute; transform: translate(-50%,-50%); width: 44px; height: 44px;
+  pointer-events: none; z-index: 41;
+  background: radial-gradient(circle, rgba(255,224,150,0.95), rgba(255,170,70,0) 68%);
+  animation: saveburst 0.72s ease-out forwards;
+}
+@keyframes saveburst { 0% { transform: translate(-50%,-50%) scale(0.3); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(2.8); opacity: 0; } }
+.float-num.save { color: #ffd86b; font-size: 18px; }
+
+/* ── ログは小さく後ろへ（チャット依存を減らす）。手応えは上で見せる ── */
+#log { height: 50px; opacity: 0.8; font-size: 11px; }
+
+/* ── フラット＆ピクセルなUI（やわらかグラデ・大きな角丸を抑える）── */
+.cmd {
+  border-radius: 4px; border: 2px solid rgba(0,0,0,0.55);
+  box-shadow: 0 3px 0 rgba(0,0,0,0.45); color: #1a1020;
+}
+.cmd:hover:not(:disabled) { transform: translateY(-2px); }
+.cmd.on { box-shadow: 0 0 0 3px var(--gold) inset, 0 3px 0 rgba(0,0,0,0.45); }
+.c-fight  { background: #e8617f; }
+.c-act    { background: #46cfc0; }
+.c-save   { background: #5fd98a; }
+.c-item   { background: #f0c24a; }
+.c-defend { background: #9aa3cf; }
+.sub-btn { border-radius: 4px; border-width: 2px; box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+.bar { border-radius: 2px; border: 1px solid rgba(0,0,0,0.45); }
+.bar .fill { border-radius: 0; box-shadow: none; }
+.card-pick, .ov-panel, .enemy-hint, .word-chip, #toast { border-radius: 4px; }
+.enemy { border-radius: 6px; }
+
+/* プレイヤー側に出す数字（被弾＝赤／回復＝緑／こころ＝青緑）。与ダメだけ見える非対称を解消。 */
+.float-num.pdmg { color: #ff5d7a; font-size: 26px; }
+.float-num.pheal { color: #7be0a0; font-size: 18px; }
+.float-num.kregen { color: var(--kokoro); font-size: 16px; }
+/* こころが戻った合図（こころバー側のやわらか明滅） */
+#player-bar.kokoropulse { animation: kokoropulse 0.6s ease; }
+@keyframes kokoropulse { 0%,100% { background: transparent; } 50% { background: rgba(79,214,200,0.16); } }
+/* タイトルの一言フッタ（説明はゲーム内に委譲した受け皿） */
+.title-foot { font-size: 11px; color: var(--text-dim); margin-top: 10px; }
+
+/* スプライトのゆるい“いきもの”感（ふわっと上下）。enemy-fig自体はanim固定なので中のsvgを動かす。 */
+.enemy-fig svg { animation: spritebob 2.8s ease-in-out infinite; }
+.enemy:nth-child(even) .enemy-fig svg { animation-delay: 0.9s; }
+.enemy:nth-child(3n) .enemy-fig svg { animation-delay: 1.5s; }
+@keyframes spritebob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
+.nakama svg { animation: spritebob 3.2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  #player-bar.kokoropulse, .enemy-fig svg, .nakama svg { animation: none !important; }
+}
+
+/* ============================================================
+   v0.3 cycle2：背景シーンも“ドット絵”に／効いた・外した手応え／入口の脈動
+   指摘：#scene のなめらかグラデ・丸点には pixelated が効かず「ドット絵に見えない」最大要因。
+        → 空を ハードな色帯、星を 四角ドット、灯り・仲間を 角ばらせる。
+   ============================================================ */
+
+/* 空：なめらかグラデ → くっきりした色帯（ドット絵の段階色）に */
+.scene-sky {
+  background: linear-gradient(180deg,
+    #0d0b20 0 20%, #181440 20% 38%, #2a2256 38% 54%,
+    #4b3768 54% 70%, #8a5468 70% 83%, #c1784f 83% 93%, #e0a85c 93% 100%) !important;
+}
+/* 星：radialの丸点 → box-shadow製の四角ドットを散らす（image-renderingが効くカクッとした点） */
+.scene-stars {
+  background: none !important;
+  width: 2px; height: 2px; top: 7%; left: 6%;
+  box-shadow:
+    30px 14px #fff, 90px 40px #ffe9c0, 150px 10px #fff, 210px 52px #fff,
+    280px 22px #ffe9c0, 60px 70px #fff, 200px 90px #fff, 330px 60px #fff,
+    120px 100px #ffe9c0, 260px 120px #fff, 380px 30px #fff, 430px 80px #ffe9c0;
+}
+/* 灯り・仲間シルエットを角ばらせて“ドット”に */
+.lantern { border-radius: 0 !important; }
+.walker, .walker::before, .walker::after { border-radius: 0 !important; }
+
+/* 響かなかった“…？”（淡いグレー） */
+.float-num.miss { color: #c9c4dd; font-size: 18px; }
+
+/* 最初の入口ボタンの脈動（“まず これ押して”を体で示す） */
+.cmd.pulse { animation: cmdpulse 0.9s ease-in-out infinite; }
+@keyframes cmdpulse {
+  0%,100% { box-shadow: 0 3px 0 rgba(0,0,0,0.45), 0 0 0 0 rgba(255,216,107,0.0); transform: translateY(0); }
+  50%     { box-shadow: 0 3px 0 rgba(0,0,0,0.45), 0 0 0 4px rgba(255,216,107,0.75); transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) { .cmd.pulse { animation: none !important; } }

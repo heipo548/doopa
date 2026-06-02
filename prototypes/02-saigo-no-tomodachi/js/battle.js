@@ -56,9 +56,14 @@ function reduceWall(enemy, amount) {
   if (enemy.dead || enemy.saved) return;
   const before = enemy.wall;
   enemy.wall = Math.max(0, enemy.wall - amount);
-  if (enemy.wall === 0 && before > 0) {
+  const dropped = before - enemy.wall;
+  if (dropped <= 0) return;
+  if (enemy.wall === 0) {
     log(`  ${enemy.name} の心の壁が ほどけた…「すくえそう」`);
     pushFx({ t: "calm", uid: enemy.uid }); // おだやかになった瞬間の演出
+  } else {
+    // まだ壁は残るが“効いた”＝その場で手応えを出す（ログを読まなくても分かる）
+    pushFx({ t: "wallhit", uid: enemy.uid, amount: dropped });
   }
 }
 
@@ -92,6 +97,7 @@ function cmdFight(weaponId, targetUid) {
   const base = weaponPower(weaponId);
   const said = w.word || w.name;
   game.lastWord = said;
+  game.lastWeapon = weaponId; // SE をことばごとに変えるため（バカ/だまれ/うるさい…の鳴き分け）
   log(`▶ ${game.player.name}「${said}」！`);
   // 言ったことばを吹き出しで見せる（とげとげ＝不穏なトーン）
   pushFx({ t: "speak", text: said, cat: w.category || "toge" });
@@ -107,6 +113,11 @@ function cmdFight(weaponId, targetUid) {
     applyDamage(t, dmg);
     // 進化ことば（もう みんな きらい／いっしょに かえろう）は壁も下げる
     if (w.wallDown) reduceWall(t, w.wallDown);
+    // 「だまれ」などは相手を1ターン黙らせる＝罵声ごとの役割の違い
+    if (w.silence && !t.dead && !t.saved) {
+      t.status.silence = Math.max(t.status.silence, w.silence);
+      log(`  ${t.name} は だまってしまった（次ターン うごけない）`);
+    }
   }
   // ことばの性質に応じて 狂気／ぬくもり を積む（「いっしょに かえろう」は ぬくもり側）
   if (w.kyoki) { gainKyoki(w.kyoki); pushFx({ t: "kyoki", amount: w.kyoki }); }
@@ -181,6 +192,7 @@ function cmdAct(actId, targetUid) {
   if (!didSomething) {
     if (word.category === "silence") log(`  …しずかな間が ながれた`);
     else log(`  …${t.name} には 響いていない（このことばは いまの相手に効かない）`);
+    pushFx({ t: "noeffect", uid: t.uid }); // “外した”手応え（ログを読まなくても分かる）
   }
 
   // やさしさ／とげ のゲージ（ことばの性質に応じて）
@@ -217,9 +229,21 @@ function cmdSave(targetUid) {
   pushFx({ t: "speak", text: "いっしょに かえろう", cat: "yasashii" });
   pushFx({ t: "save", uid: t.uid }); // むかえた瞬間の やわらかい演出
 
+  // むかえた友を「なかま」に記録＝画面上部に顔が並んで増えていく（“救った感”の核）。
+  if (Array.isArray(game.savedFriends)) {
+    game.savedFriends.push({ type: t.type, name: t.name, color: t.color, shape: t.shape });
+  }
+
   // むかえた友から “ことば” を教わる＝言えることが増える（救済→語彙の接続）。
+  //   新しく覚えた瞬間は「○○が 言えるようになった」を強調＝本作の核を即時の快感に。
   const base = ENEMIES[t.type] || {};
-  if (base.gift) learnWord(base.gift);
+  if (base.gift) {
+    const learnedNow = learnWord(base.gift);
+    if (learnedNow) {
+      const gw = KIND_WORDS[base.gift];
+      pushFx({ t: "learn", text: gw ? gw.word : "" });
+    }
+  }
 
   // 手をのばす行為そのものにも ぬくもりが宿る（救いルートの雪だるまを後押し）
   { const r = gainNukumori(1); pushFx({ t: "nukumori", amount: 1, bonus: r }); }

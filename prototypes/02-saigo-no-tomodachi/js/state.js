@@ -30,6 +30,12 @@ let _enemyUid = 0;
 // ──────────────────────────────────────────
 function newGame() {
   _enemyUid = 0;
+  // 開始の きついことば（罵声）は複数持てる。startWeapons があればそれを、無ければ単体 startWeapon を使う。
+  const startWeapons = (PLAYER_INIT.startWeapons && PLAYER_INIT.startWeapons.length)
+    ? PLAYER_INIT.startWeapons.slice()
+    : [PLAYER_INIT.startWeapon];
+  const startWeaponLv = {};
+  startWeapons.forEach((id) => { startWeaponLv[id] = 1; });
   game = {
     state: STATES.RUN_START,
     player: {
@@ -38,8 +44,8 @@ function newGame() {
       maxHp: PLAYER_INIT.maxHp,
       kokoro: PLAYER_INIT.maxKokoro,
       maxKokoro: PLAYER_INIT.maxKokoro,
-      weapons: [PLAYER_INIT.startWeapon], // 持っている きついことば（ぶつけるで使う）
-      weaponLv: { [PLAYER_INIT.startWeapon]: 1 }, // ことばごとの Lv（とがり具合）
+      weapons: startWeapons,      // 持っている きついことば（ぶつけるで使う・複数）
+      weaponLv: startWeaponLv,    // ことばごとの Lv（とがり具合）
       words: (PLAYER_INIT.startWords || []).slice(), // 覚えた やさしいことば（KIND_WORDS の id。増えていく）
       passives: {},          // 取得済みパッシブ key -> true
       items: Object.assign({}, PLAYER_INIT.items), // もちもの所持数
@@ -64,6 +70,7 @@ function newGame() {
     fx: [],                  // 演出イベントの一時キュー（ダメージ数字・揺れ等。UIが描画後に消費）
     lastWord: null,          // 最後に言ったことば（結末で「さいごに のこった ことば」に使う）
     newWords: [],            // このランで新しく覚えたことば（語彙が増えた手応えの可視化用）
+    savedFriends: [],        // むかえた友（{type,name,color,shape}）＝画面上部の「なかま」に並べて“救った感”を出す
   };
   return game;
 }

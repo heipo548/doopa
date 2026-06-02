@@ -19,7 +19,10 @@ const PLAYER_INIT = {
                       // ※20→26：序盤は群れの被弾が一気にかさむため、立て直す余裕を確保
   maxKokoro: 10,      // こころ＝やさしさ/問いかけのリソース。きいてみる／手をのばす で消費
                       // ※8→10：1ウェーブで“きいて、むかえる”を複数こなすには燃料がいる
-  startWeapon: "namida", // 開始の きついことば：「バカ」（単体6）。internal id は据え置き（互換のため）
+  // 開始の きついことば（罵声）を複数に：最初から“言い方を選べる”手応えを出す。
+  //   バカ＝単体強／だまれ＝単体軽い連打／うるさい＝前列2体。internal id は据え置き（互換のため）。
+  startWeapons: ["namida", "damare", "poyo"],
+  startWeapon: "namida", // （後方互換のため一応残す。実際は startWeapons を使う）
   startWords: [],     // 開始時に持っている“やさしいことば”（最初はまだ少ない＝言えることが増えていく成長）
   items: { heal: 3 }, // もちもの（おまもり）の初期所持
                       // ※2→3：単体ことばだと序盤の処理に手間取るので回復を1つ増量
@@ -100,11 +103,11 @@ const BALANCE = {
 // ──────────────────────────────────────────
 const ACTS = {
   nade:   { name: "どうしたの？",     word: "どうしたの？",     category: "toi",      wall: 1,             nukumori: 0, desc: "問いかけ：心の壁 −1（効く相手に）" },
-  uta:    { name: "こわかったね",     word: "こわかったね",     category: "yasashii", wall: 1, atkDown: 1, nukumori: 1, desc: "やさしい：壁 −1 ／ 相手の とげ −1 ／ ぬくもり＋" },
-  ayasu:  { name: "ここに いるよ",   word: "ここに いるよ",   category: "yasashii", wall: 1,             nukumori: 1, desc: "やさしい：壁 −1（こわがりに効く）／ ぬくもり＋" },
-  nadame: { name: "もう だいじょうぶ", word: "もう だいじょうぶ", category: "yasashii", wall: 1,           nukumori: 1, desc: "やさしい：壁 −1（こわがりに効く）／ ぬくもり＋" },
+  uta:    { name: "こわかったね",     word: "こわかったね",     category: "yasashii", wall: 1, atkDown: 1, nukumori: 1, desc: "やさしい：壁 −1 ／ 相手が おとなしくなる ／ やさしい＋" },
+  ayasu:  { name: "ここに いるよ",   word: "ここに いるよ",   category: "yasashii", wall: 1,             nukumori: 1, desc: "やさしい：壁 −1（こわがりに効く）／ やさしい＋" },
+  nadame: { name: "もう だいじょうぶ", word: "もう だいじょうぶ", category: "yasashii", wall: 1,           nukumori: 1, desc: "やさしい：壁 −1（こわがりに効く）／ やさしい＋" },
   yobi:   { name: "ねえ、きこえる？", word: "ねえ、きこえる？", category: "toi",      wall: 1, silence: 1, nukumori: 0, desc: "問いかけ：壁 −1 ／ 相手を1ターン とめる" },
-  negau:  { name: "おねがい、きかせて", word: "おねがい、きかせて", category: "toi",   wall: 1,             nukumori: 1, desc: "問いかけ：壁 −1（ぬしさまの声を きく）／ ぬくもり＋" },
+  negau:  { name: "おねがい、きかせて", word: "おねがい、きかせて", category: "toi",   wall: 1,             nukumori: 1, desc: "問いかけ：壁 −1（ぬしさまの声を きく）／ やさしい＋" },
 };
 
 // ──────────────────────────────────────────
@@ -116,11 +119,11 @@ const ACTS = {
 //   sadWall:true は「沈黙」など、悲しんでいる相手にだけ壁が −1 届く特別ルール。
 // ──────────────────────────────────────────
 const KIND_WORDS = {
-  gomen:     { name: "ごめんね",       word: "ごめんね",       category: "yasashii", heal: 3,    nukumori: 1, desc: "やさしい：自分の HP＋3 ／ ぬくもり＋" },
-  arigatou:  { name: "ありがとう",     word: "ありがとう",     category: "yasashii", atkDown: 1, nukumori: 1, desc: "やさしい：相手の とげ −1 ／ ぬくもり＋" },
-  kowakunai: { name: "こわくないよ",   word: "こわくないよ",   category: "yasashii", atkDown: 1, nukumori: 1, desc: "やさしい：相手の とげ −1 ／ ぬくもり＋" },
-  shizuka:   { name: "……（だまる）",  word: "……",            category: "silence",  sadWall: 1, nukumori: 1, desc: "沈黙：なにも言わない。さみしい子の壁が すこしほどける ／ ぬくもり＋" },
-  mataaeru:  { name: "また あえるよ",  word: "また あえるよ",  category: "yasashii", heal: 4,    nukumori: 2, desc: "やさしい：HP＋4 ／ ぬくもり＋＋（むかえた友の とくべつなことば）" },
+  gomen:     { name: "ごめんね",       word: "ごめんね",       category: "yasashii", heal: 3,    nukumori: 1, desc: "やさしい：自分の HP＋3 ／ やさしい＋" },
+  arigatou:  { name: "ありがとう",     word: "ありがとう",     category: "yasashii", atkDown: 1, nukumori: 1, desc: "やさしい：相手が おとなしくなる ／ やさしい＋" },
+  kowakunai: { name: "こわくないよ",   word: "こわくないよ",   category: "yasashii", atkDown: 1, nukumori: 1, desc: "やさしい：相手が おとなしくなる ／ やさしい＋" },
+  shizuka:   { name: "……（だまる）",  word: "……",            category: "silence",  sadWall: 1, nukumori: 1, desc: "沈黙：なにも言わない。さみしい子の壁が すこしほどける ／ やさしい＋" },
+  mataaeru:  { name: "また あえるよ",  word: "また あえるよ",  category: "yasashii", heal: 4,    nukumori: 2, desc: "やさしい：HP＋4 ／ やさしい＋＋（むかえた友の とくべつなことば）" },
 };
 
 // ことばを id から引く（ACTS と KIND_WORDS を一つに見るためのヘルパー用テーブル）。
@@ -143,12 +146,15 @@ const WEAPONS = {
   poyo:   { name: "うるさい",   word: "うるさい",   target: "front2", power: 3, perLv: 1, category: "toge", kyoki: 1, evolveKey: "okori", evolveTo: "bakuretsu" },
   // perLv 1：全体ことばが“1ボタンで全部片付く”と緊張が消え、ぶつける一強になる。Lv3 でも威力5に抑える。
   hikari: { name: "あっちいけ", word: "あっちいけ", target: "all",    power: 3, perLv: 1, category: "toge", kyoki: 2, evolveKey: "negai", evolveTo: "kyusai" },
+  // 進化しない 罵声バリエーション（初期手数＆引き出しを増やす）
+  damare: { name: "だまれ",   word: "だまれ",   target: "single", power: 4, perLv: 1, category: "toge", kyoki: 1, silence: 1 }, // 軽い単体＋1ターン黙らせる（役割の違い）
+  kiero:  { name: "きえろ",   word: "きえろ",   target: "single", power: 7, perLv: 1, category: "toge", kyoki: 2 }, // 重い単体（カードで入手）
   // 進化形態（とげの極み。性能が一段跳ね上がるが、狂気も大きく積む）
   daikouzui: { name: "もう みんな きらい", word: "もう みんな きらい", target: "all", power: 5, wallDown: 1, category: "toge", kyoki: 3, evolved: true, desc: "全体に5ダメージ＋心の壁−1（狂気＋＋＋）" },
   bakuretsu: { name: "しつこいしつこい！", word: "しつこいしつこい！", target: "front3", power: 6,        category: "toge", kyoki: 2, evolved: true, desc: "前列3体に6ダメージ（狂気＋＋）" },
   // 「救済の光」＝あっちいけ が“ねがい”で反転した進化。とげではなく、群れ全員へ手をのばすことば。
-  //   救いビルドも“強く”なれる道：火力は控えめ・壁−2が主役・狂気は積まず、むしろ ぬくもり＋。
-  kyusai:    { name: "いっしょに かえろう", word: "いっしょに かえろう", target: "all", power: 2, wallDown: 2, category: "yasashii", kyoki: 0, nukumori: 1, evolved: true, desc: "全体の心の壁−2＋2ダメージ（ぬくもり＋・狂気なし）" },
+  //   救いビルドも“強く”なれる道：火力は控えめ・壁−2が主役・狂気は積まず、むしろ やさしい＋。
+  kyusai:    { name: "いっしょに かえろう", word: "いっしょに かえろう", target: "all", power: 2, wallDown: 2, category: "yasashii", kyoki: 0, nukumori: 1, evolved: true, desc: "全体の心の壁−2＋2ダメージ（やさしい＋・狂気なし）" },
 };
 
 // ──────────────────────────────────────────
@@ -218,11 +224,11 @@ const ITEMS = {
 // ──────────────────────────────────────────
 const CARDS = [
   // 新しい きついことば（ぶつける の択が増える）
-  { id: "w_poyo",   type: "weapon",    weapon: "poyo",   name: "おぼえる：「うるさい」",     desc: "前列2体に ぶつける きついことば" },
+  { id: "w_kiero",  type: "weapon",    weapon: "kiero",  name: "おぼえる：「きえろ」",       desc: "単体に強く ぶつける きついことば（威力7）" },
   { id: "w_hikari", type: "weapon",    weapon: "hikari", name: "おぼえる：「あっちいけ」",   desc: "全体に ぶつける きついことば" },
   // 新しい やさしいことば（きいてみる の語彙が増える＝言えることが増える成長）
-  { id: "word_arigatou", type: "word", word: "arigatou", name: "おぼえる：「ありがとう」",   desc: "やさしいことば：相手の とげ −1・ぬくもり＋" },
-  { id: "word_shizuka",  type: "word", word: "shizuka",  name: "おぼえる：「……（だまる）」", desc: "沈黙：さみしい子の壁が ほどける・ぬくもり＋" },
+  { id: "word_arigatou", type: "word", word: "arigatou", name: "おぼえる：「ありがとう」",   desc: "やさしいことば：相手が おとなしくなる・やさしい＋" },
+  { id: "word_shizuka",  type: "word", word: "shizuka",  name: "おぼえる：「……（だまる）」", desc: "沈黙：さみしい子の壁が ほどける・やさしい＋" },
   // 強化・成長
   { id: "w_up",     type: "weaponLv",                    name: "ことばを とがらせる（Lv＋1）", desc: "きついことばを1つ選んで1段 強める" },
   { id: "hp",       type: "maxHp",     amount: 5,        name: "＋たいりょく",         desc: "最大HP＋5（その分すぐ回復）" },

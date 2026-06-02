@@ -42,10 +42,11 @@ var sim = [
   "    var es = living();",
   "    if (es.length === 0) break;",
   "    if (kind === 'harsh') {",
-  // 全体/前列ことばが複数体に効くなら優先、なければ単体で前列を狙う
-  "      var aoe = game.player.weapons.find(function(id){return WEAPONS[id].target==='all'||WEAPONS[id].target==='front2'||WEAPONS[id].target==='front3';});",
-  "      if (aoe && es.length>1) { cmdFight(aoe); }",
-  "      else { var single = game.player.weapons.find(function(id){return WEAPONS[id].target==='single';}) || game.player.weapons[0]; var w=WEAPONS[single]; if(w.target==='single'){cmdFight(single, es[0].uid);} else {cmdFight(single);} }",
+  // 期待ダメージ（威力×当たる体数）が最大のことばを選ぶ＝人が使うであろう手に近づける
+  "      var best=null, bestScore=-1;",
+  "      game.player.weapons.forEach(function(id){ var w=WEAPONS[id]; var n = w.target==='single'?1 : w.target==='front2'?Math.min(2,es.length) : w.target==='front3'?Math.min(3,es.length) : es.length; var sc=weaponPower(id)*n; if(sc>bestScore){bestScore=sc; best=id;} });",
+  "      var bw=WEAPONS[best];",
+  "      if(bw.target==='single'){ var tgt=es.slice().sort(function(a,b){return a.hp-b.hp;})[0]; cmdFight(best, tgt.uid); } else { cmdFight(best); }",
   "    } else {",
   // gentle：壁0がいれば むかえる／いなければ 効くことばで壁を下げる／こころ無ければ こらえる
   "      var savable = es.find(function(e){return e.wall===0;});",
