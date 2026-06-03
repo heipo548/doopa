@@ -89,6 +89,16 @@
     </div>
   </div>
 
+  <!-- 街（拠点）ハブ：v0.4 メタループ。夜カウンタ・灯り・なかま・覚えたことば・「夜へ でかける」。 -->
+  <div id="overlay-town" class="overlay hidden">
+    <div class="ov-panel town-panel"><div class="ov-body"></div></div>
+  </div>
+
+  <!-- 夜のフィールド（横スクロールの道）：歩いて拾う／むかえる／道のおわりで戦闘へ。 -->
+  <div id="overlay-field" class="hidden">
+    <div class="field-body"></div>
+  </div>
+
   <!-- レベルアップ（3択） -->
   <div id="overlay-levelup" class="overlay hidden">
     <div class="ov-panel"><div class="ov-body"></div></div>
@@ -99,12 +109,18 @@
     <div class="ov-panel"><div class="ov-body"></div></div>
   </div>
 
-  <!-- スクリプト：データ→音→状態→戦闘→カード→UI→起動 の順で読み込む -->
+  <!-- マクロ結末（いくつもの夜の総和）：さいごの夜を越えたあとの「ほんとうの夜明け」。 -->
+  <div id="overlay-macro" class="overlay hidden">
+    <div class="ov-panel"><div class="ov-body"></div></div>
+  </div>
+
+  <!-- スクリプト：データ→音→状態→戦闘→カード→（街/道/周回）→UI→起動 の順で読み込む -->
   <script src="js/data.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/state.js"></script>
   <script src="js/battle.js"></script>
   <script src="js/cards.js"></script>
+  <script src="js/field.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/main.js"></script>
 </body>

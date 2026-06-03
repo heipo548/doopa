@@ -142,9 +142,17 @@ function creatureSVG(color, shape, expr) {
 }
 
 // ──────────────────────────────────────────
-// 画面全体を描画（game.state を見て出すものを切り替える）
+// 画面全体を描画
+//   v0.4：まず app.screen（街/夜の道/マクロ結末）で大きく分岐し、
+//        戦闘(battle)のときだけ 従来の game.state ベースの戦闘描画に進む。
 // ──────────────────────────────────────────
 function render() {
+  const sc = (typeof app !== "undefined" && app) ? app.screen : "battle";
+  applyScreen(sc);    // 画面コンテナの表示/非表示を切り替える
+  if (sc === "town") { renderTown(); return; }
+  if (sc === "field") { renderField(); return; }
+  if (sc === "macro") { showMacroResult(); return; }
+
   if (!game) return;
   applyTone();        // 狂気／ぬくもり に応じて画面のトーンをそっと変える
   renderTopbar();
@@ -900,6 +908,208 @@ function showWeaponPicker(card, weaponIds) {
 }
 
 // ──────────────────────────────────────────
+// v0.4 メタループの画面（街 / 夜のフィールド / マクロ結末）
+// ──────────────────────────────────────────
+
+// 画面コンテナの表示/非表示を切り替える（戦闘の #game と 各オーバーレイ）。
+function applyScreen(sc) {
+  const setShow = (id, show) => { const e = $(id); if (e) e.classList.toggle("hidden", !show); };
+  setShow("game", sc === "battle");
+  setShow("overlay-town", sc === "town");
+  setShow("overlay-field", sc === "field");
+  setShow("overlay-macro", sc === "macro");
+  // 戦闘以外では、戦闘用オーバーレイ（レベルアップ/結末）は必ず畳む
+  if (sc !== "battle") { hideOverlay("overlay-levelup"); hideOverlay("overlay-result"); }
+}
+
+// 主人公ぽちのスプライト（街・道で歩く姿）。あたたかいクリーム色のまる。
+function pochiSVG(expr) { return creatureSVG("#f0e2b6", "circle", expr || "happy"); }
+
+// ── 街（拠点）ハブ ─────────────────────────
+//   夜カウンタ・灯り（救った友の累計）・なかま・覚えたことば・「夜へ でかける」。
+function renderTown() {
+  const ov = $("overlay-town");
+  if (!ov || !meta) return;
+  const body = ov.querySelector(".ov-body");
+  if (!body) return;
+
+  const isLast = meta.night >= meta.maxNights;
+  const nightLabel = isLast ? "さいごの夜" : `${meta.night}夜目 / ${meta.maxNights}`;
+  const lines = (typeof TOWN_LINES !== "undefined") ? TOWN_LINES : [];
+  const line = lines[Math.min(meta.night - 1, lines.length - 1)] || "";
+
+  // 灯り：救った友の数ぶん ともる（街の明るさ＝これまで救えた数の可視化）。
+  //   ただし最低1つは「ぽち自身の灯り」を必ず点灯＝第一夜の真っ暗な空欄を避ける（STORY §6「灯りひとつ」）。
+  const lit = Math.max(1, meta.friends.length);
+  // ゆうべ 新しく増えた灯り（nightStartFriends→いま）は ぽっと灯す＝「救った＝街が明るくなる」を絵で見せる。
+  const firstNewLit = (meta.gainedLightLastNight && typeof meta.nightStartFriends === "number")
+    ? Math.max(1, meta.nightStartFriends) : -1; // それ以降の点灯ぶんに justlit を付ける
+  let lanterns = "";
+  for (let i = 0; i < Math.max(6, lit + 2); i++) {
+    const on = i < lit;
+    const justlit = on && firstNewLit >= 0 && i >= firstNewLit; // この夜 増えたぶん
+    lanterns += `<span class="town-lantern ${on ? "on" : ""} ${justlit ? "justlit" : ""}"></span>`;
+  }
+  // 倒すだけの夜（灯りが増えなかった）は 街を 寒色に＝非対称を“絵”でも出す。
+  const coldClass = (meta.night > 1 && meta.gainedLightLastNight === false) ? "town-cold" : "";
+
+  const hasFriends = meta.friends.length > 0;
+  const words = (meta.learnedWords || []).map((id) => KIND_WORDS[id] ? KIND_WORDS[id].word : id);
+  const hasWords = words.length > 0;
+
+  // 友がいるときだけ「なかま」セクションを出す（空箱でCTAを埋もれさせない）。
+  const friendsSection = hasFriends ? `
+    <div class="town-section">
+      <div class="town-cap">🫂 なかま（${meta.friends.length}）</div>
+      <div class="town-friends">${meta.friends.map((f) => `<span class="town-friend" title="${f.name}">${creatureSVG(f.color, f.shape, "happy")}</span>`).join("")}</div>
+    </div>` : "";
+  // ことばを覚えているときだけ「いえる ことば」セクションを出す。
+  const wordsSection = hasWords ? `
+    <div class="town-section">
+      <div class="town-cap">💬 いえる ことば（${words.length}）</div>
+      <div class="town-words">${words.map((w) => `<span class="town-word">「${w}」</span>`).join("")}</div>
+    </div>` : "";
+
+  const justGiven = field.townWordJustGiven && KIND_WORDS[field.townWordJustGiven]
+    ? `<p class="town-learned">＋ 街で おぼえた：「${KIND_WORDS[field.townWordJustGiven].word}」</p>` : "";
+  // 倒すだけの夜は 灯りが ふえない＝「街は さみしいまま」を そっと言語化（救う/倒すの非対称）。
+  const noLight = (meta.night > 1 && meta.gainedLightLastNight === false)
+    ? `<p class="town-nolight">ゆうべは、灯りが ひとつも ふえなかった。…倒すだけの夜は、街が さみしいまま。</p>` : "";
+
+  // 第一夜（友0）は 唯一の出口「夜へ でかける」を点滅させて 視線を誘導する（迷わせない）。
+  const goPulse = (meta.night === 1 && !hasFriends) ? "pulse" : "";
+
+  body.innerHTML = `
+    <div class="town-head ${coldClass}">
+      <span class="town-night">${nightLabel}</span>
+      <button id="town-mute" class="town-mute" title="音のON/OFF">♪</button>
+    </div>
+    <h2 class="town-title">よあけまえの 街</h2>
+    <div class="town-lanterns ${coldClass}">${lanterns}</div>
+    <p class="town-line">${line}</p>
+    ${noLight}
+    ${justGiven}
+    ${friendsSection}
+    ${wordsSection}
+    <button id="town-go" class="start-btn town-go ${goPulse}">▶ 夜へ でかける</button>
+    <p class="town-foot">夜の道を 歩いて、群れと むきあう。むかえた子は この街に かえってくる。</p>
+  `;
+  const go = $("town-go");
+  if (go) go.addEventListener("click", () => { playSe("select"); goToField(); });
+  const mute = $("town-mute");
+  if (mute) mute.addEventListener("click", () => { const m = toggleMute(); mute.textContent = m ? "♪×" : "♪"; });
+}
+
+// ── 夜のフィールド（横スクロールの道）─────────
+//   →で前進。落ちてることばを拾い、救いを待つ友を むかえ、道のおわりで戦闘へ。
+function renderField() {
+  const ov = $("overlay-field");
+  if (!ov) return;
+  const body = ov.querySelector(".field-body");
+  if (!body) return;
+
+  const goal = field.goal || 1;
+  const pochiLeft = Math.round((field.x / goal) * 100);
+  const progPct = pochiLeft;
+
+  // 道に点在する出来事（済みは薄く）
+  const nodesHtml = field.nodes.map((n) => {
+    const left = Math.round((n.at / goal) * 100);
+    if (n.type === "word") {
+      return `<span class="road-node node-word ${n.done ? "done" : ""}" style="left:${left}%" title="おちている ことば">💬</span>`;
+    } else if (n.type === "friend") {
+      const base = ENEMIES[n.enemy] || {};
+      return `<span class="road-node node-friend ${n.done ? "done" : ""}" style="left:${left}%" title="${base.name}">${creatureSVG(base.color, base.shape, "sad")}</span>`;
+    } else {
+      return `<span class="road-node node-battle ${n.done ? "done" : ""}" style="left:${left}%" title="群れの けはい">⚔</span>`;
+    }
+  }).join("");
+
+  // 操作（マウス追従。クリックが要るのは「友との選択」と「群れと むきあう」だけ）
+  let controls = "";
+  if (field.activeFriend) {
+    controls = `
+      <button class="field-btn greet" id="f-greet">🤝 こえをかける（むかえる）</button>
+      <button class="field-btn pass" id="f-pass">… とおりすぎる</button>`;
+  } else if (field.reachedBattle) {
+    controls = `<button class="field-btn battle" id="f-battle">⚔ 群れと むきあう</button>`;
+  } else {
+    // ふだんは ボタン無し＝マウスでぽちを みちびく。やさしい操作ヒントだけ出す。
+    controls = `<span class="field-hint">🖱 マウスで ぽちを みぎへ みちびこう（クリックは いらない）</span>`;
+  }
+
+  body.innerHTML = `
+    <div class="field-top">
+      <span class="field-night">${meta ? (meta.night >= meta.maxNights ? "さいごの夜" : meta.night + "夜目") : "夜"}</span>
+      <div class="field-progress"><div class="fill" style="width:${progPct}%"></div></div>
+      <span class="field-dawn">朝</span>
+    </div>
+    <div class="field-road">
+      <div class="road-line"></div>
+      ${nodesHtml}
+      <span class="pochi ${field.paused ? "" : "walking"}" style="left:${pochiLeft}%">${pochiSVG("happy")}</span>
+    </div>
+    <p class="field-msg">${field.message || ""}</p>
+    <div class="field-controls">${controls}</div>
+  `;
+  // 追従ループが毎フレーム軽く動かすための要素をキャッシュ（再描画せずに ぽち・進捗・足元を更新）。
+  field._pochiEl = body.querySelector(".pochi");
+  field._progEl = body.querySelector(".field-progress .fill");
+  field._msgEl = body.querySelector(".field-msg");
+
+  const bind = (id, fn) => { const e = $(id); if (e) e.addEventListener("click", fn); };
+  bind("f-greet", () => fieldGreet());
+  bind("f-pass", () => fieldPass());
+  bind("f-battle", () => { playSe("select"); startNightBattle(); });
+}
+
+// ── マクロ結末（いくつもの夜の総和）─────────
+function showMacroResult() {
+  const ov = $("overlay-macro");
+  if (!ov || !field.macro) return;
+  const body = ov.querySelector(".ov-body");
+  if (!body) return;
+  const e = field.macro.ending;
+  const ratePct = Math.round(field.macro.rate * 100);
+  const intro = (typeof MACRO_INTRO !== "undefined") ? MACRO_INTRO : "";
+  const friendsHtml = meta.friends.length
+    ? meta.friends.map((f) => `<span class="town-friend">${creatureSVG(f.color, f.shape, "happy")}</span>`).join("")
+    : `<span class="town-empty">となりには、だれも いない。</span>`;
+  // 迎えた友の“固有名”を一文差し込む＝総和の数字でなく、顔のある朝にする（“さいご”の感情接続）。
+  const nameLine = meta.friends.length
+    ? `<p class="result-text macro-name">おかえり、${meta.friends[0].name}。${meta.friends.length > 1 ? `${meta.friends.length - 1}人の、みんなも。` : ""}</p>`
+    : "";
+
+  body.innerHTML = `
+    <h2 class="result-title">${e.title}</h2>
+    <p class="result-text">${intro.replace(/\n/g, "<br>")}</p>
+    ${nameLine}
+    <p class="result-text">${e.text.replace(/\n/g, "<br>")}</p>
+    <div class="macro-friends">${friendsHtml}</div>
+    <div class="result-stats">
+      <div><span>こえた夜</span><b>${meta.maxNights}</b></div>
+      <div><span>街の友</span><b>${meta.friends.length}</b></div>
+      <div><span>総おいはらった</span><b>${meta.totalKill}</b></div>
+      <div><span>総むかえた</span><b>${meta.totalSave}</b></div>
+      <div><span>むかえた率（総和）</span><b>${ratePct}%</b></div>
+      <div><span>いえる ことば</span><b>${(meta.learnedWords || []).length}</b></div>
+    </div>
+    <button class="restart-btn" id="macro-restart">はじめから</button>
+  `;
+  const r = $("macro-restart");
+  if (r) r.addEventListener("click", () => { playSe("select"); restartJourney(); });
+}
+
+// 夜明け/敗北のボタン文言：次の夜が来ることを予告して“周回している実感”を切らさない。
+//   dawn かつ さいごの夜を越えた → マクロ結末へ／途中 → 次の夜カウンタを併記。
+function dawnButtonLabel(kind) {
+  if (kind !== "dawn") return "🏠 街へ もどる";
+  if (!meta) return "🏠 街へ かえる";
+  if (meta.night >= meta.maxNights) return "🌅 ほんとうの夜明けへ";
+  return `次の夜へ（${meta.night + 1}夜目）　→ 🏠`;
+}
+
+// ──────────────────────────────────────────
 // オーバーレイ（結末 / RUN OVER）
 // ──────────────────────────────────────────
 function showResult(kind) {
@@ -947,14 +1157,15 @@ function showResult(kind) {
       <div><span>たどりついた夜</span><b>${stats.reachedWave}/${totalWaves()}</b></div>
       <div><span>ラン時間</span><b>${stats.seconds}秒</b></div>
     </div>
-    <button class="restart-btn">もう1回</button>
+    <button class="restart-btn">${dawnButtonLabel(kind)}</button>
   `;
+  // v0.4：もう「最初から」ではなく、メタループの街へ帰る。
+  //   夜明け(dawn)＝この夜の戦果を街に持ち帰り、次の夜 or マクロ結末へ（returnToTown）。
+  //   よが あけなかった(over)＝夜カウンタは進めず、街にもどって もう一度（townRetry）。
   ov.querySelector(".restart-btn").addEventListener("click", () => {
     playSe("select");
-    document.body.className = "theme-night";
-    setBgmTheme("night");
-    startRun();
-    render();
+    if (kind === "dawn") returnToTown();
+    else townRetry();
   });
   showOverlay("overlay-result");
 }

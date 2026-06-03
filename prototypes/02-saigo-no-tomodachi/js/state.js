@@ -17,10 +17,17 @@ const STATES = {
   LEVEL_UP: "LEVEL_UP",       // 3択でビルド強化
   DAWN: "DAWN",               // 夜明け＝結末分岐
   RUN_OVER: "RUN_OVER",       // HP0。最初から
+  // v0.4 メタループ（戦闘の“外側”）。実体の制御は field.js。
+  TOWN: "TOWN",               // 街（拠点）ハブ
+  FIELD: "FIELD",             // 夜のフィールド（横スクロールの道）
 };
 
-// 現在のランの状態（1ラン分をまるごと保持するグローバル）
+// 現在のランの状態（1ラン分＝“ひと夜の戦闘”をまるごと保持するグローバル）
 let game = null;
+
+// メタ進行（いくつもの夜をまたいで持ち越す）。newGame では消えない別グローバル。
+//   実体は field.js の initMeta() で作る。戦闘コア(headless/probe)では未初期化(null)のまま＝従来挙動。
+let meta = null;
 
 // 敵インスタンスに付ける通し番号（同じ種類が複数いても区別できるように）
 let _enemyUid = 0;
@@ -46,7 +53,12 @@ function newGame() {
       maxKokoro: PLAYER_INIT.maxKokoro,
       weapons: startWeapons,      // 持っている きついことば（ぶつけるで使う・複数）
       weaponLv: startWeaponLv,    // ことばごとの Lv（とがり具合）
-      words: (PLAYER_INIT.startWords || []).slice(), // 覚えた やさしいことば（KIND_WORDS の id。増えていく）
+      // 覚えた やさしいことば（KIND_WORDS の id。増えていく）。
+      //   v0.4：メタループ中は 前の夜までに覚えたことばを持ち越す（言えることは消えない）。
+      //   meta 未初期化（戦闘コア単体の検証）では従来どおり PLAYER_INIT.startWords（=空）から。
+      words: (meta && meta.learnedWords && meta.learnedWords.length)
+        ? meta.learnedWords.slice()
+        : (PLAYER_INIT.startWords || []).slice(),
       passives: {},          // 取得済みパッシブ key -> true
       items: Object.assign({}, PLAYER_INIT.items), // もちもの所持数
       level: 1,
@@ -171,8 +183,15 @@ function hasPassive(key) { return !!game.player.passives[key]; }
 
 // きずな：これまで救った友の数ぶん、群れの反撃をやわらげる（上限あり）。
 //   救うほど夜を生き延びやすくなる＝「救う」の見返りを“数字に出る形”で返すための関数。
+//   v0.4：この夜の救済（counters.save）に加え、街に住む友（meta.friends＝前の夜に救った子）も
+//         そっと かばう。ただし合計は bondReduceMax でクランプ＝積み過ぎても祓いを腐らせない。
+//   ※ meta が無い（戦闘コア単体の検証）ときは メタ項が 0 ＝従来とまったく同じ値を返す。
 function bondReduction() {
-  return Math.min(BALANCE.bondReduceMax, game.counters.save * BALANCE.bondReducePerSave);
+  let n = game.counters.save * BALANCE.bondReducePerSave;
+  if (meta && meta.friends && meta.friends.length) {
+    n += Math.min(BALANCE.metaBondMax || 0, meta.friends.length * (BALANCE.metaBondPerFriend || 0));
+  }
+  return Math.min(BALANCE.bondReduceMax, n);
 }
 
 // ──────────────────────────────────────────

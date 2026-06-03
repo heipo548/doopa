@@ -17,8 +17,8 @@ function readFile(p) {
 
 var cwd = $.NSFileManager.defaultManager.currentDirectoryPath.js;
 var base = cwd + "/js/";
-// index.html と同じ読み込み順
-var files = ["data.js", "audio.js", "state.js", "battle.js", "cards.js", "ui.js", "main.js"];
+// index.html と同じ読み込み順（field.js は cards→ui の間）
+var files = ["data.js", "audio.js", "state.js", "battle.js", "cards.js", "field.js", "ui.js", "main.js"];
 var src = files.map(function (f) { return readFile(base + f); }).join("\n");
 
 // ── 最小 DOM/Window スタブ ─────────────────────────────
@@ -63,6 +63,22 @@ var drive = [
   // 全shapeのピクセルスプライトが壊れず生成されるか（rect数で簡易検証）",
   "['circle','ghost','bunny','spider','boss'].forEach(function(sh){ ['neutral','happy','sad'].forEach(function(ex){ var s=creatureSVG('#8f9ee0',sh,ex); if(!/^<svg/.test(s)||(s.match(/<rect/g)||[]).length<18) throw 'sprite broken: '+sh+'/'+ex; }); });",
   "__o.push('sprites: 全shape×表情 生成OK');",
+
+  // ── v0.4 メタループ：街 → 夜のフィールド → 戦闘 → 夜明けで街へ → マクロ結末 が落ちないか ──",
+  "initMeta(); enterTown(); render(); __o.push('town render ok (night=' + meta.night + ', screen=' + app.screen + ')');",
+  "goToField(); render(); __o.push('field build ok (goal=' + field.goal + ', nodes=' + field.nodes.length + ')');",
+  // マウス追従で道のおわりまで歩く：targetX を右端にして fieldStepToward を回す（rAFの代わり）。
+  //   友に出会ったら こえをかける（むかえる）。reachedBattle になれば道のおわり。
+  "fieldSetTarget(1); var __g=0; while(!field.reachedBattle && __g++ < 400){ if(field.activeFriend){ fieldGreet(); fieldSetTarget(1); } else { fieldStepToward(); } }",
+  "__o.push('field walk ok (x=' + (Math.round(field.x*10)/10) + '/' + field.goal + ', reachedBattle=' + field.reachedBattle + ', picked=' + JSON.stringify(field.picked) + ', townFriends=' + meta.friends.length + ')');",
+  // 道のおわりで戦闘へ：newGame が meta.learnedWords を語彙に種まきしているか
+  "startNightBattle(); render(); __o.push('night battle start ok (state=' + game.state + ', wordsCarried=' + JSON.stringify(game.player.words) + ')');",
+  // 夜明け→街へかえる（returnToTown）：戦果がメタに積まれ 夜が進むか
+  "game.counters.kill=2; game.counters.save=3; game.ending=ENDINGS[0]; game.state=STATES.DAWN; returnToTown(); render(); __o.push('returnToTown ok (night=' + meta.night + ', totalSave=' + meta.totalSave + ', screen=' + app.screen + ')');",
+  // さいごの夜を越える → マクロ結末（総和で結末確定・画面遷移）
+  "meta.night = meta.maxNights; goToField(); startNightBattle(); game.counters.kill=1; game.counters.save=5; game.ending=ENDINGS[0]; game.state=STATES.DAWN; returnToTown(); render();",
+  "__o.push('macro ending ok (screen=' + app.screen + ', macro=' + (field.macro?field.macro.ending.id:'none') + ', friendBonus=' + (field.macro?field.macro.friendBonus:'NA') + ')');",
+
   "return __o.join('\\n');"
 ].join("\n");
 

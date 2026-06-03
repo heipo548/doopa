@@ -90,6 +90,7 @@ const SE = {
   calm()   { tone(660, 0.18, "sine", 0.12); tone(990, 0.24, "sine", 0.09, _t(0.06)); }, // 心の壁がほどけた（ほっ…）＝やわらかい
   heal()   { tone(523, 0.16, "sine", 0.10); tone(784, 0.24, "sine", 0.10, _t(0.06)); }, // 手をのばすHP回復のあたたかさ
   miss()   { tone(165, 0.10, "sine", 0.07); },                          // ことばが響かなかった（やわらかい低音）
+  step()   { tone(1500, 0.018, "square", 0.04); },                      // 夜の道の足音（コッ・ごく軽く）
   learn()  { [659, 880, 1047, 1319].forEach((f, i) => tone(f, 0.3, "triangle", 0.13, _t(i * 0.07))); }, // ことばを覚えた（きらきら上昇）
 };
 
@@ -98,7 +99,7 @@ function playSe(name) {
   if (SE[name]) SE[name]();
 }
 
-// BGMのテーマ別スケール（音階）。暗→明で雰囲気を変える。
+// BGMのテーマ別スケール（音階）。暗→明、街→道 で雰囲気を変える。
 const BGM_SCALES = {
   // 夜：暗すぎる指摘を受け、明るめのオルゴール子守唄へ。中〜高音のメジャーペンタトニックで
   //   “かわいくて少し切ない”が、重く沈まないトーンに（ちいかわ的なやさしい夜）。
@@ -106,7 +107,13 @@ const BGM_SCALES = {
   warm:  [523.25, 587.33, 659.25, 783.99, 880.0], // 明るい（ひかりの朝）
   gray:  [392.0, 440.0, 523.25, 587.33],          // 中間（にび色の朝）
   cold:  [415.30, 466.16, 523.25, 622.25],        // 寒い（しずかな朝）
+  // v0.4：街＝やわらかい子守唄（拠点の安心）／フィールド＝歩く前進感（朝へ進む）。
+  town:  [392.0, 440.0, 523.25, 587.33, 659.25],  // 夜と同じ温度だが、ゆっくり静かに鳴らす
+  field: [523.25, 587.33, 659.25, 783.99, 880.0], // 明るめ＝前へ歩く高揚
 };
+
+// テーマ別の間隔（ms）。街はゆったり、道は歩くテンポ、戦闘の夜は子守唄。
+const BGM_INTERVAL = { town: 1000, field: 520, night: 760 };
 
 // ゆっくりしたパッドを一定間隔で鳴らし続ける簡易BGM
 function startBgm(theme) {
@@ -115,9 +122,34 @@ function startBgm(theme) {
   bgmTheme = theme || "night";
   bgmStep = 0;
   if (bgmTimer) clearInterval(bgmTimer);
+  const interval = BGM_INTERVAL[bgmTheme] || 760;
   bgmTimer = setInterval(() => {
     if (_muted || !audioCtx) return;
     const scale = BGM_SCALES[bgmTheme] || BGM_SCALES.night;
+
+    // ── 街：やわらかい子守唄（音すくなめ・低音量・ゆっくり）＝拠点の安心 ──
+    if (bgmTheme === "town") {
+      const seq = [0, 2, 4, 2, 1, 3, 2, 0];
+      const f = scale[seq[bgmStep % seq.length] % scale.length];
+      tone(f, 1.3, "sine", 0.05);                   // やわらかいサイン波
+      tone(f * 2, 1.0, "sine", 0.014, _t(0.06));    // ほのかな倍音
+      if (bgmStep % 2 === 0) tone(f / 2, 1.4, "sine", 0.025); // ゆれる低音
+      bgmStep++;
+      return;
+    }
+    // ── フィールド：歩く前進感（アルペジオ＋毎拍クリック）＝朝へ進む ──
+    if (bgmTheme === "field") {
+      const seq = [0, 2, 4, 5, 4, 2];
+      const f = scale[seq[bgmStep % seq.length] % scale.length];
+      tone(f, 0.45, "triangle", 0.06);              // 歩くアルペジオ
+      tone(f * 2, 0.35, "sine", 0.02, _t(0.03));    // きらきら
+      if (bgmStep % 2 === 0) tone(f / 2, 0.5, "sine", 0.03); // 一歩おきの支え
+      tone(1800, 0.02, "square", 0.03);             // 毎拍の足音クリック＝前進のノリ
+      bgmStep++;
+      return;
+    }
+
+    // ── それ以外（夜の戦闘／結末テーマ）──
     let f;
     if (bgmTheme === "night") {
       // 単純な順送りをやめ、上り下りの“旋律”で往復＝かわいい子守唄に（ループ感を減らす）。
@@ -135,7 +167,7 @@ function startBgm(theme) {
     if (bgmStep % 2 === 0) tone(f / 2, 1.0, "sine", 0.03);   // 軽い支え（1つおき＝重くしない）
     if (bgmStep % 4 === 0) tone(2100, 0.025, "square", 0.03); // 拍頭の軽いクリック＝“ノリ”を立てる
     bgmStep++;
-  }, 760);
+  }, interval);
 }
 
 // 結末などでBGMの雰囲気だけ切り替える
