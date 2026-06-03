@@ -99,8 +99,8 @@ function cmdFight(weaponId, targetUid) {
   game.lastWord = said;
   game.lastWeapon = weaponId; // SE をことばごとに変えるため（バカ/だまれ/うるさい…の鳴き分け）
   log(`▶ ${game.player.name}「${said}」！`);
-  // 言ったことばを吹き出しで見せる（とげとげ＝不穏なトーン）
-  pushFx({ t: "speak", text: said, cat: w.category || "toge" });
+  // 言ったことばを吹き出しで見せる（とげとげ＝不穏なトーン）。meme は専用の小演出キー。
+  pushFx({ t: "speak", text: said, cat: w.category || "toge", meme: w.meme });
   for (const t of targets) {
     let dmg = base;
     // パッシブ「ふかいかなしみ」：悲しむ相手への与ダメ＋
@@ -118,6 +118,11 @@ function cmdFight(weaponId, targetUid) {
       t.status.silence = Math.max(t.status.silence, w.silence);
       log(`  ${t.name} は だまってしまった（次ターン うごけない）`);
     }
+    // 「よわよわ」など 相手の勢いを そぐ きついことば（攻撃力ダウン）
+    if (w.atkDown && !t.dead && !t.saved) {
+      t.atk = Math.max(0, t.atk - w.atkDown);
+      log(`  ${t.name} の 勢いが そがれた（攻撃 ${t.atk}）`);
+    }
   }
   // ことばの性質に応じて 狂気／ぬくもり を積む（「いっしょに かえろう」は ぬくもり側）
   if (w.kyoki) { gainKyoki(w.kyoki); pushFx({ t: "kyoki", amount: w.kyoki }); }
@@ -133,69 +138,73 @@ function cmdFight(weaponId, targetUid) {
 //   ・学んで覚えた やさしいことば(KIND_WORDS)：相手を選ばず ことば固有の効果（回復/とげ↓/沈黙）が届く。
 //   どちらも やさしく言えたぶん “ぬくもり” がたまる（救いルートの雪だるま）。
 // ──────────────────────────────────────────
+// ※v0.6：きいてみる は「群れ全体に1回 話しかける」。1体ずつ選ぶ不自然さを解消し、タップも減らす。
+//   効く相手だけ 壁が下がり、その子が ことばを返す（対話してる感）。
+//   救い=遅い の非対称は、すくう(cmdSave)が1ターン1体のまま＝壁を一斉に下げても“迎える”速度で律速。
+//   引数 targetUid は後方互換のため受け取るが使わない（全体に話す）。
 function cmdAct(actId, targetUid) {
   if (game.state !== STATES.PLAYER_TURN) return false;
-  const t = findEnemy(targetUid);
-  if (!t) return false;
   if (!knowsWord(actId)) return false;         // まだ覚えていないことばは使えない
+  if (livingEnemies().length === 0) return false;
   if (game.player.kokoro < BALANCE.actCost) {
     flash("こころが足りない");
     return false;
   }
   const word = wordById(actId);
   if (!word) return false;
-  game.player.kokoro -= BALANCE.actCost; // 効いても外しても こころは減る（＝手探りのコスト）
+  game.player.kokoro -= BALANCE.actCost; // 効いても外しても こころは減る（＝手探りのコスト・群れ全体で1回ぶん）
   const said = word.word || word.name;
   game.lastWord = said;
-  log(`▶ ${game.player.name}「${said}」（${t.name}へ）`);
-  pushFx({ t: "speak", text: said, cat: word.category || "toi" });
+  log(`▶ ${game.player.name}「${said}」（みんなへ）`);
+  pushFx({ t: "speak", text: said, cat: word.category || "toi", meme: word.meme });
 
   const isKind = !!KIND_WORDS[actId];          // 学んだ汎用語かどうか
-  const effective = t.acts.includes(actId);    // 生まれつきの問いかけが、この相手に効くか
   let didSomething = false;
+  let voices = 0;                              // 返事の吹き出しは出しすぎない（最大2体）
 
-  // 生まれつきの問いかけ：効く相手にだけ 壁・とめる・とげ↓（手順パズルを保つ）
-  if (effective) {
-    reduceWall(t, word.wall || 1);
-    if (word.atkDown) {
-      t.atk = Math.max(0, t.atk - word.atkDown);
-      log(`  ${t.name} の とげが すこし やわらいだ（攻撃 ${t.atk}）`);
+  for (const t of livingEnemies()) {
+    let hit = false;
+    // 生まれつきの問いかけ：効く相手にだけ 壁・とめる・とげ↓（手順パズルを保つ）
+    if (t.acts.includes(actId)) {
+      reduceWall(t, word.wall || 1);
+      if (word.atkDown) { t.atk = Math.max(0, t.atk - word.atkDown); }
+      if (word.silence) { t.status.silence = Math.max(t.status.silence, word.silence); }
+      hit = true;
     }
-    if (word.silence) {
-      t.status.silence = Math.max(t.status.silence, word.silence);
-      log(`  ${t.name} は ことばに 立ちどまっている（次ターン うごけない）`);
+    // 学んだ やさしいことば：相手を選ばず とげ↓／さみしい子の壁が そっと ほどける
+    if (isKind) {
+      if (word.atkDown) { t.atk = Math.max(0, t.atk - word.atkDown); hit = true; }
+      if (word.sadWall && t.sad) { reduceWall(t, word.sadWall); hit = true; }
     }
-    didSomething = true;
+    if (hit) {
+      didSomething = true;
+      // 対話してる感：効いた子が ことばを返す（多すぎないよう最大2体）
+      if (voices < 2 && typeof ENEMY_VOICE !== "undefined" && ENEMY_VOICE[t.type]) {
+        const lines = ENEMY_VOICE[t.type];
+        const line = lines[Math.floor(Math.random() * lines.length)];
+        log(`  ${t.name}「${line}」`);
+        pushFx({ t: "evoice", uid: t.uid, text: line });
+        voices++;
+      }
+    }
   }
 
-  // 学んだ やさしいことば：相手を選ばず “ことば固有の効果” が届く
-  if (isKind) {
-    if (word.heal && game.player.hp < game.player.maxHp) {
-      const before = game.player.hp;
-      game.player.hp = Math.min(game.player.maxHp, game.player.hp + word.heal);
-      log(`  じぶんの こころも すこし軽くなった（HP＋${game.player.hp - before}）`);
-      pushFx({ t: "pheal", amount: game.player.hp - before });
-      didSomething = true;
-    }
-    if (word.atkDown) {
-      t.atk = Math.max(0, t.atk - word.atkDown);
-      log(`  ${t.name} の とげが やわらいだ（攻撃 ${t.atk}）`);
-      didSomething = true;
-    }
-    // 沈黙（…）は、さみしい子の壁だけ そっと ほどく
-    if (word.sadWall && t.sad) {
-      reduceWall(t, word.sadWall);
-      didSomething = true;
-    }
+  // 学んだ やさしいことば の「自分が回復する」効果は 1回だけ（みんなに言って、自分も軽くなる）
+  if (isKind && word.heal && game.player.hp < game.player.maxHp) {
+    const before = game.player.hp;
+    game.player.hp = Math.min(game.player.maxHp, game.player.hp + word.heal);
+    log(`  じぶんの こころも すこし軽くなった（HP＋${game.player.hp - before}）`);
+    pushFx({ t: "pheal", amount: game.player.hp - before });
+    didSomething = true;
   }
 
   if (!didSomething) {
     if (word.category === "silence") log(`  …しずかな間が ながれた`);
-    else log(`  …${t.name} には 響いていない（このことばは いまの相手に効かない）`);
-    pushFx({ t: "noeffect", uid: t.uid }); // “外した”手応え（ログを読まなくても分かる）
+    else log(`  …いまの みんなには 響いていない`);
+    pushFx({ t: "noeffect", all: true }); // “外した”手応え（中央に）
   }
 
-  // やさしさ／とげ のゲージ（ことばの性質に応じて）
+  // やさしさ／とげ のゲージ（ことばの性質に応じて・1回ぶん）
   if (word.nukumori) { const r = gainNukumori(word.nukumori); pushFx({ t: "nukumori", amount: word.nukumori, bonus: r }); }
   if (word.kyoki) { gainKyoki(word.kyoki); pushFx({ t: "kyoki", amount: word.kyoki }); }
 

@@ -244,7 +244,9 @@ function renderEnemies() {
   // いまターゲットを選ぶ段階か？（選べる敵を光らせる）
   const targeting =
     game.state === STATES.PLAYER_TURN &&
-    (ui.mode === "fightTarget" || ui.mode === "actTarget" || ui.mode === "save");
+    (ui.mode === "fightTarget" || ui.mode === "save");
+  // v0.6：何も選んでいない時も、敵を直接クリックで攻撃できる（サクサク）。
+  const quickAttack = game.state === STATES.PLAYER_TURN && ui.mode === "idle" && !!primarySingleWeapon();
 
   for (const e of living) {
     const card = document.createElement("div");
@@ -259,7 +261,9 @@ function renderEnemies() {
     // すくえる相手だけ選べる「save」モードでは、壁0以外は選べない
     const selectable =
       targeting && (ui.mode !== "save" || e.wall === 0);
+    const clickable = selectable || quickAttack; // idle は直接クリックで攻撃できる
     if (selectable) card.classList.add("selectable");
+    else if (quickAttack) card.classList.add("tappable"); // 控えめに「押せる」を示す
 
     // 心の壁（♥＝残り, ♡＝消えた分）。0なら「すくえそう」表示
     let walls = "";
@@ -277,9 +281,9 @@ function renderEnemies() {
     const expr = saveable ? "happy" : (e.sad ? "sad" : "neutral");
     const sprite = creatureSVG(e.color, e.shape, expr);
 
-    // 「だれの こえを きく？」の段階だけ、その子の手がかり（hint）を出して総当たりを防ぐ。
+    // きいてみる（みんなに話す）段階では、各カードの手がかり（hint）を出して ことば選びを助ける。
     const base = ENEMIES[e.type] || {};
-    const showHint = ui.mode === "actTarget" && !saveable && base.hint;
+    const showHint = ui.mode === "act" && !saveable && base.hint;
 
     card.innerHTML = `
       <div class="enemy-fig ${saveable ? "calm" : ""}">${sprite}</div>
@@ -291,7 +295,7 @@ function renderEnemies() {
       ${showHint ? `<div class="enemy-hint">💭 ${base.hint}</div>` : ""}
     `;
 
-    if (selectable) {
+    if (clickable) {
       card.addEventListener("click", () => onEnemyClick(e.uid));
     }
     area.appendChild(card);
@@ -422,15 +426,14 @@ function renderPrompt() {
     }
     addCancel();
   } else if (ui.mode === "act") {
-    // 相手は選択済み。その子に効きそうなことば＋少しのダミー＋学んだ汎用語を出す。
-    const tgt = findEnemy(ui.pendingActTarget);
-    const base = tgt ? (ENEMIES[tgt.type] || {}) : {};
-    addHint(`「${tgt ? tgt.name : "相手"}」に どんな ことばを かける？${base.hint ? `（💭 ${base.hint}）` : ""}`);
+    // v0.6：みんなに話す。どの ことばを かけるか だけ選ぶ（各カードの 💭 が手がかり）。
+    addHint("みんなに かける ことばを えらぶ（💭＝それぞれの子の手がかり）");
     const list = ui.pendingActList || Object.keys(ACTS);
     for (const id of list) {
       const word = wordById(id);
       if (!word) continue;
-      const b = addBtn(`「${word.name}」`, word.desc, () => selectAct(id));
+      const icon = WORD_ICON[id] || (word.category === "yasashii" ? "🌱" : word.category === "silence" ? "🤫" : "💭");
+      const b = addBtn(`${icon}「${word.name}」`, word.desc, () => selectAct(id));
       if (b) b.classList.add(catClass(word.category));
     }
     addCancel();
@@ -476,10 +479,20 @@ function actOptionsFor(uid) {
 function catClass(cat) {
   return { toge: "word-toge", yasashii: "word-yasashii", toi: "word-toi", silence: "word-silence" }[cat] || "word-toi";
 }
-// 罵声（きついことば）の役割アイコン＝読まずに違いが伝わる（選ぶ楽しさ）。
+// ことばの役割アイコン＝読まずに違いが伝わる（選ぶ楽しさ）。罵声・問いかけ・ミーム。
 const WORD_ICON = {
   namida: "💢", damare: "🤐", poyo: "🌀", hikari: "💨", kiero: "💥",
   daikouzui: "🌊", bakuretsu: "🌀💥", kyusai: "🤝",
+  // ミーム きついことば
+  ma: "❓", yowayowa: "🍃", zako: "😏", kusa: "🌿",
+  // ミーム やさしい/問いかけ
+  wakaru: "🫂", tsuyotsuyo: "💪", soudane: "🫧", pien: "🥺",
+};
+
+// ミーム専用の小演出＝知ってる人が「！」となる一言を、言った瞬間にふわっと出す。
+const MEME_FX = {
+  ma: "！？", kusa: "ｗｗｗ", zako: "ﾌﾟｸｽ♡", yowayowa: "ｽｯ…",
+  wakaru: "うんうん", tsuyotsuyo: "✨", soudane: "……", pien: "；ω；",
 };
 
 // 小さな配列シャッフル（cards.js の shuffle はあるが、依存順の都合でこちらにも軽量版を置く）
@@ -524,15 +537,10 @@ function onCommand(cmd) {
     if (ws.length === 1) selectWeapon(ws[0]);
     else { ui.mode = "weapon"; renderPrompt(); renderCommands(); }
   } else if (cmd === "act") {
-    // 相手が1体なら「だれを」を飛ばして そのまま ことば選びへ（fightは1タップなのにactだけ重い非対称を解消）
-    const living = livingEnemies();
-    if (living.length === 1) {
-      ui.pendingActTarget = living[0].uid;
-      ui.pendingActList = actOptionsFor(living[0].uid);
-      ui.mode = "act";
-    } else {
-      ui.mode = "actTarget"; // まず「だれを」選ぶ → その子向けに候補を絞る
-    }
+    // v0.6：きいてみる は「みんなに話す」＝対象選択を飛ばして すぐ ことば選びへ（タップ削減＋自然）。
+    //   候補は いまの群れに関係する問いかけ＋学んだやさしいことば。各カードの 💭 が手がかり。
+    ui.pendingActList = actAllOptions();
+    ui.mode = "act";
     renderPrompt(); renderEnemies(); renderCommands();
   } else if (cmd === "save") {
     const savable = livingEnemies().filter((e) => e.wall === 0);
@@ -556,9 +564,21 @@ function selectWeapon(wid) {
 }
 
 function selectAct(aid) {
-  // 相手はもう選んである（actTarget で確定済み）。そのまま実行する。
-  const uid = ui.pendingActTarget;
-  doAction(() => cmdAct(aid, uid), "act");
+  // v0.6：きいてみる は群れ全体へ。対象は取らない。
+  doAction(() => cmdAct(aid), "act");
+}
+
+// きいてみる の選択肢：いまの群れに関係する問いかけ＋学んだ やさしいことば（みんなに話す前提）。
+function actAllOptions() {
+  const set = {};
+  livingEnemies().forEach((e) => (e.acts || []).forEach((id) => { set[id] = true; }));
+  const relevant = shuffleArr(Object.keys(set));
+  return relevant.concat(learnedKindWords());
+}
+
+// サクサク：敵を直接クリックした時に使う「主力の単体きついことば」。
+function primarySingleWeapon() {
+  return game.player.weapons.find((id) => WEAPONS[id] && WEAPONS[id].target === "single") || null;
 }
 
 function useItem(itemId) {
@@ -569,15 +589,12 @@ function onEnemyClick(uid) {
   if (!game || game.state !== STATES.PLAYER_TURN) return;
   if (ui.mode === "fightTarget") {
     doAction(() => cmdFight(ui.pendingWeapon, uid), "fight");
-  } else if (ui.mode === "actTarget") {
-    // 相手を決めたら、その子に効きそうなACT＋少しのダミーだけを出す段階へ
-    ui.pendingActTarget = uid;
-    ui.pendingActList = actOptionsFor(uid);
-    ui.mode = "act";
-    playSe("select");
-    renderPrompt(); renderEnemies(); renderCommands();
   } else if (ui.mode === "save") {
     doAction(() => cmdSave(uid), "save");
+  } else if (ui.mode === "idle") {
+    // v0.6 サクサク：何も選んでいない時に敵を直接クリック＝主力の単体きついことばで攻撃（1タップ）。
+    const primary = primarySingleWeapon();
+    if (primary) { ui.pendingWeapon = primary; doAction(() => cmdFight(primary, uid), "fight"); }
   }
 }
 
@@ -647,7 +664,7 @@ function playFx(prevRects) {
   let learnEv = null;
   // ── ① プレイヤーが「言った／自分に起きた」ぶんは すぐ ──
   for (const ev of game.fx) {
-    if (ev.t === "speak") wordBubble(ev.text, ev.cat);
+    if (ev.t === "speak") { wordBubble(ev.text, ev.cat); if (ev.meme && MEME_FX[ev.meme]) memeFlair(MEME_FX[ev.meme]); }
     else if (ev.t === "kyoki") meterFloat("kyoki", "とげとげ＋");
     else if (ev.t === "nukumori") { meterFloat("nukumori", "やさしい＋"); if (ev.bonus && ev.bonus.hpUp > 0) pulsePlayerBar(); }
     else if (ev.t === "pheal") { pulsePlayerBar(); floatOnPlayer(`HP＋${ev.amount}`, "pheal"); playSe("heal"); }
@@ -672,8 +689,12 @@ function playFx(prevRects) {
         if (!calmPlayed) { playSe("calm"); calmPlayed = true; }
       } else if (ev.t === "save") {
         floatOnEnemy(ev.uid, "なかまに なった！", "save", prevRects, yoff); saveBurst(ev.uid, prevRects);
+      } else if (ev.t === "evoice") {
+        enemyBubble(ev.uid, ev.text, prevRects, yoff); // 対話してる感：効いた子が ことばを返す
       } else if (ev.t === "noeffect") {
-        floatOnEnemy(ev.uid, "…？", "miss", prevRects, yoff); playSe("miss");
+        if (ev.all) { wordBubble("…？", "toi"); } // みんなに響かなかった（中央に1つ）
+        else floatOnEnemy(ev.uid, "…？", "miss", prevRects, yoff);
+        playSe("miss");
       }
     }, 120 + i * 70);
   });
@@ -727,6 +748,36 @@ function wordBubble(text, cat) {
   el.textContent = "「" + text + "」";
   host.appendChild(el);
   setTimeout(() => el.remove(), 1100);
+}
+
+// 敵の“返事”を その子の上に 吹き出しで出す（対話してる感）。倒した/居ない時は prevRects で位置補完。
+function enemyBubble(uid, text, prevRects, yoff) {
+  const host = $("game");
+  if (!host || !text) return;
+  let x, y;
+  const card = document.querySelector(`.enemy[data-uid="${uid}"]`);
+  if (card) { const hr = host.getBoundingClientRect(), cr = card.getBoundingClientRect(); x = cr.left - hr.left + cr.width / 2; y = cr.top - hr.top - 6; }
+  else if (prevRects && prevRects[uid]) { x = prevRects[uid].x; y = prevRects[uid].y - 24; }
+  else return;
+  y -= (yoff || 0);
+  const el = document.createElement("div");
+  el.className = "enemy-bubble";
+  el.textContent = text;
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+// ミーム専用のひとこと（「ｗｗｗ」等）を 画面中央やや右に ふわっと出す＝知ってる人が にやり。
+function memeFlair(text) {
+  const host = $("game");
+  if (!host || !text) return;
+  const el = document.createElement("div");
+  el.className = "meme-flair";
+  el.textContent = text;
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
 }
 
 // 「きもち」バーの端に「＋」をふわっと出す（ゲージが傾く手応え）。

@@ -35,7 +35,7 @@ var sim = [
   "      var cs = game.pendingCards || [];",
   "      var pick = cs[0];",
   "      if (kind === 'gentle') { pick = cs.find(function(c){return c.type==='maxKokoro'||c.type==='word'||c.id==='yasashii'||c.id==='negai';}) || cs[0]; }",
-  "      else { pick = cs.find(function(c){return c.type==='weapon'||c.type==='weaponLv'||c.id==='fukai'||c.id==='hayaashi';}) || cs[0]; }",
+      // harsh：とげの火力・強化・生存を取る（救い系 negai/kyusai は選ばない＝火力を散らさない）。\n      else { pick = cs.find(function(c){return c.type==='weaponLv'||c.id==='fukai'||c.id==='okori'||c.id==='hayaashi'||(c.type==='weapon' && WEAPONS[c.weapon] && WEAPONS[c.weapon].category==='toge');}) || cs[0]; }",
   "      chooseCard(pick); continue;",
   "    }",
   "    if (game.state !== STATES.PLAYER_TURN) break;",

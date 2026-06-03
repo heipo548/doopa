@@ -142,6 +142,11 @@ const KIND_WORDS = {
   // 夜の道で出会う 新しい友 から教わることば（顔ぶれを増やして“もう一晩”の燃料に）。
   daijoubu:  { name: "だいじょうぶ",   word: "だいじょうぶ",   category: "yasashii", atkDown: 1, nukumori: 1, desc: "やさしい：相手が おちつく ／ やさしい＋" },
   issho:     { name: "いっしょだよ",   word: "いっしょだよ",   category: "yasashii", heal: 2,    nukumori: 1, desc: "やさしい：自分の HP＋2 ／ やさしい＋" },
+  // ── ネットミーム系 やさしい/問いかけ（救い側にも“今っぽい共感の相づち”を散らす）──
+  wakaru:     { name: "わかる",        word: "わかる",        category: "yasashii", atkDown: 1, nukumori: 1, meme: "wakaru",     desc: "やさしい：深く共感する。相手が おとなしくなる ／ やさしい＋" },
+  tsuyotsuyo: { name: "つよつよだね",   word: "つよつよだね",   category: "yasashii", atkDown: 1, nukumori: 2, meme: "tsuyotsuyo", desc: "やさしい：ほめて しずめる ／ やさしい＋＋" },
+  soudane:    { name: "そうだね",      word: "そうだね",      category: "toi",      nukumori: 1,             meme: "soudane",    desc: "問いかけ：まず 受けとめる（壁は下げない）／ やさしい＋" },
+  pien:       { name: "ぴえん……",     word: "ぴえん……",     category: "yasashii", heal: 3,    nukumori: 1, meme: "pien",       desc: "やさしい：もらい泣き。自分の HP＋3 ／ やさしい＋" },
 };
 
 // ことばを id から引く（ACTS と KIND_WORDS を一つに見るためのヘルパー用テーブル）。
@@ -167,6 +172,11 @@ const WEAPONS = {
   // 進化しない 罵声バリエーション（初期手数＆引き出しを増やす）
   damare: { name: "だまれ",   word: "だまれ",   target: "single", power: 4, perLv: 1, category: "toge", kyoki: 1, silence: 1 }, // 軽い単体＋1ターン黙らせる（役割の違い）
   kiero:  { name: "きえろ",   word: "きえろ",   target: "single", power: 7, perLv: 1, category: "toge", kyoki: 2 }, // 重い単体（カードで入手）
+  // ── ネットミーム系 きついことば（罵声=toge。可愛い毒・トホホ。power は既存レンジ準拠＝一強化を防ぐ）──
+  //   meme: 知ってる人が「！」となる専用の小演出キー（ui.js の MEME_FX）。
+  ma:       { name: "ま？",        word: "ま？",        target: "single", power: 7, perLv: 1, category: "toge", kyoki: 2, meme: "ma" },     // 見下しの一撃（kiero 同格の重い単体・煽り）
+  zako:     { name: "ざぁこ♡",     word: "ざぁこ♡",     target: "front2", power: 4, perLv: 1, category: "toge", kyoki: 2, atkDown: 1, meme: "zako" }, // あおって前列2体＋勢いを そぐ
+  kusa:     { name: "草ァ！",       word: "草ァ！",       target: "all",    power: 3, perLv: 1, category: "toge", kyoki: 2, meme: "kusa" },     // 全体に嘲笑をばら撒く（hikari 同格）
   // 進化形態（とげの極み。性能が一段跳ね上がるが、狂気も大きく積む）
   daikouzui: { name: "もう みんな きらい", word: "もう みんな きらい", target: "all", power: 5, wallDown: 1, category: "toge", kyoki: 3, evolved: true, desc: "全体に5ダメージ＋心の壁−1（狂気＋＋＋）" },
   bakuretsu: { name: "しつこいしつこい！", word: "しつこいしつこい！", target: "front3", power: 6,        category: "toge", kyoki: 2, evolved: true, desc: "前列3体に6ダメージ（狂気＋＋）" },
@@ -223,6 +233,18 @@ const ENEMIES = {
            flavor: "夜の もりから まよいでた子。すこし さみしそう。" },
 };
 
+// 敵の“声”＝きいてみる が効いた相手が ぽつりと こぼす一言（戦闘に「対話してる感」を出す）。
+//   効いた時：その子の voice を 吹き出しで返す／効かない時は別の戸惑い（ui 側で汎用）。
+const ENEMY_VOICE = {
+  kuro:  ["……き、きいて くれるの？", "ことば、ひさしぶり。", "ひとりじゃ、なかった？"],
+  fura:  ["ここ、いて いいの……？", "なまえ、よんで くれた。", "ふわ……すこし、とまれた。"],
+  usagi: ["ぐすっ……うん。", "こわかったんだ、ずっと。", "なみだ、とまるかな。"],
+  toge:  ["とげ、ひっこめて みる……。", "ほんとは、こわいだけ。", "さわっても、いい……？"],
+  nushi: ["……ひさしぶりに、声を きいた。", "みんなの ねがいが、きこえる？", "きみ、なら……。"],
+  hoshi: ["ぴかっ……（うれしそう）", "おちてきて、よかった。"],
+  mori:  ["はっぱ、わけて あげる。", "もり、いっしょに かえろ？"],
+};
+
 // ──────────────────────────────────────────
 // ウェーブ進行（難易度カーブ）
 //   1ラン＝6ウェーブ＋最終ボス。elite:true は強化個体ウェーブ。
@@ -257,6 +279,10 @@ const CARDS = [
   // 新しい やさしいことば（きいてみる の語彙が増える＝言えることが増える成長）
   { id: "word_arigatou", type: "word", word: "arigatou", name: "おぼえる：「ありがとう」",   desc: "やさしいことば：相手が おとなしくなる・やさしい＋" },
   { id: "word_shizuka",  type: "word", word: "shizuka",  name: "おぼえる：「……（だまる）」", desc: "沈黙：さみしい子の壁が ほどける・やさしい＋" },
+  // ── ネットミーム きついことば（引きでビルド分岐・遊び心。やさしいミームは夜の道で拾える）──
+  { id: "w_ma",          type: "weapon", weapon: "ma",       name: "おぼえる：「ま？」",     desc: "単体に強く ぶつける（威力7・狂気＋＋）" },
+  { id: "w_kusa",        type: "weapon", weapon: "kusa",     name: "おぼえる：「草ァ！」",   desc: "全体に 嘲笑を ばら撒く（狂気＋＋）" },
+  { id: "w_zako",        type: "weapon", weapon: "zako",     name: "おぼえる：「ざぁこ♡」", desc: "前列2体を あおる＋勢いを そぐ" },
   // 強化・成長
   { id: "w_up",     type: "weaponLv",                    name: "ことばを とがらせる（Lv＋1）", desc: "きついことばを1つ選んで1段 強める" },
   { id: "hp",       type: "maxHp",     amount: 5,        name: "＋たいりょく",         desc: "最大HP＋5（その分すぐ回復）" },
@@ -321,7 +347,7 @@ const NIGHTFALL = {
 
 // 夜の道に「おちている ことば」として拾える やさしいことば（KIND_WORDS の id）。
 //   すでに覚えていることばは buildField 側で除外する（死に拾い防止）。
-const FIELD_WORD_POOL = ["gomen", "kowakunai", "arigatou", "shizuka"];
+const FIELD_WORD_POOL = ["gomen", "kowakunai", "arigatou", "shizuka", "wakaru", "pien", "soudane", "tsuyotsuyo"];
 
 // 夜の道で「救いを待つ友」として うずくまっている子（ENEMIES の id）。
 //   こえをかけると戦わずに むかえられる＝街の友に加わり、その子のことば(gift)を教わる。
