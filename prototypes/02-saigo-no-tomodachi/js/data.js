@@ -139,6 +139,9 @@ const KIND_WORDS = {
   okaeri:    { name: "おかえり",       word: "おかえり",       category: "yasashii", atkDown: 1, nukumori: 1, desc: "くらしのことば：相手が おとなしくなる ／ やさしい＋" },
   tadaima:   { name: "ただいま",       word: "ただいま",       category: "yasashii", heal: 2,    nukumori: 1, desc: "くらしのことば：自分の HP＋2 ／ やさしい＋" },
   oyasumi:   { name: "おやすみ",       word: "おやすみ",       category: "yasashii", atkDown: 1, nukumori: 2, desc: "くらしのことば：相手が しずかになる ／ やさしい＋＋" },
+  // 夜の道で出会う 新しい友 から教わることば（顔ぶれを増やして“もう一晩”の燃料に）。
+  daijoubu:  { name: "だいじょうぶ",   word: "だいじょうぶ",   category: "yasashii", atkDown: 1, nukumori: 1, desc: "やさしい：相手が おちつく ／ やさしい＋" },
+  issho:     { name: "いっしょだよ",   word: "いっしょだよ",   category: "yasashii", heal: 2,    nukumori: 1, desc: "やさしい：自分の HP＋2 ／ やさしい＋" },
 };
 
 // ことばを id から引く（ACTS と KIND_WORDS を一つに見るためのヘルパー用テーブル）。
@@ -208,6 +211,16 @@ const ENEMIES = {
            shape: "boss",   color: "#c25a7a", sad: true, boss: true, gift: "mataaeru",
            hint: "群れの ねがいを 束ねている（いろいろ ことばを かけて）",
            flavor: "群れの いちばん おく。その願いを ことばにできるのは、たぶん きみだけ。" },
+  // ── 夜の道だけに出る友（戦闘 WAVES には出ない／フィールドの新しい顔）──
+  //   救う体験を 夜ごとに あたらしく保つための キャラ。hp等は使わないが、念のため穏当な値を持たせる。
+  hoshi: { name: "ほしのこ",     hp: 5,  atk: 1, target: "single", wall: 1, acts: ["nade"],
+           shape: "circle", color: "#e8c84a", sad: false, gift: "daijoubu",
+           hint: "ちいさく かがやいて うずくまっている",
+           flavor: "おちてきた ほしの かけら みたいな子。" },
+  mori:  { name: "もりのこ",     hp: 6,  atk: 1, target: "single", wall: 1, acts: ["nade"],
+           shape: "bunny",  color: "#7fc8a0", sad: false, gift: "issho",
+           hint: "はっぱの においが する",
+           flavor: "夜の もりから まよいでた子。すこし さみしそう。" },
 };
 
 // ──────────────────────────────────────────
@@ -293,7 +306,8 @@ const FIELD_WORD_POOL = ["gomen", "kowakunai", "arigatou", "shizuka"];
 
 // 夜の道で「救いを待つ友」として うずくまっている子（ENEMIES の id）。
 //   こえをかけると戦わずに むかえられる＝街の友に加わり、その子のことば(gift)を教わる。
-const FIELD_FRIEND_POOL = ["kuro", "fura", "usagi"];
+//   ※ hoshi/mori は 戦闘には出ない“道だけの友”＝夜ごとに あたらしい顔に会える（顔枯れ防止）。
+const FIELD_FRIEND_POOL = ["kuro", "fura", "usagi", "hoshi", "mori"];
 
 // 出来事のない歩での「足元の情景」。無音の単調さを避け、夜の道の気配を出す。
 //   ぽちが 目盛りを跨ぐたびに 順に切り替える（歩くたびに景色が変わる手触り）。

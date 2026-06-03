@@ -957,12 +957,22 @@ function renderTown() {
   const words = (meta.learnedWords || []).map((id) => KIND_WORDS[id] ? KIND_WORDS[id].word : id);
   const hasWords = words.length > 0;
 
-  // 友がいるときだけ「なかま」セクションを出す（空箱でCTAを埋もれさせない）。
+  // 友がいるときは「なかま」セクション。いない（第一夜）ときは“伸びしろ”を予告するプレースホルダ
+  //   ＝空っぽで第一印象が決まらないよう「救うと、この街が あかるくなる」を 灰のシルエットで見せる。
   const friendsSection = hasFriends ? `
     <div class="town-section">
       <div class="town-cap">🫂 なかま（${meta.friends.length}）</div>
       <div class="town-friends">${meta.friends.map((f) => `<span class="town-friend" title="${f.name}">${creatureSVG(f.color, f.shape, "happy")}</span>`).join("")}</div>
-    </div>` : "";
+    </div>` : `
+    <div class="town-section town-preview">
+      <div class="town-cap">🫂 なかま（0）</div>
+      <div class="town-friends">
+        <span class="town-friend ghost">${creatureSVG("#6a6390", "circle", "neutral")}</span>
+        <span class="town-friend ghost">${creatureSVG("#6a6390", "bunny", "neutral")}</span>
+        <span class="town-friend ghost">${creatureSVG("#6a6390", "ghost", "neutral")}</span>
+        <span class="town-preview-note">夜の道で 手をのばすと、ここに ともだちが かえってくる。<br>救うほど、この街は あかるくなる。</span>
+      </div>
+    </div>`;
   // ことばを覚えているときだけ「いえる ことば」セクションを出す。
   const wordsSection = hasWords ? `
     <div class="town-section">
@@ -1012,16 +1022,20 @@ function renderField() {
   const pochiLeft = Math.round((field.x / goal) * 100);
   const progPct = pochiLeft;
 
-  // 道に点在する出来事（済みは薄く）
+  const lastPicked = field.picked.length ? field.picked[field.picked.length - 1] : null;
+  // 道に点在する出来事（済みは薄く／拾った瞬間は pop／友は出会うと一拍ふるえる）
   const nodesHtml = field.nodes.map((n) => {
     const left = Math.round((n.at / goal) * 100);
     if (n.type === "word") {
-      return `<span class="road-node node-word ${n.done ? "done" : ""}" style="left:${left}%" title="おちている ことば">💬</span>`;
+      const popped = (n.done && n.word === lastPicked) ? "justpicked" : "";
+      return `<span class="road-node node-word ${n.done ? "done" : ""} ${popped}" style="left:${left}%" title="おちている ことば">💬</span>`;
     } else if (n.type === "friend") {
       const base = ENEMIES[n.enemy] || {};
-      return `<span class="road-node node-friend ${n.done ? "done" : ""}" style="left:${left}%" title="${base.name}">${creatureSVG(base.color, base.shape, "sad")}</span>`;
+      const calling = (field.activeFriend === n) ? "calling" : "";
+      return `<span class="road-node node-friend ${n.done ? "done" : ""} ${calling}" style="left:${left}%" title="${base.name}">${creatureSVG(base.color, base.shape, "sad")}</span>`;
     } else {
-      return `<span class="road-node node-battle ${n.done ? "done" : ""}" style="left:${left}%" title="群れの けはい">⚔</span>`;
+      const near = field.reachedBattle ? "climax" : "";
+      return `<span class="road-node node-battle ${n.done ? "done" : ""} ${near}" style="left:${left}%" title="群れの けはい">⚔</span>`;
     }
   }).join("");
 
@@ -1041,7 +1055,7 @@ function renderField() {
   body.innerHTML = `
     <div class="field-top">
       <span class="field-night">${meta ? (meta.night >= meta.maxNights ? "さいごの夜" : meta.night + "夜目") : "夜"}</span>
-      <div class="field-progress"><div class="fill" style="width:${progPct}%"></div></div>
+      <div class="field-progress ${field.reachedBattle ? "climax" : ""}"><div class="fill" style="width:${progPct}%"></div></div>
       <span class="field-dawn">朝</span>
     </div>
     <div class="field-road">
@@ -1076,9 +1090,15 @@ function showMacroResult() {
     ? meta.friends.map((f) => `<span class="town-friend">${creatureSVG(f.color, f.shape, "happy")}</span>`).join("")
     : `<span class="town-empty">となりには、だれも いない。</span>`;
   // 迎えた友の“固有名”を一文差し込む＝総和の数字でなく、顔のある朝にする（“さいご”の感情接続）。
-  const nameLine = meta.friends.length
-    ? `<p class="result-text macro-name">おかえり、${meta.friends[0].name}。${meta.friends.length > 1 ? `${meta.friends.length - 1}人の、みんなも。` : ""}</p>`
-    : "";
+  //   2〜3人ぶんは実名で呼び、それ以上は「みんなも」でまとめる（顔ぶれを名前で返す）。
+  let nameLine = "";
+  if (meta.friends.length) {
+    const names = meta.friends.map((f) => f.name);
+    const shown = names.slice(0, 3);
+    let body2 = `おかえり、${shown.join("。")}。`;
+    if (names.length > shown.length) body2 += `そして、ほかの みんなも。`;
+    nameLine = `<p class="result-text macro-name">${body2}</p>`;
+  }
 
   body.innerHTML = `
     <h2 class="result-title">${e.title}</h2>

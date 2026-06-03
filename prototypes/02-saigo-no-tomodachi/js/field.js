@@ -119,8 +119,11 @@ function buildField() {
   // 落ちていることば：まだ覚えていない やさしいことば から
   const wordPool = (typeof FIELD_WORD_POOL !== "undefined" ? FIELD_WORD_POOL.slice() : [])
     .filter((id) => meta.learnedWords.indexOf(id) < 0);
-  // 救いを待つ友：道で うずくまっている子の種類
-  const friendPool = (typeof FIELD_FRIEND_POOL !== "undefined" ? FIELD_FRIEND_POOL.slice() : []);
+  // 救いを待つ友：道で うずくまっている子。まだ街にいない“新しい顔”を優先＝夜ごとに会う相手が変わる（顔枯れ防止）。
+  const allFriends = (typeof FIELD_FRIEND_POOL !== "undefined" ? FIELD_FRIEND_POOL.slice() : []);
+  const homeTypes = (meta.friends || []).map((f) => f.type);
+  let friendPool = allFriends.filter((id) => homeTypes.indexOf(id) < 0);
+  if (!friendPool.length) friendPool = allFriends.slice(); // 全員 もう街にいるなら 再会もあり
   _shuffleField(wordPool); _shuffleField(friendPool);
 
   // 道の途中スロットに「友／ことば」を交互に置く（偶数番は 友、奇数番は ことば）
@@ -197,7 +200,12 @@ function fieldCheckNodes() {
       } else {
         field.message = "…なにか おちていた（もう しっている ことばだ）";
       }
-      if (typeof renderField === "function") renderField(); // 拾った印（done）を反映
+      // ひと呼吸 止まって “ひろった”を読ませる＝カーソルを振り切っても語が増えた手応えが消えない。
+      field.paused = true;
+      if (typeof setTimeout === "function") setTimeout(function () { field.paused = false; startFieldLoop(); }, 280);
+      else field.paused = false;
+      if (typeof renderField === "function") renderField(); // 拾った印（done・ポップ）を反映
+      return; // 1フレームに1つだけ処理（複数同時踏破で上書きされない）
     } else if (n.type === "friend") {
       // 友に出会ったら 追従を止め、「こえをかける／とおりすぎる」を選ばせる（素通りさせない）。
       field.activeFriend = n;

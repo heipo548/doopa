@@ -993,7 +993,9 @@ body.theme-town { background: radial-gradient(circle at 50% 120%, #4a3a6e 0%, #2
 .road-node.done { opacity: 0.22; filter: grayscale(1); }
 .pochi {
   position: absolute; bottom: 26px; transform: translateX(-50%);
-  width: 40px; height: 40px; transition: left 0.32s ease;
+  width: 40px; height: 40px;
+  /* left は追従ループが毎フレーム直接書く＝CSS transition を乗せると二重がけで“ゴムひも”遅延になる。
+     なめらかさは JS 側の イージング(FIELD_SPEED) が担うので、ここでは left に transition を掛けない。 */
   animation: pochibob 0.9s ease-in-out infinite;
 }
 @keyframes pochibob { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-3px); } }
@@ -1064,4 +1066,41 @@ body.theme-town { background: radial-gradient(circle at 50% 120%, #4a3a6e 0%, #2
   .town-go.pulse { animation: none; }
   .town-lantern.justlit { animation: none; }
   .pochi.walking { animation: none; }
+}
+
+/* ── v0.4 追補2：マウス追従の手触り＆顧客価値（ドパガキCycle3反映）── */
+
+/* 友に出会った瞬間の“タメ”＝心が止まる間を見せる（拡大＋ふるえ） */
+.road-node.node-friend.calling { animation: friendcall 0.5s ease; z-index: 3; }
+@keyframes friendcall {
+  0% { transform: translateX(-50%) scale(1); }
+  40% { transform: translateX(-50%) scale(1.5) rotate(-4deg); }
+  70% { transform: translateX(-50%) scale(1.5) rotate(4deg); }
+  100% { transform: translateX(-50%) scale(1.35); }
+}
+/* 拾った瞬間の💬ポップ（語が増えた手応え） */
+.road-node.node-word.justpicked { animation: wordpick 0.5s ease; }
+@keyframes wordpick {
+  0% { transform: translateX(-50%) scale(1); }
+  45% { transform: translateX(-50%) scale(1.8) translateY(-6px); opacity: 1; }
+  100% { transform: translateX(-50%) scale(0.9); opacity: 0.25; }
+}
+/* 道のおわり（群れ）の盛り上げ：⚔ノードと進捗バーが脈動 */
+.road-node.node-battle.climax { animation: battlethrob 0.7s ease-in-out infinite; }
+@keyframes battlethrob {
+  0%,100% { transform: translateX(-50%) scale(1); filter: drop-shadow(0 0 6px rgba(255,93,122,0.6)); }
+  50% { transform: translateX(-50%) scale(1.25); filter: drop-shadow(0 0 14px rgba(255,93,122,0.95)); }
+}
+.field-progress.climax { box-shadow: 0 0 12px 2px rgba(255,93,122,0.5); animation: progthrob 0.7s ease-in-out infinite; }
+@keyframes progthrob { 0%,100% { box-shadow: 0 0 8px 1px rgba(255,93,122,0.4); } 50% { box-shadow: 0 0 16px 4px rgba(255,93,122,0.8); } }
+
+/* 第一夜の街の“伸びしろ”予告（灰のシルエット＋一文） */
+.town-preview .town-friend.ghost { opacity: 0.3; filter: grayscale(1); }
+.town-preview-note { font-size: 12px; color: var(--text-dim); line-height: 1.6; margin-left: 6px; align-self: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .road-node.node-friend.calling,
+  .road-node.node-word.justpicked,
+  .road-node.node-battle.climax,
+  .field-progress.climax { animation: none; }
 }
