@@ -56,6 +56,9 @@ function applyDamage(enemy, dmg) {
       // 第一夜チュートリアルの くろまる だけは“もう いない”と静かに返す（説明でなく結果で伝える）。
       if (game.tutorial && typeof TUTORIAL !== "undefined" && enemy.type === TUTORIAL.enemy) {
         log(`  ${TUTORIAL.hit}`);
+        // 初手で“ぶつける”だけして 核（きく→本音→手をのばす）に触れず終わるのを拾う。
+        //   責めず・断定せず、“もう一つの道があった”ことを そっと一度だけ（桜井レビュー#1）。
+        if (!game.listened) flash("ぶつけて、追い払った。……きいて みたら、どうだったろう。");
       } else {
         log(`  ${enemy.name} は ことばに 背を向けて 消えた…（おいはらった +1）`);
       }

@@ -371,9 +371,13 @@ function renderCommands() {
   //   show: ウェーブ1では ぶつける/きいてみる ＋（むかえられる時だけ）手をのばす だけ。もちもの/こらえる は2波目から。
   // ぶつける も こころを使う（v0.7）。どの ことばも払えないときは押せない＝軽い手/こらえる へ。
   const canFight = game.player.weapons.some((id) => ((WEAPONS[id] && WEAPONS[id].cost) || 0) <= p.kokoro);
+  // 第一夜は“何をするか”を動詞で対比（おいはらう／こえを きく）＝押す前に二択が分かる（桜井#3）。
+  //   こころが足りずに ぶつける が押せないときは その理由を sub に出す（桜井#5・P1-4と整合）。
+  const fightSub = !canFight ? "こころが たりない" : (game.tutorial ? "おいはらう" : "きついことば");
+  const actSub = game.tutorial ? "こえを きく" : (w1 ? "きく" : `きく・こころ-${BALANCE.actCost}`);
   const defs = [
-    { cmd: "fight", label: "ぶつける", sub: "きついことば", cls: "c-fight", on: active && canFight, show: true },
-    { cmd: "act", label: "きいてみる", sub: w1 ? "きく" : `きく・こころ-${BALANCE.actCost}`, cls: "c-act", on: active && p.kokoro >= BALANCE.actCost, show: true },
+    { cmd: "fight", label: "ぶつける", sub: fightSub, cls: "c-fight", on: active && canFight, show: true },
+    { cmd: "act", label: "きいてみる", sub: actSub, cls: "c-act", on: active && p.kokoro >= BALANCE.actCost, show: true },
     { cmd: "save", label: "手をのばす", sub: savableExists ? (w1 ? "むかえる" : `むかえる・こころ-${BALANCE.saveCost}`) : "さきに きいてみる", cls: "c-save", on: active && p.kokoro >= BALANCE.saveCost && savableExists, show: !w1 || savableExists },
     { cmd: "item", label: "もちもの", sub: "おまもり", cls: "c-item", on: active && hasItem, show: !w1 },
     { cmd: "defend", label: "こらえる", sub: "まもる", cls: "c-defend", on: active, show: !w1 },
@@ -448,7 +452,7 @@ function renderPrompt() {
       const word = wordById(id);
       if (!word) continue;
       const icon = WORD_ICON[id] || (word.category === "yasashii" ? "🌱" : word.category === "silence" ? "🤫" : "💭");
-      const b = addBtn(`${icon}「${word.name}」`, word.desc, () => selectAct(id));
+      const b = addBtn(`${icon}「${word.name}」`, actWordSub(word), () => selectAct(id));
       if (b) b.classList.add(catClass(word.category));
     }
     addCancel();
@@ -494,6 +498,18 @@ function actOptionsFor(uid) {
 function catClass(cat) {
   return { toge: "word-toge", yasashii: "word-yasashii", toi: "word-toi", silence: "word-silence" }[cat] || "word-toi";
 }
+// きいてみる の選択肢サブを ぶつける側と同じ“圧縮グリフ”に揃える（直感UIを左右で統一・桜井#2）。
+//   長い説明文(desc)ではなく、効果アイコンだけ＝読む量を半減し ひと目で違いが分かる。
+function actWordSub(word) {
+  const parts = [];
+  const wall = word.wall || word.sadWall;
+  if (wall) parts.push(`かべ-${wall}`);
+  if (word.atkDown) parts.push("勢い↓");
+  if (word.silence) parts.push("とめる");
+  if (word.heal) parts.push(`HP+${word.heal}`);
+  if (!parts.length) parts.push(word.category === "silence" ? "しずか" : "そっと");
+  return parts.join(" ");
+}
 // ことばの役割アイコン＝読まずに違いが伝わる（選ぶ楽しさ）。罵声・問いかけ・ミーム。
 const WORD_ICON = {
   namida: "💢", damare: "🤐", poyo: "🌀", hikari: "💨", kiero: "💥",
@@ -533,7 +549,8 @@ function coachLine() {
       : "💡 ♡が消えた子は【手をのばす】＝ともだちに！";
   }
   // まだ何もしていない最初の一手。チュートリアルは“2つの関わり方”を並べて選ばせる。
-  if (game.turn === 0 && game.counters.kill === 0 && game.counters.save === 0 && !game.listened) {
+  //   （turn 条件は外す＝「ぶつける」脈動の表示タイミングと一致させる・桜井#4）
+  if (game.counters.kill === 0 && game.counters.save === 0 && !game.listened) {
     return game.tutorial
       ? "💡【ぶつける】で 追い払う？ それとも【きいてみる】で 声を きく？"
       : "💡 きついことばで【ぶつける】と すぐ退けられる。まず ためしてみよう。";
@@ -1243,7 +1260,6 @@ function showMacroResult() {
   const body = ov.querySelector(".ov-body");
   if (!body) return;
   const e = field.macro.ending;
-  const ratePct = Math.round(field.macro.rate * 100);
   const intro = (typeof MACRO_INTRO !== "undefined") ? MACRO_INTRO : "";
   const friendsHtml = meta.friends.length
     ? meta.friends.map((f) => `<span class="town-friend">${creatureSVG(f.color, f.shape, "happy")}</span>`).join("")
@@ -1306,10 +1322,12 @@ function showResult(kind) {
   if (kind === "dawn" && game && game.tutorial) {
     if (typeof setBgmTheme === "function") setBgmTheme("warm");
     document.body.className = "theme-night";
+    // 追い払っただけの朝に 罵声（バカ）を“のこった ことば”として出さない＝静けさで返す（桜井#6）。
+    const tutLast = (game.counters.save === 0 && game.counters.kill > 0) ? "……" : (game.lastWord || "……");
     ov.querySelector(".ov-body").innerHTML = `
       <h2 class="result-title">よが あけた</h2>
       <p class="result-text">ながい よるの、はじめての あさ。</p>
-      <p class="result-words">さいごに のこった ことば　「${game.lastWord || "……"}」</p>
+      <p class="result-words">さいごに のこった ことば　「${tutLast}」</p>
       <button class="restart-btn">🏠 街へ かえる</button>
     `;
     ov.querySelector(".restart-btn").addEventListener("click", () => { playSe("select"); returnToTown(); });
@@ -1318,7 +1336,6 @@ function showResult(kind) {
   }
 
   const stats = runStats();
-  const ratePct = Math.round(stats.saveRate * 100);
 
   let title, text, theme;
   if (kind === "dawn") {
