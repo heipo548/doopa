@@ -57,9 +57,14 @@ var drive = [
   // v0.6 サクサク：idle で敵を直接クリック＝主力の単体ことばで攻撃（1タップ）
   "newGame(); startWave(); ui.mode='idle'; var __hp0=game.enemies[0].hp; onEnemyClick(game.enemies[0].uid); var __after=(livingEnemies()[0]?livingEnemies()[0].hp:'(退けた)'); __o.push('クイック攻撃 ok (敵HP ' + __hp0 + ' -> ' + __after + ')');",
   // 学んだ汎用語が きいてみる に出る経路：手をのばす→gift学習→再度 actOptions
-  "newGame(); startWave(); game.enemies[0].wall=0; onCommand('save'); onEnemyClick(game.enemies[0].uid); __o.push('手をのばす ok (save=' + game.counters.save + ', words=' + JSON.stringify(game.player.words) + ')');",
+  "newGame(); startWave(); game.enemies[0].wall=0; onCommand('save'); __o.push('手をのばす(1体→自動むかえる) ok (save=' + game.counters.save + ', words=' + JSON.stringify(game.player.words) + ')');",
+  // ── v0.7：ことばの“重み”（こころコスト）／対象1体は選択省略／毎ターン回復 ──
+  "newGame(); startWave(); game.player.kokoro=0; var __cf=cmdFight('namida', game.enemies[0].uid); __o.push('こころ0で ぶつける 弾かれる ok (' + (__cf===false) + ')');",
+  "newGame(); startWave(); game.player.weapons.push('kiero'); var __k0=game.player.kokoro; cmdFight('kiero', game.enemies[0].uid); __o.push('重いことば→こころ純減 ok (' + __k0 + ' -> ' + game.player.kokoro + ' / kiero cost=' + WEAPONS.kiero.cost + ' > 回復' + BALANCE.kokoroRegenPerTurn + ')');",
+  "newGame(); startWave(); var __lv=livingEnemies(); __lv.slice(1).forEach(function(e){e.dead=true;}); ui.mode='idle'; selectWeapon(primarySingleWeapon()); __o.push('単体1体は選択省略→即発射 ok (mode=' + ui.mode + ', 残り=' + livingEnemies().length + ')');",
+  "newGame(); startWave(); game.player.kokoro=3; var __kb=game.player.kokoro; cmdDefend(); __o.push('こらえる→こころ回復 ok (' + __kb + ' -> ' + game.player.kokoro + ')');",
   // 直接 playFx を多種イベントで叩く（吹き出し・メーター・回復・被弾）
-  "newGame(); startWave(); game.fx=[{t:'speak',text:'草ァ！',cat:'toge',meme:'kusa'},{t:'kyoki',amount:1},{t:'nukumori',amount:1,bonus:{hpUp:2,healed:2}},{t:'pheal',amount:2},{t:'hit',uid:game.enemies[0].uid,dmg:3,dead:false},{t:'calm',uid:game.enemies[0].uid},{t:'evoice',uid:game.enemies[0].uid,text:'……きいて くれるの？'},{t:'save',uid:game.enemies[0].uid},{t:'noeffect',all:true},{t:'pdmg',dmg:4}]; playFx(); __o.push('playFx 全イベント(ミーム/敵の返事/全体ノーエフェクト含む) ok');",
+  "newGame(); startWave(); game.fx=[{t:'speak',text:'草ァ！',cat:'toge',meme:'kusa'},{t:'kyoki',amount:1},{t:'nukumori',amount:1,bonus:{hpUp:2,healed:2}},{t:'pheal',amount:2},{t:'kspend',amount:2},{t:'kregen',amount:2},{t:'hit',uid:game.enemies[0].uid,dmg:3,dead:false},{t:'calm',uid:game.enemies[0].uid},{t:'evoice',uid:game.enemies[0].uid,text:'……きいて くれるの？'},{t:'save',uid:game.enemies[0].uid},{t:'noeffect',all:true},{t:'pdmg',dmg:4}]; playFx(); __o.push('playFx 全イベント(ミーム/敵の返事/こころ増減/全体ノーエフェクト含む) ok');",
   // レベルアップ画面
   "game.pendingCards = drawCards(); game.pendingLevelUps = 1; game.state = STATES.LEVEL_UP; render(); __o.push('showLevelUp ok (cards=' + game.pendingCards.length + ')');",
   // 結末画面（dawn）＋ RUN OVER 画面

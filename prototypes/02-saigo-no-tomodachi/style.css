@@ -1213,3 +1213,19 @@ body.theme-town { background: radial-gradient(circle at 50% 120%, #4a3a6e 0%, #2
 @media (prefers-reduced-motion: reduce) {
   .enemy-bubble, .meme-flair { animation: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   v0.7：ことばに“重み”（こころコスト）／対象1体は選択省略／文字を減らしアイコン駆動
+          ＋フィールドを縦に広げて“右に行くだけ”を解消
+   ══════════════════════════════════════════════════════════════ */
+
+/* こころが足りなくて選べない ことば（押せない＝グレー）。理由が ひと目で分かる。 */
+.sub-btn.cant { opacity: 0.42; filter: grayscale(0.55); cursor: not-allowed; }
+.sub-btn.cant:hover { transform: none; border-color: var(--line); background: var(--panel); }
+
+/* こころを使った手応え（ぶつけて こころが減る＝痛む）。回復(kregen)と対の色で増減が分かる。 */
+.float-num.kspend { color: #d98fb0; font-size: 16px; }
+
+/* フィールドの道を縦に広げる（上下の寄り道に意味＝2Dの自由感）。最後に置いて確実に上書き。 */
+.field-road { height: 240px; }
+@media (max-width: 520px) { .field-road { height: 200px; } }

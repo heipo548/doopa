@@ -134,10 +134,10 @@ function buildField() {
   field.nodes = [];
   // 物語ビート：初めて夜の道に出る夜だけ、操作の意味を一拍だけ言う（二度目は情景文に戻す）。
   if (meta && !meta._seenFirstWalk) {
-    field.message = "よるの みち。マウスで、ぽちを みぎへ。すすむほど、朝。";
+    field.message = "よるの みち。マウスで ぽちを じゆうに。みぎ＝朝、たて＝寄り道。";
     meta._seenFirstWalk = true;
   } else {
-    field.message = "よるの みち。マウスで ぽちを みちびこう（みぎへ すすむと 朝）。";
+    field.message = "よるの みち。マウスで じゆうに（みぎ＝朝／はしの ことばは たてに 寄り道して ひろう）。";
   }
 
   // 落ちていることば：まだ覚えていない やさしいことば から
@@ -150,18 +150,22 @@ function buildField() {
   if (!friendPool.length) friendPool = allFriends.slice(); // 全員 もう街にいるなら 再会もあり
   _shuffleField(wordPool); _shuffleField(friendPool);
 
-  // 道の途中スロットに「友／ことば」を交互に置く（偶数番は 友、奇数番は ことば）。
-  //   y は道幅(-1..+1)に上下へ散らす＝縦に避ければ“とおりすぎる”が操作で表現できる（決め打ちで検証も安定）。
-  const slots = (typeof META !== "undefined" && META.fieldEventSlots) ? META.fieldEventSlots : [3, 6, 8];
+  // 道の途中スロットに「友／ことば」を 2D に散らす（“右に行くだけ”の解消）。
+  //   ・友 ＝ 中央寄り(y≈±0.4)：必ず出会い「むかえる／とおりすぎる」を選ぶ（物語の分岐）。
+  //   ・ことば ＝ 端(y≈±0.85)：拾うには 縦に“寄り道”が要る＝任意の探索。寄るほど時間を食い よふけが濃くなる
+  //     （リスク/リターン：急いで朝に近づく vs 語彙を増やして夜を重くする）。
+  //   横位置(at)も間隔をばらして、一本道の単調さを消す。
+  const slots = (typeof META !== "undefined" && META.fieldEventSlots) ? META.fieldEventSlots : [1.5, 3, 4.3, 5.6];
   let wi = 0, fi = 0;
   slots.forEach((at, i) => {
-    const ny = (i % 2 === 0) ? -0.5 : 0.5; // 上下 交互に配置
+    const friendY = (i % 4 === 0) ? -0.4 : 0.4;   // 友は中央寄り（上下で変化）
+    const wordY = (i % 4 === 1) ? -0.85 : 0.85;   // ことばは端（縦に寄り道して拾う）
     if (i % 2 === 0 && fi < friendPool.length) {
-      field.nodes.push({ at: at, y: ny, type: "friend", enemy: friendPool[fi++], done: false });
+      field.nodes.push({ at: at, y: friendY, type: "friend", enemy: friendPool[fi++], done: false });
     } else if (wi < wordPool.length) {
-      field.nodes.push({ at: at, y: ny, type: "word", word: wordPool[wi++], done: false });
+      field.nodes.push({ at: at, y: wordY, type: "word", word: wordPool[wi++], done: false });
     } else if (fi < friendPool.length) {
-      field.nodes.push({ at: at, y: ny, type: "friend", enemy: friendPool[fi++], done: false });
+      field.nodes.push({ at: at, y: friendY, type: "friend", enemy: friendPool[fi++], done: false });
     }
   });
   // 道のおわり：群れの けはい（既存戦闘へ）。縦中央に固定＝縦ズレで朝に着けない事故を防ぐ。
@@ -299,7 +303,7 @@ function fieldCheckNodes() {
 //   横=left%(x)・縦=top%(y を 0..100% へ)・進捗バー・足元メッセージ・よふけバー。
 function fieldPaint() {
   const pct = field.goal > 0 ? (field.x / field.goal) * 100 : 0;
-  const topPct = 50 + (field.y || 0) * 30; // -1..+1 → 20%..80%（道幅の上下）
+  const topPct = 50 + (field.y || 0) * 38; // -1..+1 → 12%..88%（道幅を広げ、縦移動に意味を持たせる）
   if (field._pochiEl) { field._pochiEl.style.left = pct + "%"; field._pochiEl.style.top = topPct + "%"; }
   if (field._progEl) field._progEl.style.width = pct + "%";
   if (field._msgEl) field._msgEl.textContent = field.message || "";

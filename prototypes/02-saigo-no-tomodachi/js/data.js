@@ -37,6 +37,16 @@ const PLAYER_INIT = {
 const BALANCE = {
   actCost: 1,             // こころみる1回で消費するこころ
   saveCost: 2,            // すくう1回で消費するこころ（救うのは“重い”）
+
+  // ── こころ＝「ことばを発する力（心のゆとり）」に一本化 ──
+  //   やさしさ(きいてみる/手をのばす)だけでなく、きついことば(ぶつける)も これを消費する。
+  //   ＝残酷さを吐くほど、やさしくする余裕(こころ)が減る（ユーザーの「悪いこと言うと心が痛む」案）。
+  //   ねらい：ぶつけるが“無料の一択”でなくなり、毎ターン「重い一撃で仕留める？/軽い手で凌いで
+  //           こころを残す？」の天秤が生まれる（武器ごとの cost は WEAPONS 側に持たせる）。
+  //   ★要素を増やさない方針：プレイヤーが“見て管理する数字”は こころ ひとつに集約する。
+  //     （HP反動や新ゲージは足さない＝分かりにくさを避ける）
+  kokoroRegenPerTurn: 2,     // 毎プレイヤーターン、こころが自然に戻る量（息をつく＝ハードロック防止）
+  kokoroRegenDefendBonus: 2, // 「こらえる」ターンは追加で戻る（立て直しの一手に意味を持たせる）
   healAmount: 10,         // どうぐ（回復）の回復量
   defendReduction: 0.7,   // まもる：このターンの被ダメを70%カット
   weaponMaxLv: 3,         // 武器がこの Lv に達すると進化条件を満たす
@@ -75,16 +85,8 @@ const BALANCE = {
   metaBondPerFriend: 1,   // 街の友1人につき 反撃を 1 軽減（在籍ぶん）
   metaBondMax: 2,         // 街の友ぶんの軽減の上限（持ち越しが強すぎないように小さく）
 
-  // ── しずけさの回復（純・救いルートのソフトロック解消）──
-  // こころは startWave でしか満タンに戻らないため、ウェーブ途中でこころが枯れ、
-  // かつ場に残るのが「壁0＝おだやかで殴ってこない友」だけになると、
-  //   救えない（こころ無し）／殴られない（敵が静か）／こころも戻らない、で詰む。
-  // そこで「被弾0の静かな夜」が続くターンは、待つほど主人公が少しずつ こころを取り戻す。
-  //   → まもる等でターンを進めれば必ず救えるようになり、平和ルートが完走できる。
-  // 値の根拠：actCost=1 / saveCost=2 なので、1体を「壁ほどく(ACT)→すくう(SAVE)」には
-  //   合計3こころ要る。regen=1 なら数ターン待てば1体救える“ゆっくりだが確実”な早さ。
-  //   被弾しているターンは回復しない（下の runEnemyTurn 参照）ので、祓う即殺の速さの優位は保つ。
-  calmKokoroRegen: 1,     // 被弾0のターン終わりに、こころ < maxKokoro なら回復する量（max でクランプ）
+  // ※（旧 calmKokoroRegen「被弾0のターンだけ回復」は v0.7 で kokoroRegenPerTurn に統合・廃止。
+  //   こころは毎ターン少しずつ戻るので、救いルートのソフトロックも自然に解消される。）
 
   // ── 口喧嘩バトル：2つの“雪だるまゲージ”（ことばの積み方＝ビルド）──
   // この夜の戦いは武器ではなく「ことば」で行う。
@@ -158,6 +160,9 @@ const ALL_WORDS = Object.assign({}, ACTS, KIND_WORDS);
 //     name に実際のセリフを入れている（UI は name を表示するため）。
 //   target: single=単体 / front2=前列2体 / front3=前列3体 / all=全体
 //   power: 基礎威力（実威力 = power + (Lv-1) * perLv） ／ category: toge=きつい
+//   cost: このことばを言うのに要る“こころ”（重い/卑劣なことばほど高い＝心が痛む）。
+//         ねらい：威力÷cost の“効率”は バカ(6/2) > きえろ(7/3) なので、重い一撃は
+//         「いま仕留めて殴られを止めたい」時の選択になり、“最大威力の一択”が崩れる。
 //   kyoki: このことばで上がる“狂気”（とげを言うほど世界が翳る）
 //   evolveKey: 進化に必要なパッシブ ／ evolveTo: 進化後の id
 //   進化後は evolved:true（Lvの概念なし）。
@@ -165,24 +170,25 @@ const ALL_WORDS = Object.assign({}, ACTS, KIND_WORDS);
 const WEAPONS = {
   // 基本3種（きついことば）
   // power 6：開幕の「くろまる(HP6)・ふらふら(HP5)」を一撃で退けられる＝攻撃役を毎ターン1体減らせる。
-  namida: { name: "バカ",       word: "バカ",       target: "single", power: 6, perLv: 1, category: "toge", kyoki: 1, evolveKey: "fukai", evolveTo: "daikouzui" },
-  poyo:   { name: "うるさい",   word: "うるさい",   target: "front2", power: 3, perLv: 1, category: "toge", kyoki: 1, evolveKey: "okori", evolveTo: "bakuretsu" },
+  namida: { name: "バカ",       word: "バカ",       target: "single", power: 6, perLv: 1, cost: 2, category: "toge", kyoki: 1, evolveKey: "fukai", evolveTo: "daikouzui" }, // 標準の単体（こころ効率がよい主力）
+  poyo:   { name: "うるさい",   word: "うるさい",   target: "front2", power: 3, perLv: 1, cost: 2, category: "toge", kyoki: 1, evolveKey: "okori", evolveTo: "bakuretsu" },
   // perLv 1：全体ことばが“1ボタンで全部片付く”と緊張が消え、ぶつける一強になる。Lv3 でも威力5に抑える。
-  hikari: { name: "あっちいけ", word: "あっちいけ", target: "all",    power: 3, perLv: 1, category: "toge", kyoki: 2, evolveKey: "negai", evolveTo: "kyusai" },
+  hikari: { name: "あっちいけ", word: "あっちいけ", target: "all",    power: 3, perLv: 1, cost: 3, category: "toge", kyoki: 2, evolveKey: "negai", evolveTo: "kyusai" }, // 全体は こころ消費 大
   // 進化しない 罵声バリエーション（初期手数＆引き出しを増やす）
-  damare: { name: "だまれ",   word: "だまれ",   target: "single", power: 4, perLv: 1, category: "toge", kyoki: 1, silence: 1 }, // 軽い単体＋1ターン黙らせる（役割の違い）
-  kiero:  { name: "きえろ",   word: "きえろ",   target: "single", power: 7, perLv: 1, category: "toge", kyoki: 2 }, // 重い単体（カードで入手）
+  damare: { name: "だまれ",   word: "だまれ",   target: "single", power: 4, perLv: 1, cost: 1, category: "toge", kyoki: 1, silence: 1 }, // 軽い単体＋1ターン黙らせる（安い牽制＝役割の違い）
+  kiero:  { name: "きえろ",   word: "きえろ",   target: "single", power: 7, perLv: 1, cost: 3, category: "toge", kyoki: 2 }, // 重い単体（こころ3＝ここぞの仕留め）
   // ── ネットミーム系 きついことば（罵声=toge。可愛い毒・トホホ。power は既存レンジ準拠＝一強化を防ぐ）──
   //   meme: 知ってる人が「！」となる専用の小演出キー（ui.js の MEME_FX）。
-  ma:       { name: "ま？",        word: "ま？",        target: "single", power: 7, perLv: 1, category: "toge", kyoki: 2, meme: "ma" },     // 見下しの一撃（kiero 同格の重い単体・煽り）
-  zako:     { name: "ざぁこ♡",     word: "ざぁこ♡",     target: "front2", power: 4, perLv: 1, category: "toge", kyoki: 2, atkDown: 1, meme: "zako" }, // あおって前列2体＋勢いを そぐ
-  kusa:     { name: "草ァ！",       word: "草ァ！",       target: "all",    power: 3, perLv: 1, category: "toge", kyoki: 2, meme: "kusa" },     // 全体に嘲笑をばら撒く（hikari 同格）
-  // 進化形態（とげの極み。性能が一段跳ね上がるが、狂気も大きく積む）
-  daikouzui: { name: "もう みんな きらい", word: "もう みんな きらい", target: "all", power: 5, wallDown: 1, category: "toge", kyoki: 3, evolved: true, desc: "全体に5ダメージ＋心の壁−1（狂気＋＋＋）" },
-  bakuretsu: { name: "しつこいしつこい！", word: "しつこいしつこい！", target: "front3", power: 6,        category: "toge", kyoki: 2, evolved: true, desc: "前列3体に6ダメージ（狂気＋＋）" },
+  ma:       { name: "ま？",        word: "ま？",        target: "single", power: 7, perLv: 1, cost: 3, category: "toge", kyoki: 2, meme: "ma" },     // 見下しの一撃（kiero 同格の重い単体・煽り）
+  zako:     { name: "ざぁこ♡",     word: "ざぁこ♡",     target: "front2", power: 4, perLv: 1, cost: 2, category: "toge", kyoki: 2, atkDown: 1, meme: "zako" }, // あおって前列2体＋勢いを そぐ
+  kusa:     { name: "草ァ！",       word: "草ァ！",       target: "all",    power: 3, perLv: 1, cost: 3, category: "toge", kyoki: 2, meme: "kusa" },     // 全体に嘲笑をばら撒く（hikari 同格）
+  // 進化形態（とげの極み。性能が一段跳ね上がるが、こころ・狂気も大きく積む）
+  daikouzui: { name: "もう みんな きらい", word: "もう みんな きらい", target: "all", power: 5, cost: 4, wallDown: 1, category: "toge", kyoki: 3, evolved: true, desc: "全体に5ダメージ＋心の壁−1（狂気＋＋＋）" },
+  bakuretsu: { name: "しつこいしつこい！", word: "しつこいしつこい！", target: "front3", power: 6, cost: 3, category: "toge", kyoki: 2, evolved: true, desc: "前列3体に6ダメージ（狂気＋＋）" },
   // 「救済の光」＝あっちいけ が“ねがい”で反転した進化。とげではなく、群れ全員へ手をのばすことば。
   //   救いビルドも“強く”なれる道：火力は控えめ・壁−2が主役・狂気は積まず、むしろ やさしい＋。
-  kyusai:    { name: "いっしょに かえろう", word: "いっしょに かえろう", target: "all", power: 2, wallDown: 2, category: "yasashii", kyoki: 0, nukumori: 1, evolved: true, desc: "全体の心の壁−2＋2ダメージ（やさしい＋・狂気なし）" },
+  //   救いの言葉は“痛まない”＝こころ消費は軽い(1)。
+  kyusai:    { name: "いっしょに かえろう", word: "いっしょに かえろう", target: "all", power: 2, cost: 1, wallDown: 2, category: "yasashii", kyoki: 0, nukumori: 1, evolved: true, desc: "全体の心の壁−2＋2ダメージ（やさしい＋・狂気なし）" },
 };
 
 // ──────────────────────────────────────────
@@ -272,26 +278,28 @@ const ITEMS = {
 //   仕様の8種に加え、進化テーブルを全3種“到達可能”にするため
 //   進化キー（おこりんぼ／ねがい）も後半に足しています。
 // ──────────────────────────────────────────
+// ※文字量を減らし“読まずに分かる”ように：カード名は アイコン＋「ことば」だけ（「おぼえる：」は廃止）。
+//   desc は 対象 ⚡威力・♡こころ の グリフで圧縮（直感UIの定石＝アイコン＞長文）。
 const CARDS = [
   // 新しい きついことば（ぶつける の択が増える）
-  { id: "w_kiero",  type: "weapon",    weapon: "kiero",  name: "おぼえる：「きえろ」",       desc: "単体に強く ぶつける きついことば（威力7）" },
-  { id: "w_hikari", type: "weapon",    weapon: "hikari", name: "おぼえる：「あっちいけ」",   desc: "全体に ぶつける きついことば" },
+  { id: "w_kiero",  type: "weapon",    weapon: "kiero",  name: "💥「きえろ」",     desc: "単体 ⚡7・♡3（重い一撃）" },
+  { id: "w_hikari", type: "weapon",    weapon: "hikari", name: "💨「あっちいけ」", desc: "全体 ⚡3・♡3" },
   // 新しい やさしいことば（きいてみる の語彙が増える＝言えることが増える成長）
-  { id: "word_arigatou", type: "word", word: "arigatou", name: "おぼえる：「ありがとう」",   desc: "やさしいことば：相手が おとなしくなる・やさしい＋" },
-  { id: "word_shizuka",  type: "word", word: "shizuka",  name: "おぼえる：「……（だまる）」", desc: "沈黙：さみしい子の壁が ほどける・やさしい＋" },
+  { id: "word_arigatou", type: "word", word: "arigatou", name: "🫂「ありがとう」", desc: "相手が おとなしくなる・やさしい＋" },
+  { id: "word_shizuka",  type: "word", word: "shizuka",  name: "🤫「……」",       desc: "さみしい子の壁が ほどける・やさしい＋" },
   // ── ネットミーム きついことば（引きでビルド分岐・遊び心。やさしいミームは夜の道で拾える）──
-  { id: "w_ma",          type: "weapon", weapon: "ma",       name: "おぼえる：「ま？」",     desc: "単体に強く ぶつける（威力7・狂気＋＋）" },
-  { id: "w_kusa",        type: "weapon", weapon: "kusa",     name: "おぼえる：「草ァ！」",   desc: "全体に 嘲笑を ばら撒く（狂気＋＋）" },
-  { id: "w_zako",        type: "weapon", weapon: "zako",     name: "おぼえる：「ざぁこ♡」", desc: "前列2体を あおる＋勢いを そぐ" },
+  { id: "w_ma",          type: "weapon", weapon: "ma",       name: "❓「ま？」",     desc: "単体 ⚡7・♡3（煽り）" },
+  { id: "w_kusa",        type: "weapon", weapon: "kusa",     name: "🌿「草ァ！」",   desc: "全体 ⚡3・♡3（嘲笑）" },
+  { id: "w_zako",        type: "weapon", weapon: "zako",     name: "😏「ざぁこ♡」", desc: "前列2 ⚡4・♡2・勢いそぐ" },
   // 強化・成長
-  { id: "w_up",     type: "weaponLv",                    name: "ことばを とがらせる（Lv＋1）", desc: "きついことばを1つ選んで1段 強める" },
-  { id: "hp",       type: "maxHp",     amount: 5,        name: "＋たいりょく",         desc: "最大HP＋5（その分すぐ回復）" },
-  { id: "kokoro",   type: "maxKokoro", amount: 3,        name: "＋こころ",             desc: "最大こころ＋3（きく／むかえる の燃料）" },
-  { id: "fukai",    type: "passive",   key: "fukai",     name: "ふかいかなしみ",       desc: "悲しむ相手への与ダメ＋。「バカ」を「もう みんな きらい」へ進化させるキー" },
-  { id: "yasashii", type: "passive",   key: "yasashii",  name: "やさしいて",           desc: "手をのばした成功時、隣の1体の壁−1（連鎖）" },
-  { id: "hayaashi", type: "passive",   key: "hayaashi",  name: "はやあし",             desc: "毎ウェーブ先手＋被弾を一定確率で回避" },
-  { id: "okori",    type: "passive",   key: "okori",     name: "おこりんぼ",           desc: "前列ことばの与ダメ＋。「うるさい」を「しつこいしつこい！」へ進化させるキー" },
-  { id: "negai",    type: "passive",   key: "negai",     name: "ねがい",               desc: "「あっちいけ」を「いっしょに かえろう」へ反転進化させるキー" },
+  { id: "w_up",     type: "weaponLv",                    name: "🔪 ことばを とがらせる", desc: "きついことば1つを Lv＋1" },
+  { id: "hp",       type: "maxHp",     amount: 5,        name: "❤️ ＋たいりょく",   desc: "最大HP＋5" },
+  { id: "kokoro",   type: "maxKokoro", amount: 3,        name: "💗 ＋こころ",       desc: "最大こころ＋3（ことばを言う力）" },
+  { id: "fukai",    type: "passive",   key: "fukai",     name: "🌧 ふかいかなしみ", desc: "悲しむ相手へ与ダメ＋／「バカ」進化キー" },
+  { id: "yasashii", type: "passive",   key: "yasashii",  name: "🤲 やさしいて",     desc: "むかえた時、隣の壁−1" },
+  { id: "hayaashi", type: "passive",   key: "hayaashi",  name: "🐾 はやあし",       desc: "先手＋被弾を確率で 回避" },
+  { id: "okori",    type: "passive",   key: "okori",     name: "💢 おこりんぼ",     desc: "前列ことば 与ダメ＋／「うるさい」進化キー" },
+  { id: "negai",    type: "passive",   key: "negai",     name: "🙏 ねがい",         desc: "「あっちいけ」→「いっしょに かえろう」反転キー" },
 ];
 
 // ──────────────────────────────────────────
@@ -321,8 +329,10 @@ const META = {
                           //   ※各夜は既存の全6ウェーブ＋ボス。増やすほど1プレイが長くなる。
   // 夜の道は「マウスカーソル追従」で歩く（キーボード不使用）。道の長さは内部座標の“目盛り”で、
   //   出来事の位置(slots)はこの目盛り上に置く。ぽちは 0→fieldGoal を なめらかに進む。
-  fieldGoal: 7,           // 夜の道の長さ（目盛り）。出来事3つ＋道のおわりの戦闘。
-  fieldEventSlots: [2, 4, 6], // 道のどの目盛りに「出来事」を置くか（残り1つは必ず おわりの戦闘）
+  fieldGoal: 7,           // 夜の道の長さ（目盛り）。出来事4つ＋道のおわりの戦闘。
+  // 出来事を置く横位置。縦(y)は buildField で 友＝中央寄り／ことば＝端 に散らす＝2Dに広げる。
+  //   ＝「右に行くだけ」を解消：端のことばは“縦に寄り道”して拾う（その間 よふけが濃くなる＝リスク/リターン）。
+  fieldEventSlots: [1.5, 3, 4.3, 5.6],
   lastNightExtra: 2,      // さいごの夜だけ 道を この目盛りぶん 延ばす（“さいご”の手触りを足す）
 };
 

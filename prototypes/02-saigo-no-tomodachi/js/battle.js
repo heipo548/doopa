@@ -92,6 +92,13 @@ function cmdFight(weaponId, targetUid) {
   }
   if (targets.length === 0) return false;
 
+  // こころ＝「ことばを発する力（心のゆとり）」。きついことばも これを消費する（重い/卑劣なほど痛む）。
+  //   足りなければ弾く＝“最大威力の連打”が利かなくなり、「軽い手で凌いで こころを残す」判断が生まれる。
+  const cost = w.cost || 0;
+  if (game.player.kokoro < cost) { flash("こころが たりない（軽いことば／こらえる）"); return false; }
+  game.player.kokoro -= cost;
+  if (cost > 0) pushFx({ t: "kspend", amount: cost }); // こころが減った手応え（プレイヤー側に小さく）
+
   // 狂気が高いほど ことばが鋭くなる（雪だるま）。倍率は控えめ＝“ぶつける一強”を避ける。
   const kyokiMul = 1 + game.player.kyoki * BALANCE.kyokiDmgScale;
   const base = weaponPower(weaponId);
@@ -327,10 +334,28 @@ function endPlayerTurn() {
     onRunOver();
     return;
   }
+  // 毎ターン、こころが すこし戻る（息をつく）。defending を消す前に判定＝こらえた直後は多め。
+  applyKokoroRegen();
   // 次のプレイヤーターンへ
   game.turn++;
   game.player.defending = false; // まもるは直後の敵ターン1回だけ有効
   game.state = STATES.PLAYER_TURN;
+}
+
+// 毎プレイヤーターンの こころ自然回復（ぶつける/きいてみる/手をのばす すべての“燃料”）。
+//   なぜ：こころを「ことばを発する力」に一本化したため、ぶつけるで枯れてハードロックしないよう、
+//   毎ターン少しずつ戻す（エネルギー制）。こらえたターンは追加で戻る＝立て直しの一手に意味を持たせる。
+//   ★これにより 旧「被弾0のときだけ回復(calmKokoroRegen)」は不要になり、回復の窓口を一本化（要素を増やさない）。
+function applyKokoroRegen() {
+  const p = game.player;
+  if (p.kokoro >= p.maxKokoro) return;
+  let amt = BALANCE.kokoroRegenPerTurn || 0;
+  if (p.defending && BALANCE.kokoroRegenDefendBonus) amt += BALANCE.kokoroRegenDefendBonus;
+  if (amt <= 0) return;
+  const before = p.kokoro;
+  p.kokoro = Math.min(p.maxKokoro, p.kokoro + amt);
+  const got = p.kokoro - before;
+  if (got > 0) pushFx({ t: "kregen", amount: got });
 }
 
 // ──────────────────────────────────────────
@@ -384,30 +409,7 @@ function runEnemyTurn() {
   } else {
     log(`  …攻撃は とどかなかった`);
   }
-
-  // しずけさの回復：このターン被弾0（total===0）かつ まだ救うべき敵が残っていて、
-  //   こころに空きがあるなら、待つほど主人公が少しずつ こころを取り戻す。
-  // なぜここか：こころは startWave でしか満タンに戻らないので、ウェーブ途中でこころが枯れ、
-  //   残るのが「壁0＝おだやかで殴ってこない友」だけになると平和ルートが詰む（救う燃料が二度と戻らない）。
-  //   被弾しているターンは回復しない＝祓う即殺の速さの優位は保ったまま、
-  //   「静かな夜に待てば必ず救える」をデータ駆動の小さな加点で成立させる。
-  if (
-    total === 0 &&
-    living.length > 0 &&
-    BALANCE.calmKokoroRegen > 0 &&
-    game.player.kokoro < game.player.maxKokoro
-  ) {
-    const before = game.player.kokoro;
-    game.player.kokoro = Math.min(
-      game.player.maxKokoro,
-      game.player.kokoro + BALANCE.calmKokoroRegen
-    );
-    const got = game.player.kokoro - before;
-    if (got > 0) {
-      log(`  静けさに、こころが すこし もどる（＋${got}）`);
-      pushFx({ t: "kregen", amount: got }); // UI が拾えれば こころ回復の演出に使える（無ければ無視される）
-    }
-  }
+  // ※こころの自然回復は endPlayerTurn の applyKokoroRegen に一本化（被弾有無に依らず毎ターン少し戻す）。
 }
 
 // ──────────────────────────────────────────

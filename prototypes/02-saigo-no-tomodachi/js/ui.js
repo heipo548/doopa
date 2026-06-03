@@ -246,7 +246,10 @@ function renderEnemies() {
     game.state === STATES.PLAYER_TURN &&
     (ui.mode === "fightTarget" || ui.mode === "save");
   // v0.6：何も選んでいない時も、敵を直接クリックで攻撃できる（サクサク）。
-  const quickAttack = game.state === STATES.PLAYER_TURN && ui.mode === "idle" && !!primarySingleWeapon();
+  //   v0.7：主力ことばの こころコストを払えるときだけ（払えないなら 軽い手/こらえる へ誘導）。
+  const _qp = primarySingleWeapon();
+  const quickAttack = game.state === STATES.PLAYER_TURN && ui.mode === "idle" &&
+    !!_qp && game.player.kokoro >= ((WEAPONS[_qp] && WEAPONS[_qp].cost) || 0);
 
   for (const e of living) {
     const card = document.createElement("div");
@@ -364,8 +367,10 @@ function renderCommands() {
   // プレイヤーに見える名前は“ことばで戦う口喧嘩”に寄せる（内部の cmd キーは据え置き）。
   //   ぶつける＝とげとげした言葉 ／ きいてみる＝相手の声をきく ／ 手をのばす＝迎える ／ こらえる＝耐える
   //   show: ウェーブ1では ぶつける/きいてみる ＋（むかえられる時だけ）手をのばす だけ。もちもの/こらえる は2波目から。
+  // ぶつける も こころを使う（v0.7）。どの ことばも払えないときは押せない＝軽い手/こらえる へ。
+  const canFight = game.player.weapons.some((id) => ((WEAPONS[id] && WEAPONS[id].cost) || 0) <= p.kokoro);
   const defs = [
-    { cmd: "fight", label: "ぶつける", sub: "きついことば", cls: "c-fight", on: active, show: true },
+    { cmd: "fight", label: "ぶつける", sub: "きついことば", cls: "c-fight", on: active && canFight, show: true },
     { cmd: "act", label: "きいてみる", sub: w1 ? "きく" : `きく・こころ-${BALANCE.actCost}`, cls: "c-act", on: active && p.kokoro >= BALANCE.actCost, show: true },
     { cmd: "save", label: "手をのばす", sub: savableExists ? (w1 ? "むかえる" : `むかえる・こころ-${BALANCE.saveCost}`) : "さきに きいてみる", cls: "c-save", on: active && p.kokoro >= BALANCE.saveCost && savableExists, show: !w1 || savableExists },
     { cmd: "item", label: "もちもの", sub: "おまもり", cls: "c-item", on: active && hasItem, show: !w1 },
@@ -413,16 +418,22 @@ function renderPrompt() {
   const addCancel = () => addBtn("やめる", "", cancelSelection);
 
   if (ui.mode === "weapon") {
-    addHint("どの きついことばを ぶつける？");
+    // 文字を減らし“読まずに分かる”：アイコン「ことば」＋ ⚡威力・♡こころ のグリフだけ（とげ色で性質を示す）。
+    addHint("ぶつける ことばを えらぶ（♡＝かかる こころ）");
     for (const id of game.player.weapons) {
       const w = WEAPONS[id];
       const tgt = targetLabel(w.target);
       const pow = w.evolved ? w.power : weaponPower(id);
-      // とげのことばは「とげとげ＋」、反転進化「いっしょに かえろう」は やさしい＋ を明記
-      const meter = w.kyoki ? `・とげとげ+${w.kyoki}` : (w.nukumori ? `・やさしい+${w.nukumori}` : "");
+      const cost = w.cost || 0;
+      const afford = game.player.kokoro >= cost; // こころ不足なら押せない
       const icon = WORD_ICON[id] || (w.category === "yasashii" ? "🌱" : "💢");
-      const b = addBtn(`${icon}「${w.name}」`, `${tgt}・威力${pow}${w.wallDown ? `・壁-${w.wallDown}` : ""}${meter}`, () => selectWeapon(id));
-      if (b) { b.classList.add(w.category === "yasashii" ? "word-yasashii" : "word-toge"); if (pow >= 6) b.classList.add("strong"); }
+      const sub = `${tgt} ⚡${pow}${w.wallDown ? ` 壁-${w.wallDown}` : ""}　♡${cost}`;
+      const b = addBtn(`${icon}「${w.name}」`, sub, () => selectWeapon(id));
+      if (b) {
+        b.classList.add(w.category === "yasashii" ? "word-yasashii" : "word-toge");
+        if (pow >= 6) b.classList.add("strong");
+        if (!afford) { b.classList.add("cant"); b.disabled = true; }
+      }
     }
     addCancel();
   } else if (ui.mode === "act") {
@@ -545,6 +556,8 @@ function onCommand(cmd) {
   } else if (cmd === "save") {
     const savable = livingEnemies().filter((e) => e.wall === 0);
     if (savable.length === 0) { showToast("まだ むかえられる子が いない（さきに「きいてみる」）"); return; }
+    // むかえられる子が1体だけなら、選択を挟まず すぐ手をのばす（タップ削減）。
+    if (savable.length === 1) { doAction(() => cmdSave(savable[0].uid), "save"); return; }
     ui.mode = "save"; renderPrompt(); renderEnemies(); renderCommands();
   } else if (cmd === "item") {
     ui.mode = "item"; renderPrompt(); renderCommands();
@@ -557,6 +570,9 @@ function selectWeapon(wid) {
   ui.pendingWeapon = wid;
   const w = WEAPONS[wid];
   if (w.target === "single") {
+    // 対象が1体しかいないなら、わざわざ選ばせない＝即その子へ（タップ削減・自然）。
+    const living = livingEnemies();
+    if (living.length === 1) { doAction(() => cmdFight(wid, living[0].uid), "fight"); return; }
     ui.mode = "fightTarget"; renderPrompt(); renderEnemies(); renderCommands();
   } else {
     doAction(() => cmdFight(wid), "fight"); // 全体・前列はすぐ実行
@@ -593,8 +609,13 @@ function onEnemyClick(uid) {
     doAction(() => cmdSave(uid), "save");
   } else if (ui.mode === "idle") {
     // v0.6 サクサク：何も選んでいない時に敵を直接クリック＝主力の単体きついことばで攻撃（1タップ）。
+    //   v0.7：こころが足りなければ弾く（軽いことば／こらえる へ誘導）。
     const primary = primarySingleWeapon();
-    if (primary) { ui.pendingWeapon = primary; doAction(() => cmdFight(primary, uid), "fight"); }
+    if (primary) {
+      const cost = (WEAPONS[primary] && WEAPONS[primary].cost) || 0;
+      if (game.player.kokoro < cost) { showToast("こころが たりない（軽いことば／こらえる）"); return; }
+      ui.pendingWeapon = primary; doAction(() => cmdFight(primary, uid), "fight");
+    }
   }
 }
 
@@ -668,7 +689,10 @@ function playFx(prevRects) {
     else if (ev.t === "kyoki") meterFloat("kyoki", "とげとげ＋");
     else if (ev.t === "nukumori") { meterFloat("nukumori", "やさしい＋"); if (ev.bonus && ev.bonus.hpUp > 0) pulsePlayerBar(); }
     else if (ev.t === "pheal") { pulsePlayerBar(); floatOnPlayer(`HP＋${ev.amount}`, "pheal"); playSe("heal"); }
-    else if (ev.t === "kregen") { pulseKokoro(); floatOnPlayer(`こころ＋${ev.amount}`, "kregen"); }
+    // こころの増減は同時に出すと重なって読めないので、消費(♡−N)は すぐ／回復(＋N)は ひと拍おく
+    //   ＝「ことばを吐いて こころが減る → ひと息ついて すこし戻る」の順に体で分かるように。
+    else if (ev.t === "kregen") { const a = ev.amount; setTimeout(() => { pulseKokoro(); floatOnPlayer(`こころ＋${a}`, "kregen"); }, 520); }
+    else if (ev.t === "kspend") { pulseKokoro(); floatOnPlayer(`♡−${ev.amount}`, "kspend"); } // ぶつけて こころが減った
     else if (ev.t === "pdmg") pdmg += ev.dmg;
     else if (ev.t === "learn") learnEv = ev;
     else impacts.push(ev); // hit / calm / save / wallhit / noeffect
@@ -1087,9 +1111,9 @@ function renderField() {
 
   const goal = field.goal || 1;
   const pochiLeft = Math.round((field.x / goal) * 100);
-  const pochiTop = Math.round(50 + (field.y || 0) * 30);
+  const pochiTop = Math.round(50 + (field.y || 0) * 38);
   const progPct = pochiLeft;
-  const yTop = (ny) => Math.round(50 + (ny || 0) * 30); // ノードの縦位置（-1..+1 → 20..80%）
+  const yTop = (ny) => Math.round(50 + (ny || 0) * 38); // ノードの縦位置（-1..+1 → 12..88%・道幅を広げた）
 
   const lastPicked = field.picked.length ? field.picked[field.picked.length - 1] : null;
   // 道に点在する出来事（済みは薄く／拾った瞬間は pop／友は出会うと一拍ふるえる／近接はグロー）
@@ -1122,7 +1146,7 @@ function renderField() {
     controls = `<button class="field-btn battle" id="f-battle">⚔ 群れと むきあう</button>`;
   } else {
     // ふだんは ボタン無し＝マウスでぽちを みちびく。やさしい操作ヒントだけ出す。
-    controls = `<span class="field-hint">🖱 マウスで ぽちを じゆうに（みぎへ すすむと 朝。友は 縦に よけて とおれる）</span>`;
+    controls = `<span class="field-hint">🖱 マウスで じゆうに（みぎ＝朝／はしの 💬 は たてに 寄り道して ひろう・寄るほど 夜が 濃くなる）</span>`;
   }
 
   const duskPct = Math.round(field.dusk || 0);

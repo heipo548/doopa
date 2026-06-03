@@ -42,11 +42,17 @@ var sim = [
   "    var es = living();",
   "    if (es.length === 0) break;",
   "    if (kind === 'harsh') {",
-  // 期待ダメージ（威力×当たる体数）が最大のことばを選ぶ＝人が使うであろう手に近づける
-  "      var best=null, bestScore=-1;",
-  "      game.player.weapons.forEach(function(id){ var w=WEAPONS[id]; var n = w.target==='single'?1 : w.target==='front2'?Math.min(2,es.length) : w.target==='front3'?Math.min(3,es.length) : es.length; var sc=weaponPower(id)*n; if(sc>bestScore){bestScore=sc; best=id;} });",
-  "      var bw=WEAPONS[best];",
-  "      if(bw.target==='single'){ var tgt=es.slice().sort(function(a,b){return a.hp-b.hp;})[0]; cmdFight(best, tgt.uid); } else { cmdFight(best); }",
+  // v0.7：ぶつける も こころを消費する。払える ことばの中から 期待ダメージ最大を選ぶ。
+  //   払えるものが無ければ こらえる（＝こころ回復）。これで「こころ統一コストでも祓い道が
+  //   ハードロックせず夜明けに届くか＝非対称が成立するか」を実プレイ寄りに裏付ける。
+  "      var afford = game.player.weapons.filter(function(id){ return (WEAPONS[id].cost||0) <= game.player.kokoro; });",
+  "      if (afford.length === 0) { cmdDefend(); }",
+  "      else {",
+  "        var best=null, bestScore=-1;",
+  "        afford.forEach(function(id){ var w=WEAPONS[id]; var n = w.target==='single'?1 : w.target==='front2'?Math.min(2,es.length) : w.target==='front3'?Math.min(3,es.length) : es.length; var sc=weaponPower(id)*n; if(sc>bestScore){bestScore=sc; best=id;} });",
+  "        var bw=WEAPONS[best];",
+  "        if(bw.target==='single'){ var tgt=es.slice().sort(function(a,b){return a.hp-b.hp;})[0]; cmdFight(best, tgt.uid); } else { cmdFight(best); }",
+  "      }",
   "    } else {",
   // gentle：壁0がいれば むかえる／いなければ 効くことばで壁を下げる／こころ無ければ こらえる
   "      var savable = es.find(function(e){return e.wall===0;});",
