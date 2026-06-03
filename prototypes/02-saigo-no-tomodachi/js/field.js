@@ -15,27 +15,39 @@
 //   "title" / "town" / "field" / "battle"(=既存戦闘, game.state を使う) / "macro"(最終結末)
 let app = { screen: "title" };
 
-// 夜のフィールド（横スクロールの道）の歩行状態
-//   操作は「マウスカーソル追従」のみ（キーボード不使用）。ぽちは x を 0→goal へ なめらかに進む。
+// 夜のフィールド（見下ろし帯）の歩行状態
+//   操作は「マウスカーソル追従」のみ（キーボード不使用）。
+//   主軸は横(x:0→goal=朝へ)を保ちつつ、縦(y:-1..+1)に薄い遊び幅を足して“自由に歩ける”身体性を出す。
 const field = {
   goal: 0,            // 朝（道のおわり＝群れのけはい）までの距離（目盛り）
-  x: 0,               // ぽちの現在位置（0..goal の連続値）
-  targetX: 0,         // マウスカーソルが指す目標位置（0..goal）。ぽちは ここへ追従する
+  x: 0,               // ぽちの横位置（0..goal の連続値。右=朝）
+  y: 0,               // ぽちの縦位置（-1..+1。0が道の中央）
+  targetX: 0,         // マウスカーソルが指す目標 横位置
+  targetY: 0,         // マウスカーソルが指す目標 縦位置
   paused: false,      // 友と向き合う/道のおわり 等で 追従を止めているか
   reachedBattle: false, // 道のおわり（群れのけはい）に到達したか
-  nodes: [],          // 道に点在する出来事 [{at, type:"word"|"friend"|"battle", ...}]
+  dusk: 0,            // よふけメーター（0..100）。滞在・救いで満ちる＝戦闘の入りに効く（NIGHTFALL）
+  nodes: [],          // 道に点在する出来事 [{at, y, type:"word"|"friend"|"battle", ...}]
   message: "",        // 足元に出す短い案内
   picked: [],         // この夜ひろった ことば（id・演出用）
   activeFriend: null, // いま「こえをかける／とおりすぎる」を待っている友ノード
   macro: null,        // マクロ結末の計算結果 {rate, ending}
   townWordJustGiven: null, // 直前に街で授かった くらしのことば（id・街演出用）
   _raf: null,         // requestAnimationFrame のハンドル（追従ループ）
+  _lastT: 0,          // 直近フレームの時刻（dt補正＝フレームレート非依存にするため）
+  _maxv: 1,           // 最高速（目盛り/秒）。buildField で goal から算出（瞬間ワープ防止）
   _lastStep: 0,       // 直近で踏んだ“目盛り”（足音SEを刻むため）
-  _pochiEl: null, _progEl: null, _msgEl: null, // 毎フレーム軽く動かすための要素キャッシュ
+  _pochiEl: null, _progEl: null, _msgEl: null, _duskEl: null, // 毎フレーム軽く動かすための要素キャッシュ
 };
 
-// 追従の速さ（1フレームで進む 目盛り量）。小さすぎず大きすぎず＝出来事を飛ばさない。
-const FIELD_SPEED = 0.12;
+// 追従パラメータ（Webの定石：指数ダンプ lerp＋デッドゾーン＋最高速clamp）。
+//   FOLLOW=基準60fpsでの追従率（0.12〜0.20が“ぬるっと気持ちいい”帯）。dtで端末非依存に補正する。
+const FOLLOW = 0.16;       // 追従の強さ
+const DEADZONE_X = 0.12;   // 横の微振動止め（このぶん以内は動かない＝足音連打も防ぐ）
+                           //   ※小さめ：大きいと道のおわり(goal)に届かず詰む。到達判定はこれより外側にする。
+const DEADZONE_Y = 0.05;   // 縦の微振動止め
+const R_WORD = 0.7;        // ことばを拾う近接半径
+const R_FRIEND = 0.95;     // 友に出会う近接半径（縦に外せば“とおりすぎる”が成立＝身体性）
 
 // ──────────────────────────────────────────
 // メタ進行（夜をまたいで持ち越す）の初期化
@@ -51,6 +63,9 @@ function initMeta() {
     totalKill: 0,  // マクロ結末用の累計
     totalSave: 0,
     history: [],   // 各夜の記録 {night, saveRate, endingId}
+    // 物語ビート（一度きり）の既読フラグ。遊びながら小出しに見せ、二度目は出さない。
+    _seenFirstWalk: false, _seenFirstFriend: false, _seenFirstSave: false,
+    _seenFirstLight: false, _seenFirstNoLight: false,
   };
   return meta;
 }
@@ -106,15 +121,24 @@ function buildField() {
   // さいごの夜だけ 道を少し延ばす＝“さいご”に向かう手触り（3夜が同じにならないように）。
   if (isLastNight() && typeof META !== "undefined" && META.lastNightExtra) goal += META.lastNightExtra;
   field.goal = goal;
-  field.x = 0;
-  field.targetX = 0;
+  field.x = 0; field.y = 0;
+  field.targetX = 0; field.targetY = 0;
   field.paused = false;
   field.reachedBattle = false;
+  field.dusk = 0;             // よふけメーターは毎夜リセット
+  field._lastT = 0;
+  field._maxv = goal / 6;     // 道を約6秒で踏破できる最高速（瞬間ワープ防止のclamp基準）
   field._lastStep = 0;
   field.picked = [];
   field.activeFriend = null;
   field.nodes = [];
-  field.message = "よるの みち。マウスで ぽちを みちびこう（みぎへ すすむと 朝）。";
+  // 物語ビート：初めて夜の道に出る夜だけ、操作の意味を一拍だけ言う（二度目は情景文に戻す）。
+  if (meta && !meta._seenFirstWalk) {
+    field.message = "よるの みち。マウスで、ぽちを みぎへ。すすむほど、朝。";
+    meta._seenFirstWalk = true;
+  } else {
+    field.message = "よるの みち。マウスで ぽちを みちびこう（みぎへ すすむと 朝）。";
+  }
 
   // 落ちていることば：まだ覚えていない やさしいことば から
   const wordPool = (typeof FIELD_WORD_POOL !== "undefined" ? FIELD_WORD_POOL.slice() : [])
@@ -126,20 +150,22 @@ function buildField() {
   if (!friendPool.length) friendPool = allFriends.slice(); // 全員 もう街にいるなら 再会もあり
   _shuffleField(wordPool); _shuffleField(friendPool);
 
-  // 道の途中スロットに「友／ことば」を交互に置く（偶数番は 友、奇数番は ことば）
+  // 道の途中スロットに「友／ことば」を交互に置く（偶数番は 友、奇数番は ことば）。
+  //   y は道幅(-1..+1)に上下へ散らす＝縦に避ければ“とおりすぎる”が操作で表現できる（決め打ちで検証も安定）。
   const slots = (typeof META !== "undefined" && META.fieldEventSlots) ? META.fieldEventSlots : [3, 6, 8];
   let wi = 0, fi = 0;
   slots.forEach((at, i) => {
+    const ny = (i % 2 === 0) ? -0.5 : 0.5; // 上下 交互に配置
     if (i % 2 === 0 && fi < friendPool.length) {
-      field.nodes.push({ at: at, type: "friend", enemy: friendPool[fi++], done: false });
+      field.nodes.push({ at: at, y: ny, type: "friend", enemy: friendPool[fi++], done: false });
     } else if (wi < wordPool.length) {
-      field.nodes.push({ at: at, type: "word", word: wordPool[wi++], done: false });
+      field.nodes.push({ at: at, y: ny, type: "word", word: wordPool[wi++], done: false });
     } else if (fi < friendPool.length) {
-      field.nodes.push({ at: at, type: "friend", enemy: friendPool[fi++], done: false });
+      field.nodes.push({ at: at, y: ny, type: "friend", enemy: friendPool[fi++], done: false });
     }
   });
-  // 道のおわり：群れの けはい（既存戦闘へ）
-  field.nodes.push({ at: field.goal, type: "battle", done: false });
+  // 道のおわり：群れの けはい（既存戦闘へ）。縦中央に固定＝縦ズレで朝に着けない事故を防ぐ。
+  field.nodes.push({ at: field.goal, y: 0, type: "battle", done: false });
 }
 
 // この夜まだ残っている「戦闘ノード」（=道のおわり）
@@ -154,69 +180,68 @@ function fieldBattleNode() {
 //   ・通り過ぎた出来事（ことば/友/群れ）に触れたら fieldCheckNodes が反応する
 // ──────────────────────────────────────────
 
-// マウス位置（道の左端=0 〜 右端=goal の割合）から 目標位置を決める。
-//   引数 frac は 0..1（道に対する横位置の割合）。ui.js / main.js のポインタ処理から呼ぶ。
-function fieldSetTarget(frac) {
+// マウス位置（道の左上=0,0 〜 右下=1,1 の割合）から 目標位置を決める。
+//   fracX/fracY は 0..1。main.js の pointermove から呼ぶ。fracY 省略時は縦を据え置き（後方互換）。
+function fieldSetTarget(fracX, fracY) {
   if (app.screen !== "field") return;
-  const f = Math.max(0, Math.min(1, frac));
-  field.targetX = f * field.goal;
+  field.targetX = Math.max(0, Math.min(1, fracX)) * field.goal;
+  if (typeof fracY === "number") field.targetY = Math.max(0, Math.min(1, fracY)) * 2 - 1; // 0..1 → -1..+1
 }
 
-// 1フレームぶん、ぽちを targetX へ近づける（追従の本体）。
-function fieldStepToward() {
+// 1軸ぶんの追従（指数ダンプ＋最高速clamp＋デッドゾーン）。
+function _stepAxis(ax, k, maxStep, lo, hi, dead) {
+  const cur = field[ax];
+  const tgt = field[ax === "x" ? "targetX" : "targetY"];
+  const dx = tgt - cur;
+  if (Math.abs(dx) < dead) return false; // デッドゾーン内は動かない（微振動・足音連打を防ぐ）
+  let s = dx * k;
+  s = Math.max(-maxStep, Math.min(maxStep, s)); // 瞬間ワープ防止（等速感の保持）
+  field[ax] = Math.max(lo, Math.min(hi, cur + s));
+  return true;
+}
+
+// 1フレームぶん、ぽちを (targetX,targetY) へ近づける（追従の本体）。
+//   now: ブラウザは requestAnimationFrame の timestamp（performance.now）。検証は手動注入（未指定でも落ちない）。
+function fieldStepToward(now) {
   if (app.screen !== "field" || field.paused) return;
-  const dx = field.targetX - field.x;
-  if (Math.abs(dx) > 0.0005) {
-    const stepv = Math.max(-FIELD_SPEED, Math.min(FIELD_SPEED, dx));
-    field.x = Math.max(0, Math.min(field.goal, field.x + stepv));
-    // 目盛りを跨ぐたびに 足音（コッ）＋足元の情景＝歩いている手触り（無音の単調さを避ける）。
-    const cur = Math.floor(field.x);
-    if (cur > field._lastStep) {
-      field._lastStep = cur;
-      if (typeof playSe === "function") playSe("step");
-      if (typeof FIELD_SCENERY !== "undefined" && FIELD_SCENERY.length && cur < field.goal) {
-        field.message = FIELD_SCENERY[cur % FIELD_SCENERY.length];
-      }
+  if (typeof now !== "number") {
+    now = (typeof performance !== "undefined" && performance.now) ? performance.now() : (field._lastT + 16.7);
+  }
+  const dt = field._lastT ? Math.min(now - field._lastT, 50) : 16.7; // 50ms上限＝タブ復帰の暴走を防ぐ
+  field._lastT = now;
+  // フレームレート非依存の指数ダンプ係数（60fps基準を dt で補正）。
+  const k = 1 - Math.pow(1 - FOLLOW, dt / (1000 / 60));
+  const maxStep = field._maxv * dt / 1000;
+  _stepAxis("x", k, maxStep, 0, field.goal, DEADZONE_X);
+  _stepAxis("y", k, maxStep, -1, 1, DEADZONE_Y);
+
+  // よふけメーター：滞在しているだけで じわっと満ちる（dtで時間補正＝端末非依存）。
+  //   ＝「急ぐほど夜は浅い／長居・救いを重ねるほど夜は濃い」を時間で表現（NIGHTFALL）。
+  if (typeof NIGHTFALL !== "undefined") {
+    field.dusk = Math.min(NIGHTFALL.max, field.dusk + NIGHTFALL.risePerFrame * (dt / (1000 / 60)));
+  }
+
+  // 目盛りを横に跨ぐたびに 足音（コッ）＋足元の情景＝歩いている手触り（縦移動だけでは鳴らさない）。
+  const cur = Math.floor(field.x);
+  if (cur > field._lastStep) {
+    field._lastStep = cur;
+    if (typeof playSe === "function") playSe("step");
+    if (typeof FIELD_SCENERY !== "undefined" && FIELD_SCENERY.length && cur < field.goal) {
+      field.message = FIELD_SCENERY[cur % FIELD_SCENERY.length];
     }
   }
-  fieldPaint();      // 重い再描画はせず、ぽち・進捗・足元メッセージだけ動かす
+  fieldPaint();      // 重い再描画はせず、ぽち・進捗・足元メッセージ・よふけバーだけ動かす
   fieldCheckNodes(); // 出来事に触れたか
 }
 
-// いまの x で「まだ済んでいない出来事」に触れたら反応する。
-//   ぽちは右へ進んで朝を目指すので、近づいた（x が ノード位置を超えた）出来事が順に発火する。
+// いまの位置で「まだ済んでいない出来事」に触れたら反応する（2D近接＝円判定）。
+//   ・戦闘ノードだけは従来式（x>=goal-ε）＝縦ズレで朝に着けない事故を防ぐ。
+//   ・ことば/友は「最近接1件」だけ発火（同フレーム多重発火を防ぐ）。縦に外せば素通り＝“とおりすぎる”。
 function fieldCheckNodes() {
   for (const n of field.nodes) {
-    if (n.done) continue;
-    if (field.x < n.at - 0.08) continue; // まだ届いていない
-    if (n.type === "word") {
-      n.done = true;
-      const w = KIND_WORDS[n.word];
-      if (w && meta.learnedWords.indexOf(n.word) < 0) {
-        meta.learnedWords.push(n.word);
-        field.picked.push(n.word);
-        field.message = `おちていた ことばを ひろった：「${w.word}」`;
-        if (typeof playSe === "function") playSe("learn");
-      } else {
-        field.message = "…なにか おちていた（もう しっている ことばだ）";
-      }
-      // ひと呼吸 止まって “ひろった”を読ませる＝カーソルを振り切っても語が増えた手応えが消えない。
-      field.paused = true;
-      if (typeof setTimeout === "function") setTimeout(function () { field.paused = false; startFieldLoop(); }, 280);
-      else field.paused = false;
-      if (typeof renderField === "function") renderField(); // 拾った印（done・ポップ）を反映
-      return; // 1フレームに1つだけ処理（複数同時踏破で上書きされない）
-    } else if (n.type === "friend") {
-      // 友に出会ったら 追従を止め、「こえをかける／とおりすぎる」を選ばせる（素通りさせない）。
-      field.activeFriend = n;
-      field.paused = true;
-      const base = ENEMIES[n.enemy] || {};
-      field.message = `${base.name} が、みちばたで うずくまっている。`;
-      if (typeof playSe === "function") playSe("calm");
-      if (typeof render === "function") render();
-      return;
-    } else if (n.type === "battle") {
-      // 道のおわり＝群れのけはい。止まって「群れと むきあう」を出す。
+    if (n.done || n.type !== "battle") continue;
+    // 到達判定は デッドゾーンより外側に＝右端を狙えば必ず道のおわりに着ける（詰み防止）。
+    if (field.x >= field.goal - (DEADZONE_X + 0.18) && !field.reachedBattle) {
       n.done = true;
       field.reachedBattle = true;
       field.paused = true;
@@ -225,20 +250,67 @@ function fieldCheckNodes() {
       return;
     }
   }
+  // word/friend：半径内に入った最近接1件だけ。近接度 _glow も入れて演出に使う。
+  let best = null, bestD = Infinity;
+  for (const n of field.nodes) {
+    if (n.done || n.type === "battle") continue;
+    const ny = n.y || 0;
+    const d = Math.sqrt((field.x - n.at) * (field.x - n.at) + (field.y - ny) * (field.y - ny));
+    const R = n.type === "friend" ? R_FRIEND : R_WORD;
+    n._glow = Math.max(0, 1 - d / R); // 近いほど 1（renderField でグロー）
+    if (d <= R && d < bestD) { best = n; bestD = d; }
+  }
+  if (!best) return;
+
+  if (best.type === "word") {
+    best.done = true;
+    const w = KIND_WORDS[best.word];
+    if (w && meta.learnedWords.indexOf(best.word) < 0) {
+      meta.learnedWords.push(best.word);
+      field.picked.push(best.word);
+      field.message = `おちていた ことばを ひろった：「${w.word}」`;
+      if (typeof playSe === "function") playSe("learn");
+    } else {
+      field.message = "…なにか おちていた（もう しっている ことばだ）";
+    }
+    // ひと呼吸 止まって “ひろった”を読ませる＝カーソルを振り切っても語が増えた手応えが消えない。
+    field.paused = true;
+    if (typeof setTimeout === "function") setTimeout(function () { field.paused = false; startFieldLoop(); }, 280);
+    else field.paused = false;
+    if (typeof renderField === "function") renderField();
+  } else if (best.type === "friend") {
+    // 友に近づいたら 追従を止め、「こえをかける／とおりすぎる」を選ばせる。
+    field.activeFriend = best;
+    field.paused = true;
+    const base = ENEMIES[best.enemy] || {};
+    // 物語ビート：初めて友に出会う夜だけ、一拍の語り。二度目からは素直に状況だけ。
+    if (meta && !meta._seenFirstFriend) {
+      field.message = "だれかが、うずくまってる。こわくないよ。……こえ、かけてみる？";
+      meta._seenFirstFriend = true;
+    } else {
+      field.message = `${base.name} が、みちばたで うずくまっている。`;
+    }
+    if (typeof playSe === "function") playSe("calm");
+    if (typeof render === "function") render();
+  }
 }
 
 // 毎フレームの軽い反映（再描画せず、要素を直接動かす）。
+//   横=left%(x)・縦=top%(y を 0..100% へ)・進捗バー・足元メッセージ・よふけバー。
 function fieldPaint() {
   const pct = field.goal > 0 ? (field.x / field.goal) * 100 : 0;
-  if (field._pochiEl) field._pochiEl.style.left = pct + "%";
+  const topPct = 50 + (field.y || 0) * 30; // -1..+1 → 20%..80%（道幅の上下）
+  if (field._pochiEl) { field._pochiEl.style.left = pct + "%"; field._pochiEl.style.top = topPct + "%"; }
   if (field._progEl) field._progEl.style.width = pct + "%";
   if (field._msgEl) field._msgEl.textContent = field.message || "";
+  if (field._duskEl) field._duskEl.style.width = Math.round(field.dusk || 0) + "%";
 }
 
 // 追従アニメーションのループ（ブラウザのみ。requestAnimationFrame が無ければ動かない＝検証時は手動）。
-function fieldLoop() {
+//   rAF のコールバック引数 timestamp(=performance.now 相当) を fieldStepToward に渡し dt 補正に使う。
+function fieldLoop(now) {
   if (app.screen !== "field") { field._raf = null; return; }
-  fieldStepToward();
+  fieldStepToward(now);
   field._raf = (typeof requestAnimationFrame === "function") ? requestAnimationFrame(fieldLoop) : null;
 }
 function startFieldLoop() {
@@ -267,7 +339,17 @@ function fieldGreet() {
     meta.learnedWords.push(base.gift);
     field.picked.push(base.gift);
   }
-  field.message = `${base.name} を むかえた。いっしょに いこう。`;
+  // 救う＝時間を食う＝夜が濃くなる（先を急ぐメリットの対価。NIGHTFALL）。
+  if (typeof NIGHTFALL !== "undefined") {
+    field.dusk = Math.min(NIGHTFALL.max, field.dusk + NIGHTFALL.riseOnGreet);
+  }
+  // 物語ビート：初めて手をのばした瞬間だけ、一拍の語り。
+  if (meta && !meta._seenFirstSave) {
+    field.message = "て を のばした。つめたくなかった。いっしょに、いこう。";
+    meta._seenFirstSave = true;
+  } else {
+    field.message = `${base.name} を むかえた。いっしょに いこう。`;
+  }
   if (typeof playSe === "function") playSe("save");
   fieldResume();
 }
@@ -303,10 +385,32 @@ function startNightBattle() {
     showToast(lines[2] || "さいごの夜だよ。");
   }
   app.screen = "battle";
-  startRun();                 // battle.js：newGame（meta.learnedWords を語彙に種まき）→ startWave
+  startRun();                 // battle.js（無改変）：newGame（meta.learnedWords を語彙に種まき）→ startWave
+  applyNightfallToBattle();   // よふけメーター → 戦闘の入りの有利/不利へ（startRun 直後＝game.player 存在）
   if (typeof document !== "undefined" && document.body) document.body.className = "theme-night";
   if (typeof startBgm === "function") startBgm("night");
   if (typeof render === "function") render();
+}
+
+// よふけ(field.dusk)を「戦闘開始時だけ」の有利/不利に変換する（battle.js には一切触れない）。
+//   急いだ夜(dusk低)＝こころ＋ぬくもりの好スタート／長居・救い過多(dusk高)＝こころ減＋世界が翳る(狂気)。
+//   非対称ガード：rush報酬に 祓い火力(weaponLv/EXP/weapons) は絶対に混ぜない（こころ＋ぬくもりだけ）。
+//   refillKokoroEachWave=true なので効果は“1ウェーブ目の入り”に集中＝「夜の濃さで戦いの入りが決まる」。
+function applyNightfallToBattle() {
+  if (typeof game === "undefined" || !game || !game.player) return;
+  if (typeof NIGHTFALL === "undefined") return;
+  const N = NIGHTFALL, p = game.player;
+  const kMax = (typeof BALANCE !== "undefined" && BALANCE.kyokiMax) ? BALANCE.kyokiMax : 12;
+  const d = field.dusk || 0;
+  if (d < N.rushUnder) {
+    p.kokoro = Math.min(p.maxKokoro, p.kokoro + N.rushKokoro);
+    p.nukumori = (p.nukumori || 0) + N.rushNukumori;
+  } else if (d >= N.lateOver) {
+    p.kokoro = Math.max(0, p.kokoro + N.lateKokoro);
+    p.kyoki = Math.min(kMax, (p.kyoki || 0) + N.lateKyoki);
+  } else {
+    p.kyoki = Math.min(kMax, (p.kyoki || 0) + N.midKyoki);
+  }
 }
 
 // ──────────────────────────────────────────

@@ -66,15 +66,26 @@ var drive = [
 
   // ── v0.4 メタループ：街 → 夜のフィールド → 戦闘 → 夜明けで街へ → マクロ結末 が落ちないか ──",
   "initMeta(); enterTown(); render(); __o.push('town render ok (night=' + meta.night + ', screen=' + app.screen + ')');",
-  "goToField(); render(); __o.push('field build ok (goal=' + field.goal + ', nodes=' + field.nodes.length + ')');",
-  // マウス追従で道のおわりまで歩く：targetX を右端にして fieldStepToward を回す（rAFの代わり）。
-  //   友に出会ったら こえをかける（むかえる）。reachedBattle になれば道のおわり。
-  "fieldSetTarget(1); var __g=0; while(!field.reachedBattle && __g++ < 400){ if(field.activeFriend){ fieldGreet(); fieldSetTarget(1); } else { fieldStepToward(); } }",
-  "__o.push('field walk ok (x=' + (Math.round(field.x*10)/10) + '/' + field.goal + ', reachedBattle=' + field.reachedBattle + ', picked=' + JSON.stringify(field.picked) + ', townFriends=' + meta.friends.length + ')');",
+  "goToField(); render(); __o.push('field build ok (goal=' + field.goal + ', nodes=' + field.nodes.length + ', 2D y=' + field.y + ')');",
+  // 2D マウス追従で道のおわりまで歩く：時刻を注入して fieldStepToward を回す（rAFの代わり）。
+  //   未doneの友/ことばの y へ targetY を寄せて確実に踏む（検証の縦ズレ詰み回避）。友に出会えば むかえる。
+  "fieldSetTarget(1, 0.5); var __t=0, __g=0;",
+  "while(!field.reachedBattle && __g++ < 1500){",
+  "  if(field.activeFriend){ fieldGreet(); continue; }",
+  "  var __n=null; for(var __i=0;__i<field.nodes.length;__i++){ var __d=field.nodes[__i]; if(!__d.done && __d.type!=='battle'){ __n=__d; break; } }",
+  "  field.targetX = field.goal; field.targetY = __n ? __n.y : 0;",
+  "  fieldStepToward(__t += 16.7);",
+  "}",
+  "__o.push('2D field walk ok (x=' + (Math.round(field.x*10)/10) + '/' + field.goal + ', reachedBattle=' + field.reachedBattle + ', picked=' + JSON.stringify(field.picked) + ', townFriends=' + meta.friends.length + ', dusk=' + Math.round(field.dusk) + ')');",
+  // y クランプ確認（fieldSetTarget(_, 5) でも targetY<=1）
+  "fieldSetTarget(1, 5); __o.push('y clamp ok (targetY=' + field.targetY + ' <=1 ? ' + (field.targetY<=1) + ')');",
   // 道のおわりで戦闘へ：newGame が meta.learnedWords を語彙に種まきしているか
   "startNightBattle(); render(); __o.push('night battle start ok (state=' + game.state + ', wordsCarried=' + JSON.stringify(game.player.words) + ')');",
+  // ── よふけメーター → 戦闘の入り（battle.js無改変・field側の橋渡し）──
+  "initMeta(); goToField(); field.dusk=10; startNightBattle(); __o.push('nightfall RUSH ok (dusk10 → nukumori=' + game.player.nukumori + '>=' + NIGHTFALL.rushNukumori + ' ' + (game.player.nukumori>=NIGHTFALL.rushNukumori) + ' / weaponLv不変 ' + (game.player.weaponLv.namida===1) + ')');",
+  "initMeta(); goToField(); field.dusk=70; startNightBattle(); __o.push('nightfall LATE ok (dusk70 → kyoki=' + game.player.kyoki + '>=' + NIGHTFALL.lateKyoki + ' ' + (game.player.kyoki>=NIGHTFALL.lateKyoki) + ')');",
   // 夜明け→街へかえる（returnToTown）：戦果がメタに積まれ 夜が進むか
-  "game.counters.kill=2; game.counters.save=3; game.ending=ENDINGS[0]; game.state=STATES.DAWN; returnToTown(); render(); __o.push('returnToTown ok (night=' + meta.night + ', totalSave=' + meta.totalSave + ', screen=' + app.screen + ')');",
+  "initMeta(); game.counters.kill=2; game.counters.save=3; game.ending=ENDINGS[0]; game.state=STATES.DAWN; meta.nightStartFriends=0; returnToTown(); render(); __o.push('returnToTown ok (night=' + meta.night + ', totalSave=' + meta.totalSave + ', screen=' + app.screen + ')');",
   // さいごの夜を越える → マクロ結末（総和で結末確定・画面遷移）
   "meta.night = meta.maxNights; goToField(); startNightBattle(); game.counters.kill=1; game.counters.save=5; game.ending=ENDINGS[0]; game.state=STATES.DAWN; returnToTown(); render();",
   "__o.push('macro ending ok (screen=' + app.screen + ', macro=' + (field.macro?field.macro.ending.id:'none') + ', friendBonus=' + (field.macro?field.macro.friendBonus:'NA') + ')');",

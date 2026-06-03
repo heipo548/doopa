@@ -982,9 +982,24 @@ function renderTown() {
 
   const justGiven = field.townWordJustGiven && KIND_WORDS[field.townWordJustGiven]
     ? `<p class="town-learned">＋ 街で おぼえた：「${KIND_WORDS[field.townWordJustGiven].word}」</p>` : "";
+
+  // 物語ビート：初めて街に灯りが ふえた夜だけ、一拍の語り（救う＝あたたかい）。二度目は出さない。
+  let firstLight = "";
+  if (meta.gainedLightLastNight === true && !meta._seenFirstLight) {
+    firstLight = `<p class="town-learned">ひとつ、灯りが ふえた。この街に、おかえり が いえる。</p>`;
+    meta._seenFirstLight = true;
+  }
   // 倒すだけの夜は 灯りが ふえない＝「街は さみしいまま」を そっと言語化（救う/倒すの非対称）。
-  const noLight = (meta.night > 1 && meta.gainedLightLastNight === false)
-    ? `<p class="town-nolight">ゆうべは、灯りが ひとつも ふえなかった。…倒すだけの夜は、街が さみしいまま。</p>` : "";
+  //   初回だけ ひと拍 ながめの語り、二度目以降は短い既存文に戻す（くどくしない）。
+  let noLight = "";
+  if (meta.night > 1 && meta.gainedLightLastNight === false) {
+    if (!meta._seenFirstNoLight) {
+      noLight = `<p class="town-nolight">だれも、つれて こなかった。…手は よごれて ないけど、さみしいね。</p>`;
+      meta._seenFirstNoLight = true;
+    } else {
+      noLight = `<p class="town-nolight">ゆうべは、灯りが ひとつも ふえなかった。…倒すだけの夜は、街が さみしいまま。</p>`;
+    }
+  }
 
   // 第一夜（友0）は 唯一の出口「夜へ でかける」を点滅させて 視線を誘導する（迷わせない）。
   const goPulse = (meta.night === 1 && !hasFriends) ? "pulse" : "";
@@ -996,6 +1011,7 @@ function renderTown() {
     </div>
     <h2 class="town-title">よあけまえの 街</h2>
     <div class="town-lanterns ${coldClass}">${lanterns}</div>
+    ${firstLight}
     <p class="town-line">${line}</p>
     ${noLight}
     ${justGiven}
@@ -1010,8 +1026,8 @@ function renderTown() {
   if (mute) mute.addEventListener("click", () => { const m = toggleMute(); mute.textContent = m ? "♪×" : "♪"; });
 }
 
-// ── 夜のフィールド（横スクロールの道）─────────
-//   →で前進。落ちてることばを拾い、救いを待つ友を むかえ、道のおわりで戦闘へ。
+// ── 夜のフィールド（見下ろし帯・マウスカーソル追従）─────────
+//   マウスで ぽちを自由に歩かせる（横=朝へ／縦=道幅）。ことばを拾い、友を むかえ/とおりすぎ、道のおわりで戦闘へ。
 function renderField() {
   const ov = $("overlay-field");
   if (!ov) return;
@@ -1020,22 +1036,28 @@ function renderField() {
 
   const goal = field.goal || 1;
   const pochiLeft = Math.round((field.x / goal) * 100);
+  const pochiTop = Math.round(50 + (field.y || 0) * 30);
   const progPct = pochiLeft;
+  const yTop = (ny) => Math.round(50 + (ny || 0) * 30); // ノードの縦位置（-1..+1 → 20..80%）
 
   const lastPicked = field.picked.length ? field.picked[field.picked.length - 1] : null;
-  // 道に点在する出来事（済みは薄く／拾った瞬間は pop／友は出会うと一拍ふるえる）
+  // 道に点在する出来事（済みは薄く／拾った瞬間は pop／友は出会うと一拍ふるえる／近接はグロー）
   const nodesHtml = field.nodes.map((n) => {
     const left = Math.round((n.at / goal) * 100);
+    const top = yTop(n.y);
+    const glow = (!n.done && n._glow > 0.15) ? "near" : "";
     if (n.type === "word") {
       const popped = (n.done && n.word === lastPicked) ? "justpicked" : "";
-      return `<span class="road-node node-word ${n.done ? "done" : ""} ${popped}" style="left:${left}%" title="おちている ことば">💬</span>`;
+      return `<span class="road-node node-word ${n.done ? "done" : ""} ${popped} ${glow}" style="left:${left}%;top:${top}%" title="おちている ことば">💬</span>`;
     } else if (n.type === "friend") {
       const base = ENEMIES[n.enemy] || {};
       const calling = (field.activeFriend === n) ? "calling" : "";
-      return `<span class="road-node node-friend ${n.done ? "done" : ""} ${calling}" style="left:${left}%" title="${base.name}">${creatureSVG(base.color, base.shape, "sad")}</span>`;
+      return `<span class="road-node node-friend ${n.done ? "done" : ""} ${calling} ${glow}" style="left:${left}%;top:${top}%" title="${base.name}">${creatureSVG(base.color, base.shape, "sad")}</span>`;
     } else {
+      // 群れ(⚔)＝出口。遠いほど薄く・近いほど濃く＝行くべき先を示す。
       const near = field.reachedBattle ? "climax" : "";
-      return `<span class="road-node node-battle ${n.done ? "done" : ""} ${near}" style="left:${left}%" title="群れの けはい">⚔</span>`;
+      const op = (0.3 + 0.7 * (field.x / goal)).toFixed(2);
+      return `<span class="road-node node-battle ${n.done ? "done" : ""} ${near}" style="left:${left}%;top:${top}%;opacity:${op}" title="群れの けはい">⚔</span>`;
     }
   }).join("");
 
@@ -1043,32 +1065,37 @@ function renderField() {
   let controls = "";
   if (field.activeFriend) {
     controls = `
-      <button class="field-btn greet" id="f-greet">🤝 こえをかける（むかえる）</button>
-      <button class="field-btn pass" id="f-pass">… とおりすぎる</button>`;
+      <button class="field-btn greet" id="f-greet">🤝 こえをかける（むかえる・夜が 濃くなる）</button>
+      <button class="field-btn pass" id="f-pass">… とおりすぎる（夜は 浅いまま）</button>`;
   } else if (field.reachedBattle) {
     controls = `<button class="field-btn battle" id="f-battle">⚔ 群れと むきあう</button>`;
   } else {
     // ふだんは ボタン無し＝マウスでぽちを みちびく。やさしい操作ヒントだけ出す。
-    controls = `<span class="field-hint">🖱 マウスで ぽちを みぎへ みちびこう（クリックは いらない）</span>`;
+    controls = `<span class="field-hint">🖱 マウスで ぽちを じゆうに（みぎへ すすむと 朝。友は 縦に よけて とおれる）</span>`;
   }
+
+  const duskPct = Math.round(field.dusk || 0);
 
   body.innerHTML = `
     <div class="field-top">
       <span class="field-night">${meta ? (meta.night >= meta.maxNights ? "さいごの夜" : meta.night + "夜目") : "夜"}</span>
-      <div class="field-progress ${field.reachedBattle ? "climax" : ""}"><div class="fill" style="width:${progPct}%"></div></div>
-      <span class="field-dawn">朝</span>
+      <div class="field-bars">
+        <div class="bar-row"><span class="bar-lab">朝</span><div class="field-progress ${field.reachedBattle ? "climax" : ""}"><div class="fill" style="width:${progPct}%"></div></div></div>
+        <div class="bar-row"><span class="bar-lab dusk">夜</span><div class="field-dusk"><div class="fill" style="width:${duskPct}%"></div></div></div>
+      </div>
     </div>
     <div class="field-road">
       <div class="road-line"></div>
       ${nodesHtml}
-      <span class="pochi ${field.paused ? "" : "walking"}" style="left:${pochiLeft}%">${pochiSVG("happy")}</span>
+      <span class="pochi ${field.paused ? "" : "walking"}" style="left:${pochiLeft}%;top:${pochiTop}%">${pochiSVG("happy")}</span>
     </div>
     <p class="field-msg">${field.message || ""}</p>
     <div class="field-controls">${controls}</div>
   `;
-  // 追従ループが毎フレーム軽く動かすための要素をキャッシュ（再描画せずに ぽち・進捗・足元を更新）。
+  // 追従ループが毎フレーム軽く動かすための要素をキャッシュ（再描画せずに ぽち・進捗・夜・足元を更新）。
   field._pochiEl = body.querySelector(".pochi");
   field._progEl = body.querySelector(".field-progress .fill");
+  field._duskEl = body.querySelector(".field-dusk .fill");
   field._msgEl = body.querySelector(".field-msg");
 
   const bind = (id, fn) => { const e = $(id); if (e) e.addEventListener("click", fn); };
@@ -1099,12 +1126,20 @@ function showMacroResult() {
     if (names.length > shown.length) body2 += `そして、ほかの みんなも。`;
     nameLine = `<p class="result-text macro-name">${body2}</p>`;
   }
+  // 結末分岐ごとの締め1行（断定せず、景色で返す）。
+  const closeMap = {
+    hikari: "まぶしい。となりに、みんな いる。",
+    nibi: "おぼえてる なまえと、もう よべない なまえ。",
+    shizuka: "かぜの おと だけ。……それでも、朝。",
+  };
+  const closeLine = closeMap[e.id] ? `<p class="result-tone">${closeMap[e.id]}</p>` : "";
 
   body.innerHTML = `
     <h2 class="result-title">${e.title}</h2>
     <p class="result-text">${intro.replace(/\n/g, "<br>")}</p>
     ${nameLine}
     <p class="result-text">${e.text.replace(/\n/g, "<br>")}</p>
+    ${closeLine}
     <div class="macro-friends">${friendsHtml}</div>
     <div class="result-stats">
       <div><span>こえた夜</span><b>${meta.maxNights}</b></div>
