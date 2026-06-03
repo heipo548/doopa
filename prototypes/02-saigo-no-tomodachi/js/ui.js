@@ -189,17 +189,18 @@ function applyTone() {
 
 // ── 上部バー（ウェーブ進行ドット・カウンタ） ─────────────
 function renderTopbar() {
+  // 第一夜チュートリアルは ウェーブ管理を見せない＝「何をするゲームか」に集中させる（P0-2）。
+  if (game.tutorial) {
+    $("wave-info").innerHTML = `<span class="wave-text">よる の はじまり</span>`;
+    return;
+  }
   // どこまで進めば夜明け（クリア）かが一目で分かるよう、ウェーブを●で並べる（★＝ボス）。
   const left = totalWaves() - waveNumber(); // 現在ウェーブを終えた後に残る数
   const leftText = isBossWave()
     ? "最後の夜"
     : `夜明けまで あと ${left}`;
   $("wave-info").innerHTML = `${waveDots()}<span class="wave-text">${leftText}</span>`;
-  setText("c-kill", game.counters.kill);
-  setText("c-save", game.counters.save);
-  // 「記憶」改め「きずな」：救った数＝いま反撃をどれだけ和らげているか（救う見返りの可視化）
-  const shield = bondReduction();
-  setText("c-memory", game.counters.memory + (shield > 0 ? `（−${shield}）` : ""));
+  // ※おいはらった/むかえた/きずな の“管理数値”は 前面に出さない（結果は街の景色で返す＝P0-3・2-5）。
 }
 
 // むかえた友（なかま）を上部トレイに並べる。増えた瞬間だけ ぽんっ と出す＝“救った感”。
@@ -224,8 +225,9 @@ function renderNakama() {
 // ウェーブ進行の●を作る（済＝薄い／いま＝光る／★＝ボス）。
 function waveDots() {
   let s = "";
+  const waves = (typeof currentWaves === "function") ? currentWaves() : WAVES;
   for (let i = 0; i < totalWaves(); i++) {
-    const isBoss = !!(WAVES[i] && WAVES[i].boss);
+    const isBoss = !!(waves[i] && waves[i].boss);
     let cls = "wd";
     if (i < game.waveIndex) cls += " done";
     else if (i === game.waveIndex) cls += " now";
@@ -257,7 +259,7 @@ function renderEnemies() {
     card.setAttribute("data-uid", e.uid); // 演出（ダメージ数字）をこの要素に重ねるための目印
     if (e.boss) card.classList.add("boss");
 
-    // 心の壁が消えた敵は「おだやか」＝もう攻撃してこない。顔も穏やかにする。
+    // こころのかべが消えた敵は「おだやか」＝もう攻撃してこない。顔も穏やかにする。
     const saveable = e.wall === 0;
     if (saveable) card.classList.add("calm");
 
@@ -268,7 +270,7 @@ function renderEnemies() {
     if (selectable) card.classList.add("selectable");
     else if (quickAttack) card.classList.add("tappable"); // 控えめに「押せる」を示す
 
-    // 心の壁（♥＝残り, ♡＝消えた分）。0なら「すくえそう」表示
+    // こころのかべ（♥＝残り, ♡＝消えた分）。0なら「すくえそう」表示
     let walls = "";
     for (let i = 0; i < e.maxWall; i++) walls += i < e.wall ? "♥" : "♡";
 
@@ -323,10 +325,10 @@ function renderPlayer() {
   const kyokiW = Math.min(50, (p.kyoki / BALANCE.kyokiMax) * 50);
   const nukuW = Math.min(50, (p.nukumori / (BALANCE.nukumoriStep * 4)) * 50);
 
-  // きずな（むかえた友の反撃軽減）は効いているときだけ、短く出す。
+  // あかり（むかえた友の反撃軽減）は効いているときだけ、短く出す（用語整理：きずな→あかり）。
   const shield = bondReduction();
   const bondLine = game.counters.save > 0
-    ? `<div class="p-row bond-line">🫂 きずな −${shield}（むかえた ${game.counters.save}人 がかばう）</div>`
+    ? `<div class="p-row bond-line">🪔 あかり −${shield}（むかえた ${game.counters.save}人 が かばう）</div>`
     : "";
 
   $("player-bar").innerHTML = `
@@ -388,6 +390,8 @@ function renderCommands() {
       b.classList.add("on");
     }
     if (d.cmd === "fight" && firstTurn && ui.mode === "idle") b.classList.add("pulse"); // 最初の入口
+    // 「手をのばす」が解禁された瞬間（壁0の子がいて まだ誰も迎えていない）は脈動で強調＝救いの一手に気づかせる（P0-2）。
+    if (d.cmd === "save" && d.on && savableExists && game.counters.save === 0 && ui.mode === "idle") b.classList.add("pulse");
     b.disabled = !d.on;
     b.innerHTML = `<span class="cmd-label">${d.label}</span><span class="cmd-sub">${d.sub}</span>`;
     if (d.on) b.addEventListener("click", () => onCommand(d.cmd));
@@ -463,7 +467,7 @@ function renderPrompt() {
     addHint("だれの こえを きく？（上の子をクリック。各カードの 💭 が手がかり）");
     addCancel();
   } else if (ui.mode === "save") {
-    addHint("手をのばす相手を選ぶ（心の壁が消えた＝おだやかな子）");
+    addHint("手をのばす相手を選ぶ（こころのかべが消えた＝おだやかな子）");
     addCancel();
   } else {
     // 初見のときだけ、次の一手をやさしく示す（チュートリアルの代わり）。
@@ -519,15 +523,27 @@ function shuffleArr(arr) {
 //   ことばで戦う口喧嘩であること、3つの選択（ぶつける/きいてみる/手をのばす）の違いを伝える。
 function coachLine() {
   if (waveNumber() !== 1) return null;
-  // いま押せるコマンドを“1つだけ”名指しで示す（長文を読ませない＝飽きっぽい子向け）。
+  const p = game.player;
+  // 失敗理由は短く先に伝える（こころ不足＝なぜ押せないか）＝P1-4。
+  if (p.kokoro < BALANCE.actCost) return "💡 こころが たりない。【こらえる】で ひと息つこう。";
+  // おだやかに なった子がいる＝手をのばせる（解禁を名指しで）。
   if (livingEnemies().some((e) => e.wall === 0)) {
-    return "💡 ハート(♡)が消えた子は【手をのばす】＝なかまに！";
+    return game.tutorial
+      ? "💡 おだやかに なった。いまなら【手をのばす】＝ともだちに。"
+      : "💡 ♡が消えた子は【手をのばす】＝ともだちに！";
   }
-  if (game.turn === 0 && game.counters.kill === 0 && game.counters.save === 0) {
-    return "💡 きついことばで【ぶつける】と すぐ退けられる。まず ためしてみよう。";
+  // まだ何もしていない最初の一手。チュートリアルは“2つの関わり方”を並べて選ばせる。
+  if (game.turn === 0 && game.counters.kill === 0 && game.counters.save === 0 && !game.listened) {
+    return game.tutorial
+      ? "💡【ぶつける】で 追い払う？ それとも【きいてみる】で 声を きく？"
+      : "💡 きついことばで【ぶつける】と すぐ退けられる。まず ためしてみよう。";
+  }
+  // きいてみた後、まだ壁が残るなら「もう少し きく」を短く示す。
+  if (game.listened && game.counters.save === 0) {
+    return "💡 もう すこし【きいてみる】と、手を のばせそう。";
   }
   if (game.counters.save === 0) {
-    return "💡 やさしくしたい子には【きいてみる】。ハート(♡)が消えたら【手をのばす】＝なかま！";
+    return "💡 やさしくしたい子には【きいてみる】。♡が消えたら【手をのばす】！";
   }
   return null;
 }
@@ -545,6 +561,8 @@ function onCommand(cmd) {
 
   if (cmd === "fight") {
     const ws = game.player.weapons;
+    // 第一夜チュートリアルは「ぶつける＝1タップで相手へ」に絞る（武器選びを挟まず迷わせない）。
+    if (game.tutorial) { selectWeapon(primarySingleWeapon() || ws[0]); return; }
     if (ws.length === 1) selectWeapon(ws[0]);
     else { ui.mode = "weapon"; renderPrompt(); renderCommands(); }
   } else if (cmd === "act") {
@@ -1036,8 +1054,8 @@ function renderTown() {
   //   ＝空っぽで第一印象が決まらないよう「救うと、この街が あかるくなる」を 灰のシルエットで見せる。
   const friendsSection = hasFriends ? `
     <div class="town-section">
-      <div class="town-cap">🫂 なかま（${meta.friends.length}）</div>
-      <div class="town-friends">${meta.friends.map((f) => `<span class="town-friend" title="${f.name}">${creatureSVG(f.color, f.shape, "happy")}</span>`).join("")}</div>
+      <div class="town-cap">🫂 なかま（${meta.friends.length}）・さわると はなす</div>
+      <div class="town-friends">${meta.friends.map((f) => `<span class="town-friend tappable" data-type="${f.type}" title="${f.name}">${creatureSVG(f.color, f.shape, "happy")}</span>`).join("")}</div>
     </div>` : `
     <div class="town-section town-preview">
       <div class="town-cap">🫂 なかま（0）</div>
@@ -1058,16 +1076,35 @@ function renderTown() {
   const justGiven = field.townWordJustGiven && KIND_WORDS[field.townWordJustGiven]
     ? `<p class="town-learned">＋ 街で おぼえた：「${KIND_WORDS[field.townWordJustGiven].word}」</p>` : "";
 
+  // ── 第一夜の結果を「街の景色」で返す（P0-4）──
+  //   最初の街帰還（=2夜目）に一度だけ、選択に応じた静かな一言を出す。責めない・短い・断定しない。
+  //   A=手をのばした（迎えた） / C=きいたが手をのばさず / B=ぶつけた（きかなかった）。
+  let n1Line = "";
+  let suppressBeats = false; // この帰還は n1Line が担うので、汎用の firstLight/noLight は出さない
+  if (meta.night === 2 && meta._n1 && !meta._n1.shown) {
+    meta._n1.shown = true;
+    suppressBeats = true;
+    if (meta._n1.outcome === "A") {
+      n1Line = `<p class="town-learned">街に、ちいさな あかりが ふえた。</p>`;
+      meta._seenFirstLight = true; // 同義の汎用ビートは以後も出さない
+    } else if (meta._n1.outcome === "C") {
+      n1Line = `<p class="town-nolight">きいた声が、まだ すこし 耳に のこっている。</p>`;
+    } else {
+      n1Line = `<p class="town-nolight">街は、さっきと おなじくらい しずかだった。<br>ぽちは、なにも いわなかった。</p>`;
+      meta._seenFirstNoLight = true;
+    }
+  }
+
   // 物語ビート：初めて街に灯りが ふえた夜だけ、一拍の語り（救う＝あたたかい）。二度目は出さない。
   let firstLight = "";
-  if (meta.gainedLightLastNight === true && !meta._seenFirstLight) {
+  if (!suppressBeats && meta.gainedLightLastNight === true && !meta._seenFirstLight) {
     firstLight = `<p class="town-learned">ひとつ、灯りが ふえた。この街に、おかえり が いえる。</p>`;
     meta._seenFirstLight = true;
   }
   // 倒すだけの夜は 灯りが ふえない＝「街は さみしいまま」を そっと言語化（救う/倒すの非対称）。
   //   初回だけ ひと拍 ながめの語り、二度目以降は短い既存文に戻す（くどくしない）。
   let noLight = "";
-  if (meta.night > 1 && meta.gainedLightLastNight === false) {
+  if (!suppressBeats && meta.night > 1 && meta.gainedLightLastNight === false) {
     if (!meta._seenFirstNoLight) {
       noLight = `<p class="town-nolight">だれも、つれて こなかった。…手は よごれて ないけど、さみしいね。</p>`;
       meta._seenFirstNoLight = true;
@@ -1086,6 +1123,7 @@ function renderTown() {
     </div>
     <h2 class="town-title">よあけまえの 街</h2>
     <div class="town-lanterns ${coldClass}">${lanterns}</div>
+    ${n1Line}
     ${firstLight}
     <p class="town-line">${line}</p>
     ${noLight}
@@ -1099,6 +1137,17 @@ function renderTown() {
   if (go) go.addEventListener("click", () => { playSe("select"); goToField(); });
   const mute = $("town-mute");
   if (mute) mute.addEventListener("click", () => { const m = toggleMute(); mute.textContent = m ? "♪×" : "♪"; });
+  // P1-1：街の友を さわると“生活セリフ”を話す（報酬装置でなく、ここで暮らす存在に）。
+  body.querySelectorAll(".town-friend[data-type]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const t = el.getAttribute("data-type");
+      const lines = (typeof FRIEND_TOWN_LINES !== "undefined" && FRIEND_TOWN_LINES[t]) ? FRIEND_TOWN_LINES[t] : null;
+      if (!lines) return;
+      const name = (ENEMIES[t] && ENEMIES[t].name) || "";
+      showToast(`${name}「${lines[Math.floor(Math.random() * lines.length)]}」`);
+      if (typeof playSe === "function") playSe("calm");
+    });
+  });
 }
 
 // ── 夜のフィールド（見下ろし帯・マウスカーソル追従）─────────
@@ -1146,17 +1195,25 @@ function renderField() {
     controls = `<button class="field-btn battle" id="f-battle">⚔ 群れと むきあう</button>`;
   } else {
     // ふだんは ボタン無し＝マウスでぽちを みちびく。やさしい操作ヒントだけ出す。
-    controls = `<span class="field-hint">🖱 マウスで じゆうに（みぎ＝朝／はしの 💬 は たてに 寄り道して ひろう・寄るほど 夜が 濃くなる）</span>`;
+    //   第一夜（チュートリアル）は 寄り道/よふけ を言わない＝「歩いて、出会う」だけに絞る（P0-2）。
+    controls = field.tutorial
+      ? `<span class="field-hint">🖱 マウスで ぽちを みぎへ。……だれかが、まってる。</span>`
+      : `<span class="field-hint">🖱 マウスで じゆうに（みぎ＝朝／はしの 💬 は たてに 寄り道して ひろう・寄るほど 夜が 濃くなる）</span>`;
   }
 
   const duskPct = Math.round(field.dusk || 0);
+  // 第一夜は「夜のこさ（よふけ）」を出さない。出すときは効果が伝わる補足を添える（P0-3）。
+  const duskRow = field.tutorial ? "" :
+    `<div class="bar-row"><span class="bar-lab dusk">夜</span><div class="field-dusk" title="夜のこさ：濃いほど 次の戦いが つらくなる"><div class="fill" style="width:${duskPct}%"></div></div></div>`;
+  const fieldNight = field.tutorial ? "はじめての夜"
+    : (meta ? (meta.night >= meta.maxNights ? "さいごの夜" : meta.night + "夜目") : "夜");
 
   body.innerHTML = `
     <div class="field-top">
-      <span class="field-night">${meta ? (meta.night >= meta.maxNights ? "さいごの夜" : meta.night + "夜目") : "夜"}</span>
+      <span class="field-night">${fieldNight}</span>
       <div class="field-bars">
         <div class="bar-row"><span class="bar-lab">朝</span><div class="field-progress ${field.reachedBattle ? "climax" : ""}"><div class="fill" style="width:${progPct}%"></div></div></div>
-        <div class="bar-row"><span class="bar-lab dusk">夜</span><div class="field-dusk"><div class="fill" style="width:${duskPct}%"></div></div></div>
+        ${duskRow}
       </div>
     </div>
     <div class="field-road">
@@ -1219,9 +1276,8 @@ function showMacroResult() {
     <div class="result-stats">
       <div><span>こえた夜</span><b>${meta.maxNights}</b></div>
       <div><span>街の友</span><b>${meta.friends.length}</b></div>
-      <div><span>総おいはらった</span><b>${meta.totalKill}</b></div>
-      <div><span>総むかえた</span><b>${meta.totalSave}</b></div>
-      <div><span>むかえた率（総和）</span><b>${ratePct}%</b></div>
+      <div><span>もういない</span><b>${meta.totalKill}</b></div>
+      <div><span>ともだち</span><b>${meta.totalSave}</b></div>
       <div><span>いえる ことば</span><b>${(meta.learnedWords || []).length}</b></div>
     </div>
     <button class="restart-btn" id="macro-restart">はじめから</button>
@@ -1244,6 +1300,23 @@ function dawnButtonLabel(kind) {
 // ──────────────────────────────────────────
 function showResult(kind) {
   const ov = $("overlay-result");
+
+  // 第一夜チュートリアルの夜明けは“結末グリッド”を出さない＝静かな一拍だけ置いて 街へ返す（P0-2/P0-4）。
+  //   結果（迎えた/追い払った）は 街の景色で返すので、ここでは 数値や ENDINGS 文章を見せない。
+  if (kind === "dawn" && game && game.tutorial) {
+    if (typeof setBgmTheme === "function") setBgmTheme("warm");
+    document.body.className = "theme-night";
+    ov.querySelector(".ov-body").innerHTML = `
+      <h2 class="result-title">よが あけた</h2>
+      <p class="result-text">ながい よるの、はじめての あさ。</p>
+      <p class="result-words">さいごに のこった ことば　「${game.lastWord || "……"}」</p>
+      <button class="restart-btn">🏠 街へ かえる</button>
+    `;
+    ov.querySelector(".restart-btn").addEventListener("click", () => { playSe("select"); returnToTown(); });
+    showOverlay("overlay-result");
+    return;
+  }
+
   const stats = runStats();
   const ratePct = Math.round(stats.saveRate * 100);
 
@@ -1280,12 +1353,10 @@ function showResult(kind) {
     <p class="result-words">さいごに のこった ことば　「${lastWord}」</p>
     ${learnedNow.length ? `<p class="result-words dim">この夜 おぼえた ことば：${learnedNow.map((w) => `「${w}」`).join("　")}</p>` : ""}
     <div class="result-stats">
-      <div><span>おいはらった</span><b>${stats.kill}</b></div>
-      <div><span>むかえた</span><b>${stats.save}</b></div>
-      <div><span>むかえた率</span><b>${ratePct}%</b></div>
-      <div><span>きずな</span><b>${stats.memory}</b></div>
+      <div><span>もういない</span><b>${stats.kill}</b></div>
+      <div><span>ともだち</span><b>${stats.save}</b></div>
+      <div><span>あかり</span><b>${stats.memory}</b></div>
       <div><span>たどりついた夜</span><b>${stats.reachedWave}/${totalWaves()}</b></div>
-      <div><span>ラン時間</span><b>${stats.seconds}秒</b></div>
     </div>
     <button class="restart-btn">${dawnButtonLabel(kind)}</button>
   `;

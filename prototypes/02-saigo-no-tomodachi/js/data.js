@@ -106,12 +106,12 @@ const BALANCE = {
 // きいてみる（ACT）で使う “ことば” ＝ 問いかけ／やさしいことば
 //   敵ごとに「効くことばが違う」ことで、救済は“相手の声をきく手順パズル”になる。
 //   word: 画面に出る実際のセリフ ／ category: toi=問いかけ / yasashii=やさしい
-//   wall: 心の壁を下げる量 ／ atkDown: 相手の攻撃力ダウン ／ silence: 1ターン無力化
+//   wall: こころのかべを下げる量 ／ atkDown: 相手の攻撃力ダウン ／ silence: 1ターン無力化
 //   nukumori: やさしく言えたぶん たまる“ぬくもり”（救いルートの雪だるま）
 //   ※ name には word を入れている（UI は name を表示するため）。internal id は据え置き。
 // ──────────────────────────────────────────
 const ACTS = {
-  nade:   { name: "どうしたの？",     word: "どうしたの？",     category: "toi",      wall: 1,             nukumori: 0, desc: "問いかけ：心の壁 −1（効く相手に）" },
+  nade:   { name: "どうしたの？",     word: "どうしたの？",     category: "toi",      wall: 1,             nukumori: 0, desc: "問いかけ：こころのかべ −1（効く相手に）" },
   uta:    { name: "こわかったね",     word: "こわかったね",     category: "yasashii", wall: 1, atkDown: 1, nukumori: 1, desc: "やさしい：壁 −1 ／ 相手が おとなしくなる ／ やさしい＋" },
   ayasu:  { name: "ここに いるよ",   word: "ここに いるよ",   category: "yasashii", wall: 1,             nukumori: 1, desc: "やさしい：壁 −1（こわがりに効く）／ やさしい＋" },
   nadame: { name: "もう だいじょうぶ", word: "もう だいじょうぶ", category: "yasashii", wall: 1,           nukumori: 1, desc: "やさしい：壁 −1（こわがりに効く）／ やさしい＋" },
@@ -183,22 +183,22 @@ const WEAPONS = {
   zako:     { name: "ざぁこ♡",     word: "ざぁこ♡",     target: "front2", power: 4, perLv: 1, cost: 2, category: "toge", kyoki: 2, atkDown: 1, meme: "zako" }, // あおって前列2体＋勢いを そぐ
   kusa:     { name: "草ァ！",       word: "草ァ！",       target: "all",    power: 3, perLv: 1, cost: 3, category: "toge", kyoki: 2, meme: "kusa" },     // 全体に嘲笑をばら撒く（hikari 同格）
   // 進化形態（とげの極み。性能が一段跳ね上がるが、こころ・狂気も大きく積む）
-  daikouzui: { name: "もう みんな きらい", word: "もう みんな きらい", target: "all", power: 5, cost: 4, wallDown: 1, category: "toge", kyoki: 3, evolved: true, desc: "全体に5ダメージ＋心の壁−1（狂気＋＋＋）" },
-  bakuretsu: { name: "しつこいしつこい！", word: "しつこいしつこい！", target: "front3", power: 6, cost: 3, category: "toge", kyoki: 2, evolved: true, desc: "前列3体に6ダメージ（狂気＋＋）" },
+  daikouzui: { name: "もう みんな きらい", word: "もう みんな きらい", target: "all", power: 5, cost: 4, wallDown: 1, category: "toge", kyoki: 3, evolved: true, desc: "全体に5ダメージ＋こころのかべ−1（とげとげ＋＋＋）" },
+  bakuretsu: { name: "しつこいしつこい！", word: "しつこいしつこい！", target: "front3", power: 6, cost: 3, category: "toge", kyoki: 2, evolved: true, desc: "前列3体に6ダメージ（とげとげ＋＋）" },
   // 「救済の光」＝あっちいけ が“ねがい”で反転した進化。とげではなく、群れ全員へ手をのばすことば。
   //   救いビルドも“強く”なれる道：火力は控えめ・壁−2が主役・狂気は積まず、むしろ やさしい＋。
   //   救いの言葉は“痛まない”＝こころ消費は軽い(1)。
-  kyusai:    { name: "いっしょに かえろう", word: "いっしょに かえろう", target: "all", power: 2, cost: 1, wallDown: 2, category: "yasashii", kyoki: 0, nukumori: 1, evolved: true, desc: "全体の心の壁−2＋2ダメージ（やさしい＋・狂気なし）" },
+  kyusai:    { name: "いっしょに かえろう", word: "いっしょに かえろう", target: "all", power: 2, cost: 1, wallDown: 2, category: "yasashii", kyoki: 0, nukumori: 1, evolved: true, desc: "全体のこころのかべ−2＋2ダメージ（やさしい＋・とげとげ無し）" },
 };
 
 // ──────────────────────────────────────────
 // 敵（4種＋ボス）
 //   hp: 体力 ／ atk: 攻撃力 ／ target: 攻撃対象（PoCは主人公のみなので主に演出）
-//   wall: 救済に必要な心の壁 ／ acts: この敵に“効く”ACTのID配列
+//   wall: 救済に必要なこころのかべ ／ acts: この敵に“効く”ACTのID配列
 //   sad: true の敵は「悲しむ敵」。パッシブ「ふかいかなしみ」の与ダメ増対象。
 //   shape/color: 簡易図形の見た目用
 // ──────────────────────────────────────────
-// ※ wall（心の壁）は「すくう」までに必要な“こころみる(ACT)回数”。
+// ※ wall（こころのかべ）は「すくう」までに必要な“こころみる(ACT)回数”。
 //   壁がほどける(0)と敵はおだやかになり攻撃をやめる＝壁下げ自体が生存手段。
 //   群れ相手だと壁が高いと“1体なだめる間に他全員に殴られて”詰むため、
 //   1〜2手でほどける現実的な値に下げ、救済ルートを成立させている。
@@ -262,8 +262,54 @@ const WAVES = [
   { enemies: ["kuro", "kuro", "fura", "fura", "usagi"] },              // 3: 優先順位／救済初挑戦
   { enemies: ["kuro", "kuro", "fura", "usagi", "toge"] },              // 4: 守る／回復／リソース管理
   { enemies: ["kuro", "kuro", "fura", "usagi", "usagi", "toge"], elite: true }, // 5: ビルドの完成度（とげぐも2→1で solo 向けに調整）
-  { enemies: ["nushi"], boss: true },                                  // 6: 祓う即殺 or 手間でも救う
+  { enemies: ["nushi"], boss: true },                                  // 6: ぶつけて退ける or 手間でも むかえる
 ];
+
+// ──────────────────────────────────────────
+// 第一夜＝チュートリアル（P0-2）。最初の夜だけ この特別な構成に差し替える（meta.night===1）。
+//   ねらい：システム全体ではなく「ことばで関わり方を選ぶゲーム」だと“操作と反応”で伝える。
+//   ・敵は1体だけ（くろまる）。ぶつける／きいてみる のみ。きいてみる で本音が見え、手をのばす が解禁。
+//   ・勝っても3択（レベルアップ）は出さず、すぐ 街へ帰る（結果は街の景色で返す＝P0-4）。
+// ──────────────────────────────────────────
+const WAVES_TUTORIAL = [
+  { enemies: ["kuro"], tutorial: true },
+];
+
+// 第一夜の くろまる専用セリフ（チュートリアルの“操作→反応”を、説明ではなく ことばで返す）。
+const TUTORIAL = {
+  enemy: "kuro",
+  intro:  "くろまるは、こっちを にらんでいる。「バカ」",   // 出会いがしら
+  listen: "……おいてかないで",                          // きいてみる で見える本音
+  reach:  "くろまるは、すこしだけ 近づいた。",           // 手をのばす
+  hit:    "くろまるは、もう いない。",                   // ぶつける（追い払う）
+};
+
+// 街に住みついた友の“生活セリフ”（P1-1）。報酬装置ではなく「ここで暮らしはじめた存在」に。
+//   すぐ元気になりすぎない／少し気まずい／でも、いる。短く 余白を残す。
+const FRIEND_TOWN_LINES = {
+  kuro:  ["ことば、まだ へた。でも、いる。", "……ここ、いても いいんだよね。"],
+  fura:  ["きょうは、ここに いられた。", "ふわ……。"],
+  usagi: ["ないてないよ。……ちょっとだけ。", "となり、いても いい？"],
+  toge:  ["さわっても、たぶん だいじょうぶ。", "とげ、しまって みた。"],
+  nushi: ["……しずかだ。ひさしぶりに。", "みんな、いるね。"],
+  hoshi: ["くらいところのほうが、まぶしくないから。", "ぴかっ……（ここに いる）"],
+  mori:  ["はっぱ、おいて いくね。", "もり、いまは とおい。でも へいき。"],
+};
+
+// 一度 とおりすぎた相手に、あとの夜 もう一度 道で会ったときの ひとこと（P1-2）。
+//   ＝「ゲームが少し覚えている」気配。責めない・短い・気まずい。
+const FRIEND_REUNION_LINES = ["また、きいて くれるの？", "きのう、いそいで たね。", "こんどは、ほんと？", "まだ、ここに いたよ。", "まえより、こわく ない？"];
+
+// 同じことばを続けて使ったときの 小さな反応（P1-3）。ことばを“効果カード”でなく意味あるものに。
+//   罰ではない・テンポを壊さない 1行だけ。連続2回目以降に たまに出す。
+const WORD_OVERUSE = {
+  wakaru:    "ほんとに？",
+  gomen:     "ぽちの こえが、すこし ちいさくなった。",
+  namida:    "ことばが、すこし いたい。",        // 「バカ」
+  ma:        "……また それ？",
+  kusa:      "わらいが、から回りした。",
+  daijoubu:  "だいじょうぶじゃ、ないかも。",
+};
 
 // ──────────────────────────────────────────
 // どうぐ（ITEM）

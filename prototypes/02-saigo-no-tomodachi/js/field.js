@@ -115,8 +115,25 @@ function isLastNight() {
   return !!(meta && meta.night >= meta.maxNights);
 }
 
+// 第一夜（meta.night===1）＝チュートリアル：短く静かな 一本道（寄り道なし・よふけ無し）。
+//   いきなり 拾う/分岐/よふけ を出さず「歩く→1体と出会う」だけに絞る（P0-2）。
+function buildTutorialField() {
+  field.goal = 2.6;            // 数歩で 道のおわり（1体）に着く短さ
+  field.x = 0; field.y = 0; field.targetX = 0; field.targetY = 0;
+  field.paused = false; field.reachedBattle = false;
+  field.dusk = 0; field._lastT = 0; field._maxv = field.goal / 4; field._lastStep = 0;
+  field.picked = []; field.activeFriend = null;
+  field.tutorial = true;       // renderField/歩行で よふけバーを隠す目印
+  field.message = "よるの みち。マウスで ぽちを みぎへ。……だれかが、いる。";
+  if (meta) meta._seenFirstWalk = true;
+  field.nodes = [{ at: field.goal, y: 0, type: "battle", done: false }];
+}
+
 // 夜の道を組み立てる（夜ごとに すこし違う並びを乱数で）
 function buildField() {
+  // 第一夜だけ チュートリアルの短い道に差し替える。
+  if (meta && meta.night === 1) { buildTutorialField(); return; }
+  field.tutorial = false;
   let goal = (typeof META !== "undefined" && META.fieldGoal) ? META.fieldGoal : 10;
   // さいごの夜だけ 道を少し延ばす＝“さいご”に向かう手触り（3夜が同じにならないように）。
   if (isLastNight() && typeof META !== "undefined" && META.lastNightExtra) goal += META.lastNightExtra;
@@ -221,7 +238,8 @@ function fieldStepToward(now) {
 
   // よふけメーター：滞在しているだけで じわっと満ちる（dtで時間補正＝端末非依存）。
   //   ＝「急ぐほど夜は浅い／長居・救いを重ねるほど夜は濃い」を時間で表現（NIGHTFALL）。
-  if (typeof NIGHTFALL !== "undefined") {
+  //   ※第一夜チュートリアルでは出さない（要素を絞る＝P0-2）。
+  if (typeof NIGHTFALL !== "undefined" && !field.tutorial) {
     field.dusk = Math.min(NIGHTFALL.max, field.dusk + NIGHTFALL.risePerFrame * (dt / (1000 / 60)));
   }
 
@@ -288,7 +306,11 @@ function fieldCheckNodes() {
     field.paused = true;
     const base = ENEMIES[best.enemy] || {};
     // 物語ビート：初めて友に出会う夜だけ、一拍の語り。二度目からは素直に状況だけ。
-    if (meta && !meta._seenFirstFriend) {
+    //   一度 とおりすぎた相手と再会したら、その子は こちらを少し覚えている（P1-2・責めない短い一言）。
+    if (meta && meta._passed && meta._passed.indexOf(best.enemy) >= 0 && typeof FRIEND_REUNION_LINES !== "undefined") {
+      const r = FRIEND_REUNION_LINES[Math.floor(Math.random() * FRIEND_REUNION_LINES.length)];
+      field.message = `${base.name}「${r}」`;
+    } else if (meta && !meta._seenFirstFriend) {
       field.message = "だれかが、うずくまってる。こわくないよ。……こえ、かけてみる？";
       meta._seenFirstFriend = true;
     } else {
@@ -363,6 +385,8 @@ function fieldGreet() {
 function fieldPass() {
   const node = field.activeFriend;
   if (node) node.done = true;
+  // とおりすぎた相手の種類を控える＝あとの夜の再会で「世界が少し覚えている」を出す（P1-2）。
+  if (node && meta) { meta._passed = meta._passed || []; if (meta._passed.indexOf(node.enemy) < 0) meta._passed.push(node.enemy); }
   field.activeFriend = null;
   field.message = "…とおりすぎた。もう、あえないかもしれない。";
   if (typeof playSe === "function") playSe("miss");
@@ -437,6 +461,14 @@ function returnToTown() {
     (game.player.words || []).forEach((id) => {
       if (meta.learnedWords.indexOf(id) < 0) meta.learnedWords.push(id);
     });
+    // 第一夜（チュートリアル）の結果を控える＝街の景色で返すため（P0-4）。
+    //   A=手をのばした（迎えた） / C=きいたが手をのばさず / B=ぶつけた（きかなかった）。
+    if (meta.night === 1) {
+      meta._n1 = {
+        outcome: game.counters.save > 0 ? "A" : (game.listened ? "C" : "B"),
+        shown: false,
+      };
+    }
   }
   // ゆうべ「灯りが ふえたか」＝この夜に新しい友を迎えたか（街の非対称を可視化するフラグ）。
   //   倒すだけの夜は friends が増えない＝「街は さみしいまま」を街でそっと言語化する（renderTown）。

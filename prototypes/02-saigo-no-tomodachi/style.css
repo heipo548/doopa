@@ -1229,3 +1229,7 @@ body.theme-town { background: radial-gradient(circle at 50% 120%, #4a3a6e 0%, #2
 /* フィールドの道を縦に広げる（上下の寄り道に意味＝2Dの自由感）。最後に置いて確実に上書き。 */
 .field-road { height: 240px; }
 @media (max-width: 520px) { .field-road { height: 200px; } }
+
+/* 街の友は さわると“生活セリフ”を話す（P1-1）＝報酬装置でなく ここで暮らす存在に。 */
+.town-friend.tappable { cursor: pointer; transition: transform 0.12s ease; }
+.town-friend.tappable:hover { transform: translateY(-3px) scale(1.06); }

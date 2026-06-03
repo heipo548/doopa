@@ -26,6 +26,17 @@ function pushFx(ev) {
   if (game && Array.isArray(game.fx)) game.fx.push(ev);
 }
 
+// 同じことばを続けて使ったときの 小さな反応（P1-3）。ことばを“効果カード”でなく意味あるものに。
+//   罰ではない・テンポを壊さない 短い1行だけ。連続使用が続くときに たまに出す（くどくしない）。
+function noteWordUse(id) {
+  if (!id || typeof WORD_OVERUSE === "undefined") return;
+  if (game._lastWordId === id) game._wordStreak = (game._wordStreak || 1) + 1;
+  else { game._lastWordId = id; game._wordStreak = 1; }
+  if (game._wordStreak >= 2 && game._wordStreak % 2 === 0 && WORD_OVERUSE[id]) {
+    log(`  （${WORD_OVERUSE[id]}）`);
+  }
+}
+
 // uid から “まだ場にいる” 敵を探す
 function findEnemy(uid) {
   return game.enemies.find((e) => e.uid === uid && !e.dead && !e.saved) || null;
@@ -42,7 +53,12 @@ function applyDamage(enemy, dmg) {
       enemy.dead = true;
       game.counters.kill++;
       game.player.exp += BALANCE.expPerKill; // ぶつけて退けると EXP 多め＝早く強くなる
-      log(`  ${enemy.name} は ことばに 背を向けて 消えた…（おいはらった +1）`);
+      // 第一夜チュートリアルの くろまる だけは“もう いない”と静かに返す（説明でなく結果で伝える）。
+      if (game.tutorial && typeof TUTORIAL !== "undefined" && enemy.type === TUTORIAL.enemy) {
+        log(`  ${TUTORIAL.hit}`);
+      } else {
+        log(`  ${enemy.name} は ことばに 背を向けて 消えた…（おいはらった +1）`);
+      }
       pushFx({ t: "hit", uid: enemy.uid, dmg: dmg, dead: true, color: enemy.color }); // とどめ＝はじけて消える演出
     }
   } else {
@@ -51,7 +67,7 @@ function applyDamage(enemy, dmg) {
   }
 }
 
-// 心の壁を下げる（0になると「すくえそう」）
+// こころのかべを下げる（0になると「すくえそう」）
 function reduceWall(enemy, amount) {
   if (enemy.dead || enemy.saved) return;
   const before = enemy.wall;
@@ -59,7 +75,7 @@ function reduceWall(enemy, amount) {
   const dropped = before - enemy.wall;
   if (dropped <= 0) return;
   if (enemy.wall === 0) {
-    log(`  ${enemy.name} の心の壁が ほどけた…「すくえそう」`);
+    log(`  ${enemy.name} のこころのかべが ほどけた…「すくえそう」`);
     pushFx({ t: "calm", uid: enemy.uid }); // おだやかになった瞬間の演出
   } else {
     // まだ壁は残るが“効いた”＝その場で手応えを出す（ログを読まなくても分かる）
@@ -105,6 +121,7 @@ function cmdFight(weaponId, targetUid) {
   const said = w.word || w.name;
   game.lastWord = said;
   game.lastWeapon = weaponId; // SE をことばごとに変えるため（バカ/だまれ/うるさい…の鳴き分け）
+  noteWordUse(weaponId);      // きついことばの使いすぎに 小さな反応（P1-3）
   log(`▶ ${game.player.name}「${said}」！`);
   // 言ったことばを吹き出しで見せる（とげとげ＝不穏なトーン）。meme は専用の小演出キー。
   pushFx({ t: "speak", text: said, cat: w.category || "toge", meme: w.meme });
@@ -141,7 +158,7 @@ function cmdFight(weaponId, targetUid) {
 // ──────────────────────────────────────────
 // きいてみる（ACT）：相手に問いかける／やさしいことばをかける。
 //   相手の声をきこうとする行動。敵ごとに「効くことばが違う」＝相手の声をきく手順パズル。
-//   ・生まれつきの問いかけ(ACTS)：その相手に効けば 心の壁を下げる（atkDown/とめる も）。
+//   ・生まれつきの問いかけ(ACTS)：その相手に効けば こころのかべを下げる（atkDown/とめる も）。
 //   ・学んで覚えた やさしいことば(KIND_WORDS)：相手を選ばず ことば固有の効果（回復/とげ↓/沈黙）が届く。
 //   どちらも やさしく言えたぶん “ぬくもり” がたまる（救いルートの雪だるま）。
 // ──────────────────────────────────────────
@@ -160,6 +177,8 @@ function cmdAct(actId, targetUid) {
   const word = wordById(actId);
   if (!word) return false;
   game.player.kokoro -= BALANCE.actCost; // 効いても外しても こころは減る（＝手探りのコスト・群れ全体で1回ぶん）
+  game.listened = true;                  // この夜「きいてみる」をした（第一夜の街の返し方＝P0-4 の分岐に使う）
+  noteWordUse(actId);                    // 同じことばの使いすぎに 小さな反応（P1-3）
   const said = word.word || word.name;
   game.lastWord = said;
   log(`▶ ${game.player.name}「${said}」（みんなへ）`);
@@ -187,8 +206,14 @@ function cmdAct(actId, targetUid) {
       didSomething = true;
       // 対話してる感：効いた子が ことばを返す（多すぎないよう最大2体）
       if (voices < 2 && typeof ENEMY_VOICE !== "undefined" && ENEMY_VOICE[t.type]) {
-        const lines = ENEMY_VOICE[t.type];
-        const line = lines[Math.floor(Math.random() * lines.length)];
+        // 第一夜チュートリアルの くろまる は、きいてみると“本音”が漏れる（説明でなく ことばで核を伝える）。
+        let line;
+        if (game.tutorial && typeof TUTORIAL !== "undefined" && t.type === TUTORIAL.enemy) {
+          line = TUTORIAL.listen;
+        } else {
+          const lines = ENEMY_VOICE[t.type];
+          line = lines[Math.floor(Math.random() * lines.length)];
+        }
         log(`  ${t.name}「${line}」`);
         pushFx({ t: "evoice", uid: t.uid, text: line });
         voices++;
@@ -220,7 +245,7 @@ function cmdAct(actId, targetUid) {
 }
 
 // ──────────────────────────────────────────
-// 手をのばす（SAVE/MERCY）：もう攻撃せず、心の壁0の相手を こちら側に迎える。
+// 手をのばす（SAVE/MERCY）：もう攻撃せず、こころのかべ0の相手を こちら側に迎える。
 //   救済+1・きずな+1。そして その子の“ことば”を教わる＝語彙が増える（救済→成長の接続）。
 // ──────────────────────────────────────────
 function cmdSave(targetUid) {
@@ -228,7 +253,7 @@ function cmdSave(targetUid) {
   const t = findEnemy(targetUid);
   if (!t) return false;
   if (t.wall > 0) {
-    flash("まだ心の壁がある（先に きいてみる）");
+    flash("まだこころのかべがある（先に きいてみる）");
     return false;
   }
   if (game.player.kokoro < BALANCE.saveCost) {
@@ -241,7 +266,11 @@ function cmdSave(targetUid) {
   game.counters.memory++;
   game.player.exp += BALANCE.expPerSave; // むかえると EXP 少なめ（代わりに きずな と ことば が積み上がる）
   game.lastWord = "いっしょに かえろう";
-  log(`▶ ${game.player.name}「いっしょに かえろう」 — ${t.name} に 手をのばした（むかえた +1・きずな +1）`);
+  log(`▶ ${game.player.name}「いっしょに かえろう」 — ${t.name} に 手をのばした（ともだち +1・あかり +1）`);
+  // 第一夜チュートリアルの くろまる は“すぐ喜ばない／でも すこし近づく”を一言で返す（救い＝完全な正解ではない）。
+  if (game.tutorial && typeof TUTORIAL !== "undefined" && t.type === TUTORIAL.enemy) {
+    log(`  ${TUTORIAL.reach}`);
+  }
   pushFx({ t: "speak", text: "いっしょに かえろう", cat: "yasashii" });
   pushFx({ t: "save", uid: t.uid }); // むかえた瞬間の やわらかい演出
 
@@ -252,8 +281,10 @@ function cmdSave(targetUid) {
 
   // むかえた友から “ことば” を教わる＝言えることが増える（救済→語彙の接続）。
   //   新しく覚えた瞬間は「○○が 言えるようになった」を強調＝本作の核を即時の快感に。
+  //   ※第一夜チュートリアルでは ここでの gift 習得は出さない＝覚えることばを「街で おかえり」の
+  //     ひとつに絞り、初回の情報量を抑える（P0-2「新しいことばをひとつ覚える」）。
   const base = ENEMIES[t.type] || {};
-  if (base.gift) {
+  if (!game.tutorial && base.gift) {
     const learnedNow = learnWord(base.gift);
     if (learnedNow) {
       const gw = KIND_WORDS[base.gift];
@@ -368,7 +399,7 @@ function runEnemyTurn() {
   log("― 群れの反撃 ―");
   let total = 0;
   for (const e of living) {
-    // 心の壁がほどけた敵（wall<=0）は おだやかになり、もう攻撃してこない。
+    // こころのかべがほどけた敵（wall<=0）は おだやかになり、もう攻撃してこない。
     // ＝「壁を下げる」こと自体が被弾を減らす手段になり、すくうルートが成立する。
     // （祓うルートは敵を消すので元から被弾が減る。救うルートにも“同等の生存手段”を与える狙い）
     if (e.wall <= 0) {
@@ -419,8 +450,8 @@ function onWaveCleared() {
   game.state = STATES.WAVE_CLEAR;
   log(`― WAVE ${waveNumber()} クリア ―`);
 
-  if (isBossWave()) {
-    onDawn(); // ボスを退けたら夜明け
+  if (isBossWave() || isTutorialWave()) {
+    onDawn(); // ボスを退けたら夜明け。第一夜チュートリアルも 3択を挟まず すぐ夜明け→街へ。
     return;
   }
 

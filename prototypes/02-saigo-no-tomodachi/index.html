@@ -38,15 +38,13 @@
     </div>
   </div>
 
-  <div id="game">
-    <!-- 上部バー：ウェーブ・カウンタ・ミュート -->
+  <!-- 戦闘HUD。タイトル/街/道では hidden（applyScreen が battle のときだけ表示）。
+       ★初期は hidden：タイトル画面で WAVE や数値・ボタンが見えないように（P0-1）。 -->
+  <div id="game" class="hidden">
+    <!-- 上部バー：夜明けへの進み（ドット）＋ミュート。
+         ※おいはらった/むかえた/きずな の“管理数値”は前面に出さない方針（結果は街の景色で返す）。 -->
     <header id="topbar">
-      <div id="wave-info">WAVE 1 / 6</div>
-      <div id="counters">
-        <span class="ct kill">おいはらった <b id="c-kill">0</b></span>
-        <span class="ct save">むかえた <b id="c-save">0</b></span>
-        <span class="ct memory">きずな <b id="c-memory">0</b></span>
-      </div>
+      <div id="wave-info"></div>
       <button id="mute-btn" title="音のON/OFF">♪</button>
     </header>
 
@@ -77,15 +75,12 @@
     <div class="ov-panel title-panel">
       <h1 class="game-title">さいごのともだち</h1>
       <p class="game-subtitle">LAST FRIEND STANDING ― ことばで、たたかう夜</p>
-      <!-- プロローグ：物語の入口（ちいかわ的な可愛さ × さみしい夜 × ことばで戦う）。
-           演出は .title-prologue（style.css）。傷つける/わかりあう の二択が、口喧嘩バトルの核。 -->
+      <!-- タイトルは“寂しい夜が はじまる”空気だけを先に渡す（数値や遊び方の説明は出さない＝P0-1）。
+           遊び方は第一夜のチュートリアルで、操作と反応で伝える。 -->
       <p class="title-prologue">ながい よるの はなし。
 ともだちは みんな いなくなった。
 それでも 夜は、だれかを つれてくる。</p>
-      <p class="title-lead">ことばで、ひと晩を生きのびる。<br />
-        きついことばで <b>おいはらう</b> か、やさしいことばで <b>ともだち</b> にするか。</p>
       <button id="start-btn" class="start-btn">▶ はじめる</button>
-      <p class="title-foot">遊びかたは ゲーム内で やさしく案内します</p>
     </div>
   </div>
 

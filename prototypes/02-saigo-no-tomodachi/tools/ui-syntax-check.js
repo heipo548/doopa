@@ -94,6 +94,9 @@ var drive = [
   // ── よふけメーター → 戦闘の入り（battle.js無改変・field側の橋渡し）──
   "initMeta(); goToField(); field.dusk=10; startNightBattle(); __o.push('nightfall RUSH ok (dusk10 → nukumori=' + game.player.nukumori + '>=' + NIGHTFALL.rushNukumori + ' ' + (game.player.nukumori>=NIGHTFALL.rushNukumori) + ' / weaponLv不変 ' + (game.player.weaponLv.namida===1) + ')');",
   "initMeta(); goToField(); field.dusk=70; startNightBattle(); __o.push('nightfall LATE ok (dusk70 → kyoki=' + game.player.kyoki + '>=' + NIGHTFALL.lateKyoki + ' ' + (game.player.kyoki>=NIGHTFALL.lateKyoki) + ')');",
+  // 第一夜チュートリアル：1体ウェーブを むかえて→夜明け（結末グリッドを出さない最小表示）→街へ
+  "initMeta(); goToField(); startNightBattle(); game.enemies[0].wall=0; onCommand('save'); __o.push('tutorial: 1体むかえる ok (save=' + game.counters.save + ', tutorial=' + game.tutorial + ', state=' + game.state + ')');",
+  "render(); __o.push('tutorial dawn 最小表示 ok (screen=' + app.screen + ')');",
   // 夜明け→街へかえる（returnToTown）：戦果がメタに積まれ 夜が進むか
   "initMeta(); game.counters.kill=2; game.counters.save=3; game.ending=ENDINGS[0]; game.state=STATES.DAWN; meta.nightStartFriends=0; returnToTown(); render(); __o.push('returnToTown ok (night=' + meta.night + ', totalSave=' + meta.totalSave + ', screen=' + app.screen + ')');",
   // さいごの夜を越える → マクロ結末（総和で結末確定・画面遷移）

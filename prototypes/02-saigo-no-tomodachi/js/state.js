@@ -83,6 +83,8 @@ function newGame() {
     lastWord: null,          // 最後に言ったことば（結末で「さいごに のこった ことば」に使う）
     newWords: [],            // このランで新しく覚えたことば（語彙が増えた手応えの可視化用）
     savedFriends: [],        // むかえた友（{type,name,color,shape}）＝画面上部の「なかま」に並べて“救った感”を出す
+    tutorial: false,         // この夜が 第一夜チュートリアルか（startWave で wave.tutorial から設定）
+    listened: false,         // この夜「きいてみる」を1回でもしたか（第一夜の街の返し方＝P0-4 の分岐に使う）
   };
   return game;
 }
@@ -118,8 +120,10 @@ function makeEnemy(typeId, pos, elite) {
 // ウェーブを開始する（群れを並べ、こころを補充）
 // ──────────────────────────────────────────
 function startWave() {
-  const wave = WAVES[game.waveIndex];
+  const waves = currentWaves();
+  const wave = waves[game.waveIndex];
   const elite = !!wave.elite;
+  game.tutorial = !!wave.tutorial; // 第一夜チュートリアルの1体ウェーブか
   game.enemies = wave.enemies.map((t, i) => makeEnemy(t, i, elite));
   game.turn = 0;
   game.player.defending = false;
@@ -141,14 +145,30 @@ function startWave() {
   if (wave.boss) log("ぬしさま が あらわれた…！");
 
   // はじめて出会う子だけ、その素性（flavor）を一度だけ流す＝物語の手触り。
+  //   第一夜チュートリアルの くろまる だけは、説明的な flavor ではなく“出会いがしらの一言”を出す。
   for (const e of game.enemies) {
     if (!game.seenTypes[e.type]) {
       game.seenTypes[e.type] = true;
-      const base = ENEMIES[e.type];
-      if (base && base.flavor) log(`  〔${base.name}〕${base.flavor}`);
+      if (game.tutorial && typeof TUTORIAL !== "undefined" && e.type === TUTORIAL.enemy) {
+        log(`  ${TUTORIAL.intro}`);
+      } else {
+        const base = ENEMIES[e.type];
+        if (base && base.flavor) log(`  〔${base.name}〕${base.flavor}`);
+      }
     }
   }
 }
+
+// 今この夜で使うウェーブ構成。第一夜（meta.night===1）だけ チュートリアルの1体ウェーブに差し替える。
+//   ※ meta が無い（balance-probe / headless 等のコア単体検証）ときは 従来の WAVES のまま＝挙動不変。
+function currentWaves() {
+  if (typeof meta !== "undefined" && meta && meta.night === 1 && typeof WAVES_TUTORIAL !== "undefined") {
+    return WAVES_TUTORIAL;
+  }
+  return WAVES;
+}
+// このウェーブが チュートリアル用（クリアで即・夜明け、レベルアップ3択を出さない）か
+function isTutorialWave() { return !!(game && game.tutorial); }
 
 // ──────────────────────────────────────────
 // 状態を調べる小さなヘルパー群
@@ -168,9 +188,9 @@ function frontEnemies(n) {
     .sort((a, b) => a.pos - b.pos)
     .slice(0, n);
 }
-function isBossWave() { return !!WAVES[game.waveIndex].boss; }
+function isBossWave() { return !!currentWaves()[game.waveIndex].boss; }
 function waveNumber() { return game.waveIndex + 1; }
-function totalWaves() { return WAVES.length; }
+function totalWaves() { return currentWaves().length; }
 
 // 武器まわりのアクセサ
 function weaponLevel(id) { return game.player.weaponLv[id] || 1; }
