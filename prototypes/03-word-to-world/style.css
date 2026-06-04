@@ -57,6 +57,14 @@ body.dark-1::after, body.dark-2::after, body.dark-3::after {
 }
 body.dark-2::after { background: radial-gradient(circle at 50% 36%, transparent 32%, rgba(18,6,28,0.18) 72%, rgba(14,4,22,0.4) 100%); }
 body.dark-3::after { background: radial-gradient(circle at 50% 38%, rgba(10,2,16,0.12) 18%, rgba(10,2,16,0.4) 64%, rgba(6,1,12,0.62) 100%); }
+/* 世界(#scene)は翳らせつつ、読む面(パネル/バトルカード)は不透明・明るめに保って本文の可読性を死守（桜井FB）。
+   body の filter は子にも効くので、暗い時ほどパネル地を白寄り＝高くして相対コントラストを確保する。 */
+/* ★メタパネル(.meta-panel)は意図的に“暗い外側”なので除外（白くしない）。それ以外の読む面だけ明るく保つ。 */
+body.dark-2 .ov-panel:not(.meta-panel), body.dark-2 .battle-card,
+body.dark-3 .ov-panel:not(.meta-panel), body.dark-3 .battle-card {
+  background: linear-gradient(180deg, #fffdfe, #fff4fa);
+}
+body.dark-3 .ov-panel:not(.meta-panel), body.dark-3 .battle-card { box-shadow: 0 18px 44px rgba(40,10,40,0.5); }
 
 /* すべてのドット絵をくっきり（拡大してもにじませない） */
 #scene, #scene *, .creature svg, .enemy-fig svg, .spr { image-rendering: pixelated; image-rendering: crisp-edges; }
@@ -464,7 +472,9 @@ body.dark-3::after { background: radial-gradient(circle at 50% 38%, rgba(10,2,16
 .field-l .creature { width: 46px; height: 46px; }
 @keyframes lbob { 0%,100% { transform: translate(-50%,-50%); } 50% { transform: translate(-50%, calc(-50% - 3px)); } }
 
-.field-msg { text-align: center; color: var(--text); font-size: 13.5px; min-height: 20px; margin: 8px 0 12px; }
+/* 目的の一文は“最初に目が行く”大きさに（堀井FB：最初の30秒で何をするか）。 */
+.field-msg { text-align: center; color: var(--text); font-size: 15px; font-weight: 800; min-height: 20px; margin: 10px 0 2px; }
+.field-sub { text-align: center; color: var(--accent); font-size: 12px; font-weight: 700; margin: 0 0 10px; }
 .field-controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .field-btn {
   border: 2px solid var(--line); border-radius: 999px; cursor: pointer; padding: 11px 22px;
@@ -526,6 +536,24 @@ body.dark-3::after { background: radial-gradient(circle at 50% 38%, rgba(10,2,16
 .float-num.pdmg { color: var(--harsh); font-size: 22px; }      /* プレイヤー被弾 */
 .float-num.pheal{ color: var(--kind);  font-size: 18px; }      /* kind の side:healSelf */
 .float-num.calm { color: var(--kind);  font-size: 18px; }      /* 寄り添いの手応え（数値ではなく“ことば”/光） */
+.float-num.soften { color: var(--kind); font-size: 13px; font-weight: 800; } /* lowerAtk＝とげが引っ込む（数値でなく“ことば”） */
+
+/* harsh が刺さって敵が一瞬のけぞる（ことばが届いた距離感／桜井FB）。 */
+.creature.recoil, .enemy-fig.recoil { animation: erecoil 0.26s cubic-bezier(.2,.8,.3,1) !important; }
+@keyframes erecoil {
+  0%   { transform: translate(0,0); }
+  35%  { transform: translate(0,-9px) scale(0.97); }
+  100% { transform: translate(0,0); }
+}
+
+/* 敵の反応セリフ（スプライト直下に大きめ＝ログに埋もれさせない）。kind=ミント/harsh=赤桃で“どう効いたか”を色でも。 */
+.enemy-react {
+  margin-top: 4px; font-size: 13px; font-weight: 800; line-height: 1.4;
+  max-width: 260px; animation: reactIn 0.25s ease both;
+}
+.enemy-react.kind  { color: var(--kind); }
+.enemy-react.harsh { color: var(--harsh); }
+@keyframes reactIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
 /* 撃破/寄り添いのポフ（白い拡散）。 */
 .poof {
@@ -640,8 +668,14 @@ body.dark-3 .unstable { letter-spacing: 4px; color: #54234a; text-shadow: 0 0 2p
   55%  { transform: translateY(2px) scale(1.3); }
   100% { transform: translateY(0) scale(1); }
 }
-/* WORLD 完成後は全体が やわらかな朝の光へ（世界が戻る/満ちる気配）。 */
+/* 差し込む L の輝きは結末トーン別（Toby FB：遊び方で “世界の一部” の在り方が変わる）。
+   warm=金色フル(既定)／gray=灯るが控えめ／cruel=入りきらず暗い（"WOR_Dのまま"に近い余韻）。 */
+.meta-logo .logo-l.tone-gray  { color: #c9bce6; text-shadow: 0 0 8px rgba(170,150,210,0.5); }
+.meta-logo .logo-l.tone-cruel { color: #6a5a86; opacity: 0.55; text-shadow: none; }
+/* WORLD 完成後の余韻も結末トーンで（warm=朝の光／gray=ほのか／cruel=ほぼ光らない）。 */
 .meta-panel.world-done { box-shadow: 0 0 80px rgba(255,210,120,0.4); }
+body.tone-gray  .meta-panel.world-done { box-shadow: 0 0 60px rgba(170,150,210,0.35); }
+body.tone-cruel .meta-panel.world-done { box-shadow: 0 0 30px rgba(90,70,120,0.35); }
 
 /* ── ポーズ ── */
 .pause-panel .ov-title { color: var(--text); }
@@ -717,7 +751,10 @@ body.dark-3 .unstable { letter-spacing: 4px; color: #54234a; text-shadow: 0 0 2p
 /* カードの追加要素：Lvバッジ・トレードオフ文・Lv上げ枠（金）。 */
 .card-lv { font-size: 11px; font-weight: 800; color: var(--gold); }
 .card-lv.new { color: var(--accent); }
-.card-tradeoff { font-size: 11px; line-height: 1.5; color: var(--text); opacity: 0.9; }
+/* トレードオフは“毎回の駆け引き”の核なので、短く・色つき背景で浮かせる（桜井：意識させる／堀井：短く）。 */
+.card-tradeoff { font-size: 12px; font-weight: 800; line-height: 1.45; padding: 4px 8px; border-radius: 6px; margin-top: 2px; }
+.card-pick.harsh .card-tradeoff { color: var(--harsh); background: #fff1f4; }
+.card-pick.kind  .card-tradeoff { color: #2e9e90; background: #effbf8; }
 .card-pick.card-levelup { border-color: var(--gold); box-shadow: 0 4px 0 rgba(255,194,75,0.35); }
 
 /* プレイヤーバー：図＋名前（横並びは #player-bar の flex に乗る）。 */

@@ -54,13 +54,15 @@ function makeCardOption(id) {
 
   // トレードオフ文：harsh=速いが凶暴／kind=遅いが優しい、を毎回はっきり言う。
   //   side（kind の耐久補助）があれば、その“やさしさの実利”も一言添える。
+  // トレードオフ文：毎回「速い凶暴／遅い優しさ」を“短い情緒フレーズ”で目立たせる（桜井：意識させる）。
+  //   ただし長い説明・生数値は出さない（堀井：発見の余地を残す）。side の実利だけ控えめに一言添える。
   let tradeoff;
   if (w.kind === "harsh") {
-    tradeoff = "速いが 凶暴：精神HPを 大きく 削る。けれど 言うほど 世界が 翳る。";
+    tradeoff = "はやいが、凶暴。";
   } else {
-    tradeoff = "遅いが 優しい：思いやりを 小刻みに 満たす。勝つには 手数が いる。";
-    if (w.side && w.side.healSelf) tradeoff += `（自分の hpも +${w.side.healSelf} 回復）`;
-    if (w.side && w.side.lowerAtk) tradeoff += `（相手の こうげきを -${w.side.lowerAtk}）`;
+    tradeoff = "おそいが、やさしい。";
+    if (w.side && w.side.healSelf) tradeoff += " じぶんも 軽くなる。";
+    if (w.side && w.side.lowerAtk) tradeoff += " 相手の とげが ひっこむ。";
   }
 
   return {

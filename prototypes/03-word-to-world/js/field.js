@@ -37,7 +37,8 @@ const field = {
   targetX: 0.02,      // マウスが指す目標 横位置（fieldSetTarget が更新）。
   targetY: 0.5,       // マウスが指す目標 縦位置。
   paused: false,      // 会話/戦闘/ショップ等へ抜けている間は追従を止める。
-  message: "",        // 足元に出す短い案内（立て札の本文や状況説明）。
+  message: "",        // 足元に出す案内（入場時は目的の一文、立て札の本文や状況説明）。
+  messageSub: "",     // 目的の下に出す“次の小目標”（入場時のみ。立て札/セーブに触れると消す）。
   _raf: null,         // requestAnimationFrame ハンドル（追従ループ）。
   _lastT: 0,          // 直近フレーム時刻（dt 補正＝フレームレート非依存にするため）。
   _maxv: 0.6,         // 最高速（割合/秒）。瞬間ワープ防止の clamp 基準。
@@ -72,7 +73,10 @@ function enterArea(areaId) {
   field.targetX = field.x; field.targetY = field.y;
   field.paused = false;
   field._lastT = 0;
-  field.message = area.name ? area.name + "。マウスで すすむ（みぎ＝さき）。" : "";
+  // 入場時は“目的の一文”を大きく＋次の小目標（最初の30秒の迷いを消す／堀井FB）。
+  //   sign/save に触れると field.message は上書きされ、その時 messageSub は消す（下の fireNode 参照）。
+  field.message = area.intro || (area.name ? area.name + "。マウスで すすむ。" : "");
+  field.messageSub = area.introSub || "";
 
   // 一度きりのエリア導入ログ（既読なら出さない）。02 の seen と同じ間引き。
   if (game && game.seen && !game.seen["area_" + areaId]) {
@@ -234,6 +238,7 @@ function fireNode(node) {
       let ok = false;
       if (typeof saveGame === "function") ok = !!saveGame(0); // 体験版は単一スロット運用。
       field.message = ok ? "ここまでを セーブした。" : "セーブできなかった…";
+      field.messageSub = "";
       if (typeof log === "function") log(field.message);
       if (typeof showToast === "function") showToast(field.message);
       if (typeof playSe === "function") playSe("calm");
@@ -248,6 +253,7 @@ function fireNode(node) {
     case "sign": {
       const text = (typeof SIGNS !== "undefined" && SIGNS[node.ref]) ? SIGNS[node.ref] : "…なにか 書いてある。";
       field.message = text;
+      field.messageSub = ""; // 立て札を読んだら 入場時の小目標は消す（その場の情報を優先）。
       // typewriter 表示と読み飛ばし計測は ui 側。ここでは“何文字 提示したか”を metrics に伝える。
       //   ※ textShown は metrics.js の“グローバル関数”（metrics.textShown という method は無い）。
       if (typeof textShown === "function") {

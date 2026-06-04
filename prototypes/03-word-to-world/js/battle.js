@@ -55,6 +55,17 @@ function pickLine(lines) {
   return lines[idx];
 }
 
+// 「進捗(0..1)」に応じて配列後方の一言を選ぶ（思いやりを“見えないまま”敵の反応で感じさせる核）。
+//   onKind は「尖る→迷う→柔らかい」の順に並べてある前提。寄り添うほど後ろ＝柔らかいセリフへ。
+//   ★ここで返すのは“セリフ”だけ。思いやりの量・割合は決してUIに出さない（数値化しない）。
+function pickLineByProgress(lines, ratio) {
+  if (!Array.isArray(lines) || lines.length === 0) return "";
+  const r = Math.max(0, Math.min(1, ratio || 0));
+  // ratio 1.0 ちょうどで末尾、それ未満は前方に寄せる。floor で段階感を出す。
+  const idx = Math.min(lines.length - 1, Math.floor(r * lines.length));
+  return lines[idx];
+}
+
 // ──────────────────────────────────────────
 // startBattle(enemyId, opts?)
 //   敵テンプレ(ENEMIES[enemyId])から“戦闘インスタンス”を作って game.battle に据える。
@@ -83,6 +94,8 @@ function startBattle(enemyId, opts) {
     phase: "player",            // バトル内サブ状態："player"|"enemy"|"end"（state.STATES とは別物）。
     turn: 0,
     opts: opts || {},           // フィールド復帰用の情報（撃破フラグ等を field 側が読む）。
+    lastReact: "",              // 直近の敵の反応セリフ（敵スプライト直下に出す。思いやりの“量”ではない）。
+    lastReactKind: false,       // その反応が kind(寄り添い) 由来か（表示の色分けに使う）。
   };
 
   game.state = STATES.BATTLE;
@@ -94,6 +107,12 @@ function startBattle(enemyId, opts) {
   if (base.intro && !game.seen[`intro_${enemyId}`]) {
     log(base.intro);
     game.seen[`intro_${enemyId}`] = true;
+  }
+  // 初めての戦闘だけ、遊び方を一行で体験的に渡す（説明ゼロ即操作のまま“何をするか”を1回だけ／堀井FB）。
+  //   以降は #prompt の常設ガイドと、敵の反応(表情・セリフ)で体得させる。
+  if (!game.seen["battle_tutorial"]) {
+    game.seen["battle_tutorial"] = true;
+    log("ことばを えらんで、こころを かわす。きつい ことばで 言い負かすか、やさしい ことばで 寄りそうか。");
   }
   // BGM トーンを翳りに合わせる（audio.setTone があれば）。主人公の不穏化と空気を合わせる。
   if (typeof setTone === "function" && typeof darkLevel === "function") setTone(darkLevel());
@@ -129,10 +148,11 @@ function playerCard(wordId) {
     // 言ったことばを吹き出しで（toge＝とげとげした不穏なトーン）。被弾数字は ui が mindHp 差から出す。
     pushFx({ t: "speak", text: said, cat: "harsh" });
     pushFx({ t: "hit", dmg: power, mindHp: en.mindHp, mindHpMax: en.mindHpMax }); // 精神HP被弾＝数字フロート（見えるゲージ）。
+    pushFx({ t: "recoil", uid: en.id });    // ことばが届いた距離感（敵が一瞬のけぞる）。
     se("harsh");
-    // 被弾セリフ（不穏度で出し分け）。
+    // 被弾セリフ（不穏度で出し分け）。敵スプライト直下にも出すため lastReact に控える。
     const oh = pickLine(en.lines.onHarsh);
-    if (oh) { log(`  ${en.name}「${oh}」`); }
+    if (oh) { log(`  ${en.name}「${oh}」`); game.battle.lastReact = oh; game.battle.lastReactKind = false; }
 
   } else {
     // ── kind：思いやりを満たす（遅い＝優しさルート）───────────
@@ -157,12 +177,14 @@ function playerCard(wordId) {
       if (w.side.lowerAtk) {
         const before = en.atk;
         en.atk = Math.max(0, en.atk - w.side.lowerAtk);
-        if (en.atk < before) { log(`  ${en.name} の とげが すこし ひっこんだ（攻撃 ${en.atk}）`); pushFx({ t: "calm" }); }
+        // 「とげが ひっこんだ」を可視化（soften fx）＝長期戦が“詰まない”実感を見せる（桜井FB）。
+        if (en.atk < before) { log(`  ${en.name} の とげが すこし ひっこんだ`); pushFx({ t: "soften", uid: en.id }); }
       }
     }
-    // 被弾(＝寄り添われ)セリフ（不穏度で出し分け）。
-    const ok = pickLine(en.lines.onKind);
-    if (ok) { log(`  ${en.name}「${ok}」`); }
+    // 被弾(＝寄り添われ)セリフを“思いやり進捗”で段階出し分け（尖る→迷う→柔らかい）。
+    //   ★割合は使うが、数値はUIに出さない。敵の「ことば」と「表情」だけで“効いている”を伝える。
+    const ok = pickLineByProgress(en.lines.onKind, en.omoiyari / en.omoiyariNeed);
+    if (ok) { log(`  ${en.name}「${ok}」`); game.battle.lastReact = ok; game.battle.lastReactKind = true; }
   }
 
   // ── 勝敗チェック → 未決着なら敵ターン ─────────────────
@@ -351,6 +373,7 @@ function battleCommandList() {
 if (typeof window !== "undefined") {
   window.startBattle = startBattle;
   window.playerCard = playerCard;
+  window.pickLineByProgress = pickLineByProgress;
   window.enemyTurn = enemyTurn;
   window.winBattle = winBattle;
   window.checkWin = checkWin;

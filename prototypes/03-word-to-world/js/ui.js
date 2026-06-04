@@ -414,6 +414,7 @@ function renderField() {
       <span class="field-l ${f.paused ? "" : "walking"}" style="left:${lLeft}%;top:${lTop}%">${playerSVG("happy")}</span>
     </div>
     <p class="field-msg">${lWord(f.message || "")}</p>
+    ${f.messageSub ? `<p class="field-sub">${esc(f.messageSub)}</p>` : ""}
   `;
 }
 
@@ -608,10 +609,22 @@ function renderEnemyArea() {
   if (!area) return;
   const en = game.battle.enemy;
 
+  const b = game.battle;
   const hpPct = Math.max(0, Math.round((en.mindHp / en.mindHpMax) * 100));
-  // 表情：精神HP が残り少ないと sad、それ以外は neutral（敵が言い負かされかけている手触り）。
-  const expr = (en.mindHp <= 0) ? "sad" : (hpPct <= 35 ? "sad" : "neutral");
+  // 表情は“どう勝ちつつあるか”を映す。kind が効くほど顔がほどけ(happy)、harsh で削れるほど sad。
+  //   ★思いやりの「量・割合」は描かない（バー/数値ゼロ）。表情と反応セリフ“だけ”で効いているのを感じさせる。
+  const kindProg = en.omoiyariNeed > 0 ? en.omoiyari / en.omoiyariNeed : 0;
+  let expr = "neutral";
+  if (en.omoiyari >= en.omoiyariNeed) expr = "happy";
+  else if (kindProg >= 0.5) expr = "happy";      // 半分 寄り添うと、もう顔がほどけ始める
+  else if (en.mindHp <= 0) expr = "sad";
+  else if (hpPct <= 35) expr = "sad";
   const sprite = creatureSVG(en.color, en.shape, expr);
+
+  // 直近の敵の反応セリフを スプライト直下に大きめに（ログに埋もれさせない／桜井FB）。
+  const react = (b && b.lastReact)
+    ? `<div class="enemy-react ${b.lastReactKind ? "kind" : "harsh"}">「${esc(b.lastReact)}」</div>`
+    : "";
 
   area.innerHTML = `
     <div class="enemy ${en.boss ? "boss" : ""}" data-uid="${esc(en.id)}">
@@ -619,6 +632,7 @@ function renderEnemyArea() {
       <div class="enemy-name">${esc(en.name)}</div>
       <div class="bar mind"><div class="fill" style="width:${hpPct}%"></div></div>
       <div class="enemy-hp">精神HP ${Math.max(0, en.mindHp)}/${en.mindHpMax}</div>
+      ${react}
     </div>
   `;
   // ★ここに omoiyari のバーや数値は絶対に出さない（見えないゲージを守る核）。
@@ -780,6 +794,13 @@ function playFx(prevRects) {
       } else if (ev.t === "calm") {
         // kind が届いた合図＝“ほっ…”だけ。思いやりの「量」は絶対に出さない（数字を出さない）。
         floatOnEnemy(uid, "ほっ…", "calm", prevRects);
+      } else if (ev.t === "recoil") {
+        // harsh が刺さって敵が一瞬のけぞる（ことばが届いた距離感）。
+        recoilEnemy(uid);
+      } else if (ev.t === "soften") {
+        // lowerAtk＝敵の“とげ”が引っ込む合図（長期戦が詰まない実感の可視化）。数値は出さない。
+        floatOnEnemy(uid, "とげが ひっこんだ", "soften", prevRects);
+        softenEnemy(uid);
       } else if (ev.t === "win") {
         // 勝敗の余韻：harsh 勝ち＝静かに翳る／kind 勝ち＝あたたかい光（数値は出さない）。
         if (ev.kind) saveBurst(uid, prevRects);
@@ -861,6 +882,16 @@ function shakeEnemy(uid) {
 function flashEnemy(uid) {
   const fig = uid != null ? document.querySelector(`.enemy[data-uid="${cssEsc(uid)}"] .enemy-fig`) : null;
   if (fig) { fig.classList.add("hitpop"); setTimeout(() => fig.classList.remove("hitpop"), 260); }
+}
+// harsh が刺さって敵が一瞬のけぞる（ことばが届いた“距離”を体に出す／桜井FB）。
+function recoilEnemy(uid) {
+  const fig = uid != null ? document.querySelector(`.enemy[data-uid="${cssEsc(uid)}"] .enemy-fig`) : null;
+  if (fig) { fig.classList.add("recoil"); setTimeout(() => fig.classList.remove("recoil"), 260); }
+}
+// kind の lowerAtk が効いて敵の“とげ”が引っ込む＝やわらかい光をひと押し（既存 .calm を流用）。
+function softenEnemy(uid) {
+  const fig = uid != null ? document.querySelector(`.enemy[data-uid="${cssEsc(uid)}"] .enemy-fig`) : null;
+  if (fig) { fig.classList.add("calm"); setTimeout(() => fig.classList.remove("calm"), 700); }
 }
 // 言い負かした瞬間の“パンッ！”（敵は render で消える前提なので、居た場所に出す）＝ポフ＋かけら飛散。
 function deadPoof(uid, prevRects, color) {
@@ -993,13 +1024,17 @@ function renderMeta() {
     `・ことばを ちゃんと 読んだ わりあい：${Math.round((sum.readRatio || 0) * 100)}%\n` +
     `・ひとつの ことばを 見ていた 時間：${(sum.avgDwellMs / 1000).toFixed(1)}びょう`;
 
+  // 結末トーン（warm/gray/cruel）で締めを出し分ける（採点でなく返礼に／Toby・堀井FB）。
+  const tone = (game.ending && game.ending.tone) || "warm";
+  const closeSet = (M.closeByTone && M.closeByTone[tone]) || M.closeLines || [];
+
   const script = []
     .concat(M.openLines || [])
     .concat(skipSet || [])
     .concat(clickSet || [])
     .concat([mirror])
     .concat(M.reveal || [])
-    .concat(M.closeLines || []);
+    .concat(closeSet);
 
   // reveal の何行目で綴りアニメを差し込むか（reveal の開始位置）。
   const revealStart = (M.openLines || []).length + (skipSet || []).length + (clickSet || []).length + 1;
@@ -1011,8 +1046,9 @@ function renderMeta() {
   const idx = Math.min(game.metaUi.i, script.length - 1);
 
   // 綴りの表示状態：worldLineIndex に達したら WORLD（L 挿入済み）を見せる。
+  //   差し込む L の輝きは結末トーン別（warm=金色フル／gray=控えめ／cruel=入りきらず暗い）。
   const spelled = (idx >= worldLineIndex);
-  const logo = spelledLogo(spelled, idx >= revealStart);
+  const logo = spelledLogo(spelled, idx >= revealStart, tone);
 
   bodyEl.innerHTML = `
     <div class="meta-sky"></div>
@@ -1071,11 +1107,12 @@ function showMetaEnd() {
 
 // メタ画面のロゴ綴り。
 //   reveal 前：WO_RD（ギャップ _ ）／reveal 中：ギャップが光る／WORLD 完成：_ の位置へ L が差し込まれて WORLD。
-function spelledLogo(spelled, revealing) {
+function spelledLogo(spelled, revealing, tone) {
   if (spelled) {
-    // WORLD：W O R L D。差し込まれた L は CSS .meta-logo .logo-l で金色に光って入ってくる（linsert）。
+    // WORLD：W O R L D。差し込まれた L は結末トーンで輝きが変わる（warm=金/gray=控えめ/cruel=暗い）。
+    const t = tone || "warm";
     return ["W", "O", "R", "L", "D"].map((c) =>
-      c === "L" ? `<span class="logo-l">L</span>` : `<span class="logo-ch">${c}</span>`
+      c === "L" ? `<span class="logo-l tone-${t}">L</span>` : `<span class="logo-ch">${c}</span>`
     ).join("");
   }
   // WO_RD：欠けたスロット。CSS .meta-logo .logo-slot が脈動（slotblink）して“ここに何か入る”を予感させる。

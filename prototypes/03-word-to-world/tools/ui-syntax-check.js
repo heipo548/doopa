@@ -101,6 +101,8 @@ var drive = [
   "  { t:'hit', dmg:20, mindHp:0, mindHpMax:18 },",   // 撃破（deadPoof 経路）
   "  { t:'calm' },",
   "  { t:'pheal', amount:3 },",
+  "  { t:'soften', uid:__uid },",   // lowerAtk＝とげが引っ込む（新fx）
+  "  { t:'recoil', uid:__uid },",   // harshヒット後の敵リコイル（新fx）
   "  { t:'learn', text:'だいじょうぶ' },",
   "  { t:'dark' },",
   "  { t:'win', kind:true },",
@@ -108,7 +110,12 @@ var drive = [
   "  { t:'pdmg', dmg:4 },",
   "  { t:'lose' }",
   "];",
-  "playFx({}); __o.push('playFx 全イベント(speak harsh/kind・hit・撃破・calm・pheal・learn・dark・win両方・pdmg・lose) ok');",
+  "playFx({}); __o.push('playFx 全イベント(speak・hit・撃破・calm・pheal・soften・recoil・learn・dark・win両方・pdmg・lose) ok');",
+
+  // ── 敵反応の段階化（pickLineByProgress）と 敵スプライト直下のセリフ表示／表情の omoiyari 連動 ──
+  "newGame(); startBattle('villain');",
+  "__o.push('pickLineByProgress: 0%=' + JSON.stringify(pickLineByProgress(ENEMIES.villain.lines.onKind,0)) + ' 50%=' + JSON.stringify(pickLineByProgress(ENEMIES.villain.lines.onKind,0.5)) + ' 100%=' + JSON.stringify(pickLineByProgress(ENEMIES.villain.lines.onKind,1)) + ' 段階差? ' + (pickLineByProgress(ENEMIES.villain.lines.onKind,0)!==pickLineByProgress(ENEMIES.villain.lines.onKind,1)));",
+  "game.battle.enemy.omoiyari = game.battle.enemy.omoiyariNeed; game.battle.lastReact='……ありがとう。'; game.battle.lastReactKind=true; render(); var __ehtml=document.getElementById('enemy-area').innerHTML; __o.push('敵反応表示＆表情ほどけ ok (思いやり満タンで omoiyari数値は出さない? ' + !/思いやり|omoiyari/i.test(__ehtml) + ')');",
 
   // ── 3択カード：offerCards → renderCards（harsh/kind 色分け・トレードオフ文）。
   "offerCards({ from:'field', reason:'win' }); render(); __o.push('render cards ok (pending=' + (game.pendingCards?game.pendingCards.length:0) + ')');",
