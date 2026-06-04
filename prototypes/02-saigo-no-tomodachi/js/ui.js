@@ -1045,6 +1045,20 @@ function applyScreen(sc) {
 // 主人公ぽちのスプライト（街・道で歩く姿）。あたたかいクリーム色のまる。
 function pochiSVG(expr) { return creatureSVG("#f0e2b6", "circle", expr || "happy"); }
 
+// 街の足元の一文。2周目は「ここ、きた ことが ある」を一度／救いゼロの周回は街の存在理由が揺れる（#8/#9）。
+function townFootText() {
+  if (!meta) return "夜の道を 歩いて、むきあう。むかえた子は この街に かえってくる。";
+  if (meta.night === 1 && meta._journeys >= 1 && !meta._seenReturnedFoot) {
+    meta._seenReturnedFoot = true;
+    return "ここ、きた ことが ある きがする。";
+  }
+  if (meta.night > 1 && meta.totalSave === 0) {
+    return "ここは、だれの ために あかるく してるんだっけ。";
+  }
+  if (meta.night === 1) return "夜の道を 歩いて、あの子に あいに いく。むかえた子は、この街に かえってくる。";
+  return "夜の道を 歩いて、むきあう。むかえた子は この街に かえってくる。";
+}
+
 // ── 街（拠点）ハブ ─────────────────────────
 //   夜カウンタ・灯り（救った友の累計）・なかま・覚えたことば・「夜へ でかける」。
 function renderTown() {
@@ -1091,7 +1105,10 @@ function renderTown() {
   let touchHint = "";
   if (hasFriends && !meta._seenTownTouch) { touchHint = `<span class="town-stage-hint">👆 友を さわって みて</span>`; meta._seenTownTouch = true; }
   // ① 倒した子の「空席」＝消えかけた輪郭。数が増えても席は1つ（さわると 違う子の名残）。救いと喪失を同じ街に。
-  const hasLost = !!(meta.lostTypes && meta.lostTypes.length);
+  // 空席は「この旅で倒した子」＋「前周から持ち越した子（#9）」。2周目は誰も置いていない空席が最初からひとつ。
+  const ghostTypes = (meta.lostTypes || []).slice();
+  if (meta._carriedGhost && ghostTypes.indexOf(meta._carriedGhost) < 0) ghostTypes.push(meta._carriedGhost);
+  const hasLost = ghostTypes.length > 0;
   const vacancyHtml = hasLost
     ? `<span class="town-vacancy tappable" data-ghost="1" style="left:${nF ? 88 : 50}%" title="…いなくなった子">${creatureSVG("#45416a", "circle", "neutral")}</span>`
     : "";
@@ -1189,9 +1206,7 @@ function renderTown() {
     ${friendsSection}
     ${wordsSection}
     <button id="town-go" class="start-btn town-go ${goPulse}">▶ 夜へ でかける</button>
-    <p class="town-foot">${meta.night === 1
-      ? "夜の道を 歩いて、あの子に あいに いく。むかえた子は、この街に かえってくる。"
-      : "夜の道を 歩いて、むきあう。むかえた子は この街に かえってくる。"}</p>
+    <p class="town-foot">${townFootText()}</p>
   `;
   const go = $("town-go");
   if (go) go.addEventListener("click", () => { playSe("select"); goToField(); });
@@ -1209,13 +1224,15 @@ function renderTown() {
     });
   });
   // ① 空席をさわると、いなくなった子の名残（途中で切れた flavor）が ひとつ（数えない・名前を出さない）。
+  //   #5：「おぼえてるよ」を覚えた者だけ、名残を“最後まで”見届けられる（途中で切れない完結文）。
   const vac = body.querySelector(".town-vacancy[data-ghost]");
   if (vac) vac.addEventListener("click", () => {
-    const lost = (meta.lostTypes && meta.lostTypes.length) ? meta.lostTypes : null;
-    if (!lost) return;
-    const t = lost[Math.floor(Math.random() * lost.length)];
-    const line = (typeof TOWN_GHOST_LINES !== "undefined" && TOWN_GHOST_LINES[t]) ? TOWN_GHOST_LINES[t] : "……もう、いない。";
-    showToast(line);
+    if (!ghostTypes.length) return;
+    const t = ghostTypes[Math.floor(Math.random() * ghostTypes.length)];
+    const remembers = (meta.learnedWords || []).indexOf("oboeteru") >= 0;
+    const full = (typeof TOWN_GHOST_FULL !== "undefined") ? TOWN_GHOST_FULL[t] : null;
+    const cut = (typeof TOWN_GHOST_LINES !== "undefined") ? TOWN_GHOST_LINES[t] : null;
+    showToast((remembers && full) ? full : (cut || "……もう、いない。"));
     if (typeof playSe === "function") playSe("miss");
   });
 }
@@ -1248,6 +1265,10 @@ function renderField() {
       const calling = (field.activeFriend === n) ? "calling" : "";
       const passed = n._passedAnim ? "justpassed" : ""; // とおりすぎた＝小さくなって消える（P0-3）
       return `<span class="road-node node-friend ${n.done ? "done" : ""} ${calling} ${passed} ${glow}" style="left:${left}%;top:${top}%" title="${base.name}">${creatureSVG(base.color, base.shape, "sad")}</span>`;
+    } else if (n.type === "ghost") {
+      // 群れの おく の名残＝倒した子の声（さいごの夜のみ）。灰色の faint な輪郭（CSSで grayscale）。
+      const gb = ENEMIES[n.ghost] || {};
+      return `<span class="road-node node-ghost ${n.done ? "done" : ""} ${glow}" style="left:${left}%;top:${top}%" title="…なにかの 名残">${creatureSVG(gb.color || "#444", gb.shape || "circle", "neutral")}</span>`;
     } else {
       // 群れ(⚔)＝出口。遠いほど薄く・近いほど濃く＝行くべき先を示す。近づくと「境界」を脈動で予告（P0-4）。
       const near = field.reachedBattle ? "climax" : (field.x >= goal - 1.0 ? "near" : "");
@@ -1286,10 +1307,12 @@ function renderField() {
     `<div class="bar-row"><span class="bar-lab dusk">夜</span><div class="field-dusk" title="夜のこさ：濃いほど 次の戦いが つらくなる"><div class="fill" style="width:${duskPct}%"></div></div></div>`;
   const fieldNight = field.tutorial ? "はじめての夜"
     : (meta ? (meta.night >= meta.maxNights ? "さいごの夜" : meta.night + "夜目") : "夜");
+  // その夜の「場所」をそっと出す（説明はしない＝地名だけ・v0.12 世界拡張）。第一夜は場所なし。
+  const placeName = (!field.tutorial && field.place && field.place.name) ? `<span class="field-place">・${field.place.name}</span>` : "";
 
   body.innerHTML = `
     <div class="field-top">
-      <span class="field-night">${fieldNight}</span>
+      <span class="field-night">${fieldNight}${placeName}</span>
       <div class="field-bars">
         <div class="bar-row"><span class="bar-lab">朝</span><div class="field-progress ${field.reachedBattle ? "climax" : ""}"><div class="fill" style="width:${progPct}%"></div></div></div>
         ${duskRow}
@@ -1363,6 +1386,13 @@ function showMacroResult() {
   const topWord = topSaidWord();
   const topLine = topWord ? `<p class="result-words">きみが いちばん いえた ことば　「${topWord}」</p>` : "";
 
+  // #6 旅を“地理”で返す（通ってきた場所）＋周回のにじみ。数字でなく景色で。
+  const places = (meta.visitedPlaces || []).filter(Boolean);
+  const placeLine = places.length ? `<p class="result-text dim">きみは、${places.join("と ")}を とおってきた。</p>` : "";
+  const journeyLine = (meta._journeys >= 1) ? `<p class="result-text dim">なんども、夜を こえてきた。</p>` : "";
+  // #8 救い特化（ひかり）で越えた時だけ、夜明けの“その先”を そっと匂わす（断定しない。強さで来た者には見えない）。
+  const beyondLine = (e.id === "hikari") ? `<p class="result-tone">……あさの むこうに、まだ みちが ある きがする。</p>` : "";
+
   body.innerHTML = `
     <h2 class="result-title">${e.title}</h2>
     <p class="result-text">${intro.replace(/\n/g, "<br>")}</p>
@@ -1370,6 +1400,8 @@ function showMacroResult() {
     <p class="result-text">${e.text.replace(/\n/g, "<br>")}</p>
     ${closeLine}
     ${topLine}
+    ${placeLine}
+    ${journeyLine}
     <div class="macro-friends">${friendsHtml}</div>
     <div class="result-stats">
       <div><span>こえた夜</span><b>${meta.maxNights}</b></div>
@@ -1378,6 +1410,7 @@ function showMacroResult() {
       <div><span>ともだち</span><b>${meta.totalSave}</b></div>
       <div><span>いえる ことば</span><b>${(meta.learnedWords || []).length}</b></div>
     </div>
+    ${beyondLine}
     <button class="restart-btn" id="macro-restart">はじめから</button>
   `;
   const r = $("macro-restart");

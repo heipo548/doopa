@@ -64,7 +64,11 @@ function initMeta() {
     totalSave: 0,
     lostTypes: [], // 倒した子の種類（街に“空席”の名残を残す・数えない＝STORY §3「不在を残す」）
     wordCount: {}, // 旅で言った ことばの回数（結末の「いちばん いえた ことば」用・⑦）
+    visitedPlaces: [], // 通ってきた 場所の名（結末で“地理”を返す・v0.12 世界拡張）
     _retried: 0,   // HP0で倒れて やり直した回数（世界が薄く覚える・⑤）
+    _journeys: 0,  // 周回数（マクロ結末を越えて はじめから した回数。ぬしさま/街/結末が薄く覚える）
+    _carriedGhost: null, // 前周で失った子（2周目の街に最初から空席を置く・#9）
+    _kageSeen: false,    // 群れの おく で 影に手をのばしたか（2段階）
     history: [],   // 各夜の記録 {night, saveRate, endingId}
     // 物語ビート（一度きり）の既読フラグ。遊びながら小出しに見せ、二度目は出さない。
     _seenFirstWalk: false, _seenFirstFriend: false, _seenFirstSave: false,
@@ -111,6 +115,11 @@ function goToField() {
   if (typeof startBgm === "function") startBgm("field");
   if (typeof render === "function") render();
   startFieldLoop(); // マウス追従のアニメーションを開始（ブラウザのみ）
+  // 「いってらっしゃい」を覚えていると、街を出る時に だれかが 見送る（送り出される側になる違和感・#5 small）。
+  if (meta && (meta.learnedWords || []).indexOf("itterasshai") >= 0 && !meta._seenSendoff && meta.friends.length && typeof showToast === "function") {
+    meta._seenSendoff = true;
+    showToast("「いってらっしゃい」。だれかの こえが、せなかに あたった。");
+  }
 }
 
 // この夜が「さいごの夜」か
@@ -128,6 +137,7 @@ function buildTutorialField() {
   field.picked = []; field.activeFriend = null;
   field._nearWarned = false;   // 出口（戦闘）接近の予告を 各夜1回だけ出すため
   field.tutorial = true;       // renderField/歩行で よふけバーを隠す目印
+  field.place = null;          // 第一夜は場所なし（特別さを後で効かせる＝汎用 FIELD_SCENERY）
   field.message = "よるの みち。マウスで ぽちを みぎへ。むこうに、だれか いる。"; // 歩く目的を先に灯す（予告）
   if (meta) meta._seenFirstWalk = true;
   // 縦中央(y:0)に“道だけの友”ほしのこ を置き 必ず出会わせる（戦闘の くろまる とは別キャラ＝混同しない）。
@@ -166,6 +176,23 @@ function buildField() {
     field.message = "よるの みち。マウスで じゆうに（みぎ＝朝／はしの ことばは たてに 寄り道して ひろう）。";
   }
 
+  // ── この夜の「場所」を決める（v0.12 世界拡張・Toby）。さいごの夜は「群れの おく」、中盤は みずうみ/駅/もり で揺れる。──
+  //   均質な「夜の道」から、地名のある場所へ。足元の景色（fieldStepToward）が その場所になる。
+  field.place = null;
+  if (typeof FIELD_PLACES !== "undefined") {
+    const ids = Object.keys(FIELD_PLACES);
+    if (isLastNight() && typeof FIELD_OKU !== "undefined") {
+      field.place = FIELD_OKU;
+    } else if (ids.length) {
+      field.place = FIELD_PLACES[ids[Math.floor(Math.random() * ids.length)]];
+    }
+  }
+  // 行った場所を旅の記録に（結末で“通ってきた地理”を返す＝数字でなく地理で旅を返す）。
+  if (field.place && meta) {
+    meta.visitedPlaces = meta.visitedPlaces || [];
+    if (meta.visitedPlaces.indexOf(field.place.name) < 0) meta.visitedPlaces.push(field.place.name);
+  }
+
   // 落ちていることば：まだ覚えていない やさしいことば から
   const wordPool = (typeof FIELD_WORD_POOL !== "undefined" ? FIELD_WORD_POOL.slice() : [])
     .filter((id) => meta.learnedWords.indexOf(id) < 0);
@@ -175,6 +202,10 @@ function buildField() {
   let friendPool = allFriends.filter((id) => homeTypes.indexOf(id) < 0);
   if (!friendPool.length) friendPool = allFriends.slice(); // 全員 もう街にいるなら 再会もあり
   _shuffleField(wordPool); _shuffleField(friendPool);
+  // 場所の友を この夜の道へ優先（みずうみ→みずのこ／駅→えきのこ／もり→おくのこ）。その場所で会いやすく。
+  if (field.place && field.place.friend && friendPool.indexOf(field.place.friend) >= 0) {
+    friendPool = [field.place.friend].concat(friendPool.filter((id) => id !== field.place.friend));
+  }
 
   // 道の途中スロットに「友／ことば」を 2D に散らす（“右に行くだけ”の解消）。
   //   ・友 ＝ 中央寄り(y≈±0.4)：必ず出会い「むかえる／とおりすぎる」を選ぶ（物語の分岐）。
@@ -196,6 +227,18 @@ function buildField() {
   });
   // 道のおわり：群れの けはい（既存戦闘へ）。縦中央に固定＝縦ズレで朝に着けない事故を防ぐ。
   field.nodes.push({ at: field.goal, y: 0, type: "battle", done: false });
+
+  // ── さいごの夜だけ：戦闘の手前を「群れの おく」に（2段階・Toby#7）──
+  //   倒した子の名残（拾っても語彙にならない・一言だけ）と、なまえのない影 が うずくまる。
+  //   ＝自分が黙らせた声の中を歩いて ぬしさまへ向かう重さ。倒した数だけ おくが 重い。
+  if (isLastNight()) {
+    const lost = (meta && meta.lostTypes ? meta.lostTypes : []).slice(0, 3);
+    lost.forEach((t, i) => {
+      field.nodes.push({ at: field.goal - 1.8 + i * 0.45, y: (i % 2 ? 0.6 : -0.6), type: "ghost", ghost: t, done: false });
+    });
+    // 影＝ここだけに うずくまる。救えるが gift なし・無言で消える（第三の名残）。
+    field.nodes.push({ at: field.goal - 0.7, y: 0, type: "friend", enemy: "kage", done: false, kageNode: true });
+  }
 }
 
 // この夜まだ残っている「戦闘ノード」（=道のおわり）
@@ -257,8 +300,12 @@ function fieldStepToward(now) {
   if (cur > field._lastStep) {
     field._lastStep = cur;
     if (typeof playSe === "function") playSe("step");
-    if (typeof FIELD_SCENERY !== "undefined" && FIELD_SCENERY.length && cur < field.goal) {
-      field.message = FIELD_SCENERY[cur % FIELD_SCENERY.length];
+    // 足元の景色は「その夜の場所」のもの（FIELD_PLACES）。場所が無ければ汎用 FIELD_SCENERY（第一夜など）。
+    const scen = (field.place && field.place.scenery && field.place.scenery.length)
+      ? field.place.scenery
+      : (typeof FIELD_SCENERY !== "undefined" ? FIELD_SCENERY : null);
+    if (scen && scen.length && cur < field.goal) {
+      field.message = scen[cur % scen.length];
     }
   }
   fieldPaint();      // 重い再描画はせず、ぽち・進捗・足元メッセージ・よふけバーだけ動かす
@@ -340,6 +387,16 @@ function fieldCheckNodes() {
     }
     if (typeof playSe === "function") playSe("calm");
     if (typeof render === "function") render();
+  } else if (best.type === "ghost") {
+    // 群れの おく の名残＝倒した子の声。拾っても語彙にならない（黙らせた声は ことばに ならない）。
+    best.done = true;
+    const t = best.ghost;
+    field.message = (typeof TOWN_GHOST_LINES !== "undefined" && TOWN_GHOST_LINES[t]) ? TOWN_GHOST_LINES[t] : "……だれかの こえ。";
+    field.paused = true;
+    if (typeof setTimeout === "function") setTimeout(function () { field.paused = false; startFieldLoop(); }, 360);
+    else field.paused = false;
+    if (typeof playSe === "function") playSe("miss");
+    if (typeof renderField === "function") renderField();
   }
 }
 
@@ -377,6 +434,14 @@ function fieldGreet() {
   if (!node) return;
   node.done = true;
   field.activeFriend = null;
+  // 影（kage）＝救っても 街に来ない・gift もない。無言で ほどけて消える（第三の名残・2段階）。
+  if (node.enemy === "kage") {
+    if (meta) meta._kageSeen = true;
+    field.message = "て を のばした。……影は、しずかに ほどけて、きえた。";
+    if (typeof playSe === "function") playSe("calm");
+    fieldResume();
+    return;
+  }
   const base = ENEMIES[node.enemy] || {};
   // 街の友に加える（種類でユニーク化＝街が散らからないように）
   if (!meta.friends.some((m) => m.type === node.enemy)) {
@@ -436,9 +501,14 @@ function startNightBattle() {
   const bn = fieldBattleNode();
   if (bn) bn.done = true;
   // さいごの夜だけ、戦闘に入る前に ひと拍 語りを差し込む（“さいご”の重み）。
+  //   誰も救わず ここまで来た時だけ、ぬしさまが タイトルを 別の向きで返す（#8・説教せず ただ問う）。
   if (isLastNight() && typeof showToast === "function") {
-    const lines = (typeof TOWN_LINES !== "undefined") ? TOWN_LINES : [];
-    showToast(lines[2] || "さいごの夜だよ。");
+    if (meta && meta.totalSave === 0) {
+      showToast("……きみが、ぼくの さいごの ともだち？");
+    } else {
+      const lines = (typeof TOWN_LINES !== "undefined") ? TOWN_LINES : [];
+      showToast(lines[2] || "さいごの夜だよ。");
+    }
   }
   app.screen = "battle";
   startRun();                 // battle.js（無改変）：newGame（meta.learnedWords を語彙に種まき）→ startWave
@@ -561,9 +631,14 @@ function macroEnding() {
   if (typeof render === "function") render();
 }
 
-// マクロ結末から「はじめから」＝メタを作り直して第一夜の街へ
+// マクロ結末から「はじめから」＝メタを作り直して第一夜の街へ。
+//   ただし“周回数”と“前周で失った子”だけは持ち越す＝世界が やり直しを薄く覚えている（#9）。
 function restartJourney() {
+  const journeys = (meta && meta._journeys ? meta._journeys : 0) + 1;
+  const carried = (meta && meta.lostTypes && meta.lostTypes.length) ? meta.lostTypes[0] : null;
   initMeta();
+  meta._journeys = journeys;
+  meta._carriedGhost = carried; // 2周目の街に、だれも置いていない 空席を ひとつ
   field.macro = null;
   enterTown();
 }

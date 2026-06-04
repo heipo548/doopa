@@ -284,6 +284,9 @@ function cmdAct(actId, targetUid) {
     didSomething = true;
   }
 
+  // ……みずおと（lull）：効果は無いが、みんなが すこし 耳を すます＝役に立たないのに 忘れられない（演出だけ）。
+  if (word.lull) { log(`  みんな、みずおとを きいている。`); didSomething = true; }
+
   if (!didSomething) {
     if (word.category === "silence") log(`  …しずかな間が ながれた`);
     else log(`  …いまの みんなには 響いていない`);
@@ -481,7 +484,10 @@ function runEnemyTurn() {
       if (!e._phaseSaid && e.wall <= Math.floor(e.maxWall / 2)) {
         e._phaseSaid = true;
         const base = ENEMIES[e.type];
-        if (base && base.phaseLine) { log(`  ${e.name}「${base.phaseLine}」`); pushFx({ t: "evoice", uid: e.uid, text: base.phaseLine }); }
+        // 2周目以降は ぬしさまが きみを覚えている（phaseLineSeen）＝周回のメタ・不穏（#4）。
+        const seen = (typeof meta !== "undefined" && meta && meta._journeys >= 1);
+        const pl = (base && seen && base.phaseLineSeen) ? base.phaseLineSeen : (base ? base.phaseLine : null);
+        if (pl) { log(`  ${e.name}「${pl}」`); pushFx({ t: "evoice", uid: e.uid, text: pl }); }
       }
     }
     if (game.player.defending) {

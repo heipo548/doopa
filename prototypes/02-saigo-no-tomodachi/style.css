@@ -1303,3 +1303,9 @@ body.theme-town { background: radial-gradient(circle at 50% 120%, #4a3a6e 0%, #2
 }
 /* 出口⚔が近い＝「ここを すぎると むきあう」を脈動で予告（接近のみ・climaxは到達時）。 */
 .road-node.node-battle.near { animation: battlethrob2 0.9s ease-in-out infinite; }
+
+/* v0.12 世界拡張（Toby）：場所名／群れのおくの名残 */
+.field-place { color: #b9a6e0; font-weight: 700; font-size: 11px; margin-left: 2px; }
+/* 群れの おく の名残＝倒した子の声。灰色で faint・ゆらぐ（拾うと一言・語彙にならない）。 */
+.road-node.node-ghost { filter: grayscale(1) brightness(0.55); opacity: 0.5; }
+.road-node.node-ghost.near { opacity: 0.78; }
