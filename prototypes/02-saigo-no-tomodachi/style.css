@@ -1293,3 +1293,13 @@ body.theme-town { background: radial-gradient(circle at 50% 120%, #4a3a6e 0%, #2
 @keyframes vacancyFade { 0%,100% { opacity: 0.2; } 50% { opacity: 0.4; } }
 .town-vacancy:hover { opacity: 0.6; }
 @media (prefers-reduced-motion: reduce) { .town-vacancy { animation: none; } }
+
+/* v0.11：夜フィールドの初心者向け導線（桜井） */
+/* とおりすぎた友＝小さくなって消える＝「速いが、もう会えない」を絵で（P0-3）。 */
+.road-node.node-friend.justpassed { animation: friendfade 0.55s ease forwards; }
+@keyframes friendfade {
+  0% { transform: translate(-50%,-50%) scale(1); opacity: 0.9; }
+  100% { transform: translate(-50%,-50%) scale(0.55); opacity: 0.18; }
+}
+/* 出口⚔が近い＝「ここを すぎると むきあう」を脈動で予告（接近のみ・climaxは到達時）。 */
+.road-node.node-battle.near { animation: battlethrob2 0.9s ease-in-out infinite; }

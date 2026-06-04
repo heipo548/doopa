@@ -118,18 +118,23 @@ function isLastNight() {
   return !!(meta && meta.night >= meta.maxNights);
 }
 
-// 第一夜（meta.night===1）＝チュートリアル：短く静かな 一本道（寄り道なし・よふけ無し）。
-//   いきなり 拾う/分岐/よふけ を出さず「歩く→1体と出会う」だけに絞る（P0-2）。
+// 第一夜（meta.night===1）＝チュートリアル：フィールドの遊び方を1周 体験させる（よふけは出さない）。
+//   「歩く→道だけの友に出会う→迎える/とおりすぎる→右端で戦闘→街に連れ帰る」を 操作で通す（桜井P0-1）。
 function buildTutorialField() {
-  field.goal = 2.6;            // 数歩で 道のおわり（1体）に着く短さ
+  field.goal = 3.6;            // 友に出会い→さらに 右端の戦闘へ、の“間”を作る（短すぎると遊び方が伝わらない）
   field.x = 0; field.y = 0; field.targetX = 0; field.targetY = 0;
   field.paused = false; field.reachedBattle = false;
-  field.dusk = 0; field._lastT = 0; field._maxv = field.goal / 4; field._lastStep = 0;
+  field.dusk = 0; field._lastT = 0; field._maxv = field.goal / 5; field._lastStep = 0;
   field.picked = []; field.activeFriend = null;
+  field._nearWarned = false;   // 出口（戦闘）接近の予告を 各夜1回だけ出すため
   field.tutorial = true;       // renderField/歩行で よふけバーを隠す目印
   field.message = "よるの みち。マウスで ぽちを みぎへ。むこうに、だれか いる。"; // 歩く目的を先に灯す（予告）
   if (meta) meta._seenFirstWalk = true;
-  field.nodes = [{ at: field.goal, y: 0, type: "battle", done: false }];
+  // 縦中央(y:0)に“道だけの友”ほしのこ を置き 必ず出会わせる（戦闘の くろまる とは別キャラ＝混同しない）。
+  field.nodes = [
+    { at: 1.8, y: 0, type: "friend", enemy: "hoshi", done: false, tutFriend: true },
+    { at: field.goal, y: 0, type: "battle", done: false },
+  ];
 }
 
 // 夜の道を組み立てる（夜ごとに すこし違う並びを乱数で）
@@ -145,6 +150,7 @@ function buildField() {
   field.targetX = 0; field.targetY = 0;
   field.paused = false;
   field.reachedBattle = false;
+  field._nearWarned = false;  // 出口（戦闘）接近の予告を 各夜1回だけ出すため（桜井P0-4）
   field.dusk = 0;             // よふけメーターは毎夜リセット
   field._lastT = 0;
   field._maxv = goal / 6;     // 道を約6秒で踏破できる最高速（瞬間ワープ防止のclamp基準）
@@ -263,6 +269,14 @@ function fieldStepToward(now) {
 //   ・戦闘ノードだけは従来式（x>=goal-ε）＝縦ズレで朝に着けない事故を防ぐ。
 //   ・ことば/友は「最近接1件」だけ発火（同フレーム多重発火を防ぐ）。縦に外せば素通り＝“とおりすぎる”。
 function fieldCheckNodes() {
+  // 出口（戦闘）が近づいたら 一度だけ予告＝「ここを すぎると むきあう」（誤突入でなく 心構え・桜井P0-4）。
+  //   到達（停止＝むきあうボタン）はこの先の判定で行う＝予告だけでは戦闘は始まらない。
+  if (!field.reachedBattle && !field._nearWarned && field.x >= field.goal - 1.0) {
+    field._nearWarned = true;
+    field.message = field.tutorial
+      ? "この さきに、くろまるが いる。ここを すぎると、むきあう ことに なる。"
+      : "群れの けはい。ここを すぎると、むきあう。";
+  }
   for (const n of field.nodes) {
     if (n.done || n.type !== "battle") continue;
     // 到達判定は デッドゾーンより外側に＝右端を狙えば必ず道のおわりに着ける（詰み防止）。
@@ -311,11 +325,15 @@ function fieldCheckNodes() {
     const base = ENEMIES[best.enemy] || {};
     // 物語ビート：初めて友に出会う夜だけ、一拍の語り。二度目からは素直に状況だけ。
     //   一度 とおりすぎた相手と再会したら、その子は こちらを少し覚えている（P1-2・責めない短い一言）。
-    if (meta && meta._passed && meta._passed.indexOf(best.enemy) >= 0 && typeof FRIEND_REUNION_LINES !== "undefined") {
+    if (best.tutFriend) {
+      // 第一夜：二択の“意味”を動詞で（よふけは出さない＝「連れて帰る／急いで朝へ」だけ）。
+      field.message = "うずくまってる子が いる。て を のばす？ それとも、いそいで 朝へ いく？";
+    } else if (meta && meta._passed && meta._passed.indexOf(best.enemy) >= 0 && typeof FRIEND_REUNION_LINES !== "undefined") {
       const r = FRIEND_REUNION_LINES[Math.floor(Math.random() * FRIEND_REUNION_LINES.length)];
       field.message = `${base.name}「${r}」`;
     } else if (meta && !meta._seenFirstFriend) {
-      field.message = "だれかが、うずくまってる。こわくないよ。……こえ、かけてみる？";
+      // 2夜目の初・友出会いで、よふけの意味を“迎える文脈”で初めて言う（P1-1）。
+      field.message = "うずくまってる子。て を のばすと つれて かえれる。でも、夜が すこし 濃くなる。";
       meta._seenFirstFriend = true;
     } else {
       field.message = `${base.name} が、みちばたで うずくまっている。`;
@@ -369,15 +387,20 @@ function fieldGreet() {
     meta.learnedWords.push(base.gift);
     field.picked.push(base.gift);
   }
-  // 救う＝時間を食う＝夜が濃くなる（先を急ぐメリットの対価。NIGHTFALL）。
-  if (typeof NIGHTFALL !== "undefined") {
+  // 救う＝時間を食う＝夜が濃くなる（先を急ぐメリットの対価。NIGHTFALL）。第一夜は よふけ非表示＝増やさない。
+  let duskRose = false;
+  if (typeof NIGHTFALL !== "undefined" && !field.tutorial) {
     field.dusk = Math.min(NIGHTFALL.max, field.dusk + NIGHTFALL.riseOnGreet);
+    duskRose = true;
   }
-  // 物語ビート：初めて手をのばした瞬間だけ、一拍の語り。
-  if (meta && !meta._seenFirstSave) {
-    field.message = "て を のばした。つめたくなかった。いっしょに、いこう。";
-    meta._seenFirstSave = true;
+  // メッセージ：第一夜は「連れて帰る」を強調／2夜目の初・迎えで よふけの意味を一度だけ／以降は短く。
+  if (node.tutFriend) {
+    field.message = "て を のばした。つめたく なかった。……いっしょに、いえに かえろう。";
+  } else if (duskRose && meta && !meta._seenDuskRise) {
+    field.message = `${base.name} を むかえた。つれて かえる ぶん、夜が 濃くなった。（濃いほど 次が つらい）`;
+    meta._seenDuskRise = true;
   } else {
+    if (meta) meta._seenFirstSave = true;
     field.message = `${base.name} を むかえた。いっしょに いこう。`;
   }
   if (typeof playSe === "function") playSe("save");
@@ -388,11 +411,12 @@ function fieldGreet() {
 //   一度通りすぎた友には その夜 二度と会えない＝選択に重みを持たせる（“心が止まる”）。
 function fieldPass() {
   const node = field.activeFriend;
-  if (node) node.done = true;
+  if (node) { node.done = true; node._passedAnim = true; } // _passedAnim＝renderで「小さくなって消える」演出（P0-3）
   // とおりすぎた相手の種類を控える＝あとの夜の再会で「世界が少し覚えている」を出す（P1-2）。
   if (node && meta) { meta._passed = meta._passed || []; if (meta._passed.indexOf(node.enemy) < 0) meta._passed.push(node.enemy); }
   field.activeFriend = null;
-  field.message = "…とおりすぎた。もう、あえないかもしれない。";
+  // 第一夜は「失う」を一度だけ 強めに刻む＝リスクを体に（責めない・断定だけ）。
+  field.message = (node && node.tutFriend) ? "…とおりすぎた。あの子は、もう いない。" : "…とおりすぎた。もう、あえないかもしれない。";
   if (typeof playSe === "function") playSe("miss");
   fieldResume();
 }

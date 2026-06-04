@@ -1246,19 +1246,25 @@ function renderField() {
     } else if (n.type === "friend") {
       const base = ENEMIES[n.enemy] || {};
       const calling = (field.activeFriend === n) ? "calling" : "";
-      return `<span class="road-node node-friend ${n.done ? "done" : ""} ${calling} ${glow}" style="left:${left}%;top:${top}%" title="${base.name}">${creatureSVG(base.color, base.shape, "sad")}</span>`;
+      const passed = n._passedAnim ? "justpassed" : ""; // とおりすぎた＝小さくなって消える（P0-3）
+      return `<span class="road-node node-friend ${n.done ? "done" : ""} ${calling} ${passed} ${glow}" style="left:${left}%;top:${top}%" title="${base.name}">${creatureSVG(base.color, base.shape, "sad")}</span>`;
     } else {
-      // 群れ(⚔)＝出口。遠いほど薄く・近いほど濃く＝行くべき先を示す。
-      const near = field.reachedBattle ? "climax" : "";
+      // 群れ(⚔)＝出口。遠いほど薄く・近いほど濃く＝行くべき先を示す。近づくと「境界」を脈動で予告（P0-4）。
+      const near = field.reachedBattle ? "climax" : (field.x >= goal - 1.0 ? "near" : "");
       const op = (0.3 + 0.7 * (field.x / goal)).toFixed(2);
-      return `<span class="road-node node-battle ${n.done ? "done" : ""} ${near}" style="left:${left}%;top:${top}%;opacity:${op}" title="群れの けはい">⚔</span>`;
+      return `<span class="road-node node-battle ${n.done ? "done" : ""} ${near}" style="left:${left}%;top:${top}%;opacity:${op}" title="ここを すぎると むきあう">⚔</span>`;
     }
   }).join("");
 
   // 操作（マウス追従。クリックが要るのは「友との選択」と「群れと むきあう」だけ）
   let controls = "";
   if (field.activeFriend) {
-    controls = `
+    // 第一夜は よふけ非表示＝「連れて帰る／急いで朝へ」の行動対比だけ（よふけの文言は2夜目から）。
+    controls = field.tutorial
+      ? `
+      <button class="field-btn greet" id="f-greet">🤝 て を のばす（つれて かえる）</button>
+      <button class="field-btn pass" id="f-pass">… とおりすぎる（いそいで 朝へ）</button>`
+      : `
       <button class="field-btn greet" id="f-greet">🤝 こえをかける（むかえる・夜が 濃くなる）</button>
       <button class="field-btn pass" id="f-pass">… とおりすぎる（夜は 浅いまま）</button>`;
   } else if (field.reachedBattle) {
