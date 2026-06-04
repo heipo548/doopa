@@ -1,0 +1,661 @@
+/*
+ * style.css — プロト#03「WO_RD → WORLD」の見た目
+ *
+ * テーマ：可愛くポップな村（パステル）。素材なし＝CSS/SVG のドット絵風で世界を作る。
+ * 署名：主人公(L)だけが進行とともにダーク化する。body.dark-1/2/3 で世界全体を
+ *       段階的に翳らせる（彩度↓・暗化）＝Lの内面のダークが世界に滲む、という演出。
+ * 方針：可読性は絶対に犠牲にしない（UI は不透明寄りパネルに乗せ、背景は後ろで“気配”に徹する）。
+ *       02「さいごのともだち」の流儀（フラット＆ピクセルUI・吹き出し・オーバーレイ・トースト）に合わせる。
+ *
+ * ★思いやりゲージ(omoiyari)のスタイルは“あえて存在しない”。UI に一切出さないため。
+ */
+
+:root {
+  /* パステルの村パレット。やわらかいが文字は濃色で読みやすく保つ。 */
+  --bg:       #fff3f8;   /* いちばん奥のほんのりピンク */
+  --bg2:      #ffe6f1;
+  --panel:    #fffafd;   /* パネルは白寄り＝文字が読みやすい */
+  --panel2:   #ffeef6;
+  --line:     #f3c6db;   /* やわらかい桃色の枠線 */
+  --text:     #4a3a52;   /* 焦げ茶むらさき＝パステル背景でも読める濃さ */
+  --text-dim: #927e9c;
+  --harsh:    #ff6b8a;   /* とがった ことば（精神HPを削る）＝赤桃。凶暴側の色。 */
+  --kind:     #4fc7b8;   /* やさしい ことば（思いやりを満たす）＝ミント。優しさ側の色。 */
+  --hp:       #ff7a99;   /* 見える HP バー（敵の精神HP / プレイヤーhp） */
+  --gold:     #ffc24b;   /* 強調・報酬 */
+  --accent:   #b48cff;   /* ポップな差し色（むらさき） */
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  /* 日本語ピクセルフォント（DotGothic16）。未読込/オフライン時は system へ自動フォールバック。 */
+  font-family: "DotGothic16", -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+    "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at 50% -10%, var(--bg2), var(--bg) 70%);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  overflow: hidden;
+}
+
+/* 既定テーマ：ポップな村（明るいパステル）。 */
+body.theme-pop { background: radial-gradient(circle at 50% -8%, #fff0fb 0%, #ffe3f0 46%, #ffd9ec 100%); }
+
+/* ── 主人公(L)だけのダーク化を“世界の翳り”として滲ませる ──
+   kyoubou が BALANCE.darkenAt を超えるたび JS が body へ dark-1/2/3 を付ける。
+   彩度を落とし、暗いオーバーレイを重ねて段階的に翳らせる。可読性のため文字色は据え置き、
+   暗幕は背景(#scene)とパネルの“間”に効かせる（filterはbody直下に控えめに）。 */
+body.dark-1 { filter: saturate(0.86) brightness(0.97); }
+body.dark-2 { filter: saturate(0.66) brightness(0.9)  contrast(1.04); }
+body.dark-3 { filter: saturate(0.42) brightness(0.8)  contrast(1.1); }
+/* 翳りの暗幕（画面最前面のうっすら影。UI操作は透過）。darkが上がるほど濃く。 */
+body.dark-1::after, body.dark-2::after, body.dark-3::after {
+  content: ""; position: fixed; inset: 0; z-index: 40; pointer-events: none;
+  background: radial-gradient(circle at 50% 36%, transparent 40%, rgba(20,8,30,0.0) 60%, rgba(20,8,30,0.22) 100%);
+}
+body.dark-2::after { background: radial-gradient(circle at 50% 36%, transparent 32%, rgba(18,6,28,0.18) 72%, rgba(14,4,22,0.4) 100%); }
+body.dark-3::after { background: radial-gradient(circle at 50% 38%, rgba(10,2,16,0.12) 18%, rgba(10,2,16,0.4) 64%, rgba(6,1,12,0.62) 100%); }
+
+/* すべてのドット絵をくっきり（拡大してもにじませない） */
+#scene, #scene *, .creature svg, .enemy-fig svg, .spr { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+/* ════════════════════════════════════════════════════════════
+   背景シーン：可愛くポップな村（ドット絵風）。色帯＋角ばったシルエットで“ドット”感。
+   ════════════════════════════════════════════════════════════ */
+#scene { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+
+/* 空：水色→桃の くっきりした色帯（なめらかグラデではなくドット絵の段階色）。 */
+.scene-sky {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg,
+    #bfe8ff 0 26%, #d8f0ff 26% 44%, #ffeaf4 44% 64%, #ffe0ee 64% 82%, #ffd2e6 82% 100%);
+}
+
+/* ふわふわ雲（角ばった四角の塊＝ドット雲）。ゆっくり明滅。 */
+.scene-clouds { position: absolute; inset: 0; }
+.cloud {
+  position: absolute; width: 46px; height: 16px; background: #ffffff;
+  box-shadow:
+    14px -8px 0 0 #ffffff, 30px 0 0 0 #ffffff, -12px 2px 0 0 #fdf4fb,
+    0 6px 0 0 #ffffff;
+  opacity: 0.92; animation: clouddrift 9s ease-in-out infinite;
+}
+.scene-clouds .cloud:nth-child(even) { animation-delay: 2.5s; }
+@keyframes clouddrift { 0%,100% { transform: translateX(0); } 50% { transform: translateX(10px); } }
+
+/* なだらかな丘 2層（手前ほど濃いミント）。clip-path のゆるい波で“やさしい稜線”。 */
+.scene-hill { position: absolute; left: 0; right: 0; }
+.hill-back {
+  bottom: 24%; height: 26%; background: #c8f0d8; opacity: 0.92;
+  clip-path: polygon(0 60%, 18% 42%, 40% 56%, 62% 40%, 82% 54%, 100% 46%, 100% 100%, 0 100%);
+}
+.hill-mid {
+  bottom: 16%; height: 28%; background: #a8e6c4;
+  clip-path: polygon(0 56%, 22% 64%, 46% 48%, 68% 62%, 88% 50%, 100% 58%, 100% 100%, 0 100%);
+}
+
+/* パステルの家々（角ばった本体＋三角屋根）。村の“暮らし”の気配。 */
+.scene-houses { position: absolute; left: 0; right: 0; bottom: 13%; height: 0; }
+.house {
+  position: absolute; bottom: 0; width: 26px; height: 22px; border-radius: 2px;
+  box-shadow: inset -3px -3px 0 rgba(0,0,0,0.06);
+}
+.house::before { /* 三角屋根 */
+  content: ""; position: absolute; top: -14px; left: -3px;
+  border-left: 16px solid transparent; border-right: 16px solid transparent;
+  border-bottom: 14px solid #ff9ebf;
+}
+.house::after { /* まどの灯り（小さな四角） */
+  content: ""; position: absolute; top: 7px; left: 9px; width: 8px; height: 8px;
+  background: #fff6c8; border-radius: 1px; box-shadow: 0 0 5px 1px rgba(255,220,120,0.6);
+}
+.house.h-pink  { background: #ffc1d6; } .house.h-pink::before  { border-bottom-color: #ff7aa6; }
+.house.h-mint  { background: #b8ebd6; } .house.h-mint::before  { border-bottom-color: #6fd8b4; }
+.house.h-cream { background: #ffe6b8; } .house.h-cream::before { border-bottom-color: #ffce6e; }
+.house.h-sky   { background: #bfe0ff; } .house.h-sky::before   { border-bottom-color: #7fb8ff; }
+.house.h-lilac { background: #ddccff; } .house.h-lilac::before { border-bottom-color: #b48cff; }
+
+/* 手前の地面（村の道＝やわらかい黄緑） */
+.scene-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 14%; background: linear-gradient(180deg, #bfe89e, #9fda82); }
+
+/* 足もとの花（ドットの点）。ぴょこぴょこ。 */
+.scene-flowers { position: absolute; left: 0; right: 0; bottom: 4%; height: 0; }
+.flower {
+  position: absolute; bottom: 0; width: 6px; height: 6px; border-radius: 50%;
+  background: #ff7aa6; box-shadow: 0 0 0 2px #ffd1e0, 0 8px 0 -2px #6fc36f;
+  animation: flowerbob 3s ease-in-out infinite;
+}
+.scene-flowers .flower:nth-child(even) { background: #ffd166; box-shadow: 0 0 0 2px #fff0c0, 0 8px 0 -2px #6fc36f; animation-delay: 1.2s; }
+@keyframes flowerbob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+
+/* ════════════════════════════════════════════════════════════
+   バトルHUD（#game）
+   ════════════════════════════════════════════════════════════ */
+#game {
+  position: relative;   /* 浮かぶ数字・fx をこの中に絶対配置する基準 */
+  z-index: 1;            /* 背景 #scene より前 */
+  max-width: 680px;
+  height: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  /* 背景の村が うっすら透ける半透明（パネル自体は読みやすさ優先で残す）。 */
+  background: linear-gradient(180deg, rgba(255,250,253,0.86), rgba(255,240,247,0.92));
+  transition: filter 0.6s ease, box-shadow 0.6s ease;
+}
+/* battle 以外では畳む（ui.render が class hidden を付け外し）。 */
+#game.hidden { display: none; }
+
+/* ── 上部バー ── */
+#topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 14px; border-bottom: 2px solid var(--line);
+  font-size: 13px; font-weight: 800; letter-spacing: 1px;
+}
+#topbar .mute-btn, #mute-btn {
+  background: var(--panel2); color: var(--text); border: 2px solid var(--line);
+  border-radius: 6px; min-width: 36px; height: 30px; cursor: pointer; font-size: 14px;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.08);
+}
+#topbar .mute-btn:hover, #mute-btn:hover { border-color: var(--accent); }
+
+/* ── 敵エリア ── */
+#enemy-area {
+  flex: 1; min-height: 0;
+  display: flex; flex-wrap: wrap; align-content: center; justify-content: center;
+  gap: 14px; padding: 18px 14px; overflow-y: auto;
+}
+.enemy {
+  width: 120px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 8px 6px; border-radius: 10px; border: 2px solid transparent;
+  transition: transform 0.15s, filter 0.15s;
+}
+.enemy.boss { width: 168px; }
+
+/* 生きもの（ピクセル風SVGスプライト）。creatureSVG が中の svg を吐く。 */
+.creature, .enemy-fig {
+  position: relative; width: 72px; height: 72px;
+  background: none; border-radius: 0; box-shadow: none;
+}
+.enemy.boss .creature, .enemy.boss .enemy-fig { width: 116px; height: 116px; }
+.creature svg, .enemy-fig svg { display: block; width: 100%; height: 100%; }
+/* 足もとの硬いドット影＝スプライトが宙に浮かず ドット世界に立つ。 */
+.creature::after, .enemy-fig::after {
+  content: ""; position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%);
+  width: 56%; height: 3px; background: rgba(74,58,82,0.22);
+}
+/* ゆるい いきもの感（ふわっと上下）。 */
+.creature svg, .enemy-fig svg { animation: spritebob 2.8s ease-in-out infinite; }
+.enemy:nth-child(even) .enemy-fig svg { animation-delay: 0.9s; }
+@keyframes spritebob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
+/* 被弾：一瞬 白くピカッ＆ぐっと縮む（とがった ことばが刺さった手応え）。 */
+.creature.hitpop, .enemy-fig.hitpop { animation: hitpop 0.26s steps(2, end) !important; }
+@keyframes hitpop {
+  0%   { transform: scale(1); filter: brightness(3) saturate(0.2); }
+  50%  { transform: scale(0.82) translateX(-2px); }
+  100% { transform: scale(1); filter: none; }
+}
+/* 寄り添えた相手＝やわらかい光（kind勝利の気配。思いやり数値は出さない）。 */
+.creature.calm, .enemy-fig.calm { filter: drop-shadow(0 0 8px rgba(79,199,184,0.85)); }
+
+.enemy-name { font-size: 13px; font-weight: 800; }
+
+/* バー（精神HP / プレイヤーhp 共通。可視ゲージはこれだけ）。 */
+.bar {
+  width: 100%; max-width: 110px; height: 9px;
+  background: rgba(74,58,82,0.14); border: 1px solid rgba(74,58,82,0.18);
+  border-radius: 2px; overflow: hidden;
+}
+.bar .fill { height: 100%; transition: width 0.3s ease; }
+.bar.mind .fill { background: linear-gradient(90deg, #ffb0c2, var(--harsh)); } /* 敵の精神HP（削る対象） */
+.bar.hp   .fill { background: linear-gradient(90deg, #ffb0c2, var(--hp)); }    /* プレイヤーhp */
+.enemy .bar { width: 90px; }
+
+/* ── バトルログ（小さく後ろへ。手応えは数字・fxで上に出す）── */
+#log {
+  height: 54px; margin: 0 14px; padding: 6px 12px;
+  background: rgba(255,255,255,0.6); border: 2px solid var(--line); border-radius: 6px;
+  overflow-y: auto; font-size: 11.5px; color: var(--text-dim); opacity: 0.92;
+}
+.log-line { padding: 1px 0; }
+.log-line:last-child { color: var(--text); }
+
+/* ── プレイヤーステータス（見える hp のみ）── */
+#player-bar {
+  padding: 10px 14px; display: flex; flex-direction: column; gap: 5px;
+  border-top: 2px solid var(--line); font-size: 12.5px;
+}
+.p-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.p-name { font-weight: 800; font-size: 14px; }
+.p-gauge { display: flex; align-items: center; gap: 8px; }
+.p-gauge .g-label { width: 40px; color: var(--text-dim); font-size: 11px; }
+.p-gauge .bar { flex: 1; max-width: none; height: 11px; }
+.p-gauge .g-num { width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+/* 回復したときの やわらか明滅（kind の side:healSelf 等）。 */
+#player-bar.healpulse { animation: healpulse 0.6s ease; }
+@keyframes healpulse { 0%,100% { background: transparent; } 50% { background: rgba(79,199,184,0.18); } }
+
+/* ── サブ操作（プロンプト：ことばの案内・Lv等）── */
+#prompt {
+  min-height: 40px; padding: 8px 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+}
+.prompt-hint { width: 100%; font-size: 12.5px; color: var(--text-dim); }
+
+/* ── コマンドバー（手札のことば。harsh/kind で色分け）── */
+#command-bar {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px; padding: 12px 14px 18px;
+}
+.cmd {
+  border: 2px solid rgba(74,58,82,0.18); border-radius: 8px; cursor: pointer;
+  padding: 12px 8px; min-height: 56px; color: #3a2a40;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-weight: 800; line-height: 1.25;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.5);
+  transition: transform 0.1s, filter 0.1s, box-shadow 0.1s;
+}
+.cmd .cmd-label { font-size: 15px; }
+.cmd .cmd-sub   { font-size: 10px; font-weight: 700; opacity: 0.75; letter-spacing: 0.5px; }
+.cmd:hover:not(:disabled) { transform: translateY(-2px); }
+.cmd:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 1px 0 rgba(0,0,0,0.12); }
+.cmd:disabled { filter: grayscale(0.55) brightness(0.92); opacity: 0.5; cursor: default; }
+/* とがった ことば（精神HPを削る／凶暴+／速い）＝赤桃。 */
+.cmd.harsh { background: linear-gradient(180deg, #ff9bb2, var(--harsh)); }
+/* やさしい ことば（思いやりを満たす／優しさ+／遅い）＝ミント。 */
+.cmd.kind  { background: linear-gradient(180deg, #94e6da, var(--kind)); }
+/* Lv バッジ（3段階成長の体験。card のレベルを小さく示す）。 */
+.cmd .cmd-lv {
+  font-size: 9px; font-weight: 800; color: #4a3a52;
+  background: rgba(255,255,255,0.7); border-radius: 999px; padding: 0 6px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   オーバーレイ共通（タイトル/会話/カード/ショップ/結末/メタ/ポーズ）
+   ════════════════════════════════════════════════════════════ */
+.overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  background: rgba(255,225,240,0.6); backdrop-filter: blur(3px);
+}
+.overlay.hidden { display: none; }
+.ov-panel {
+  width: min(560px, 94vw); max-height: 92vh; overflow-y: auto;
+  background: linear-gradient(180deg, var(--panel), var(--panel2));
+  border: 3px solid var(--line); border-radius: 14px;
+  padding: 28px 24px; text-align: center;
+  box-shadow: 0 18px 44px rgba(180,120,160,0.35);
+}
+
+/* ── タイトル ── */
+.title-panel { position: relative; }
+.game-title {
+  font-size: clamp(40px, 11vw, 72px); font-weight: 900; letter-spacing: 8px;
+  display: inline-flex; align-items: baseline; gap: 2px; margin-bottom: 4px;
+}
+.game-title .logo-ch {
+  background: linear-gradient(180deg, var(--harsh), var(--accent));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+/* 欠けた L のスロット＝点滅する空欄。「ここに 何かが 足りない」を体で伝える。 */
+.game-title .logo-slot {
+  color: var(--text-dim); opacity: 0.5; font-weight: 700;
+  animation: slotblink 1.4s ease-in-out infinite;
+}
+@keyframes slotblink { 0%,100% { opacity: 0.25; } 50% { opacity: 0.7; } }
+.game-subtitle { color: var(--text-dim); letter-spacing: 1px; font-size: 12.5px; margin-top: 2px; }
+.title-prologue {
+  max-width: 460px; margin: 18px auto 6px; padding: 14px 16px;
+  font-size: 13.5px; line-height: 2; color: var(--text);
+  background: rgba(255,255,255,0.55); border: 2px solid var(--line);
+  border-radius: 10px; white-space: pre-line;
+}
+.title-btns { display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 18px; }
+.start-btn {
+  border: none; border-radius: 999px; cursor: pointer; padding: 14px 36px;
+  font-size: 16px; font-weight: 800; color: #fff;
+  background: linear-gradient(90deg, var(--harsh), var(--accent));
+  box-shadow: 0 4px 0 rgba(150,90,140,0.35);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.start-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(180,120,160,0.45); }
+.start-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(150,90,140,0.35); }
+.continue-btn {
+  border: 2px solid var(--line); border-radius: 999px; cursor: pointer;
+  padding: 12px 24px; font-size: 14px; font-weight: 700; color: var(--text);
+  background: var(--panel2); transition: border-color 0.12s, transform 0.1s;
+}
+.continue-btn:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-2px); }
+.continue-btn:disabled { opacity: 0.4; cursor: default; } /* セーブ無し時 ui が disabled に */
+.title-foot { font-size: 11.5px; color: var(--text-dim); margin-top: 14px; }
+.title-panel .mute-btn {
+  position: absolute; top: 12px; right: 12px;
+}
+
+/* ── 会話（NPC）── */
+.dialogue-panel { text-align: left; }
+.dialogue-who { font-weight: 800; color: var(--accent); font-size: 14px; margin-bottom: 8px; }
+.dialogue-text {
+  font-size: 15px; line-height: 1.9; color: var(--text); min-height: 84px;
+  padding: 14px 16px; background: rgba(255,255,255,0.6);
+  border: 2px solid var(--line); border-radius: 10px;
+}
+.dialogue-next { margin-top: 12px; text-align: right; font-size: 12px; color: var(--text-dim); }
+
+/* ── カード入手/報酬（3択：トレードオフを明示）── */
+.ov-title { font-size: 22px; font-weight: 900; color: var(--accent); }
+.ov-sub { color: var(--text-dim); font-size: 13px; margin: 6px 0 18px; }
+.cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media (max-width: 520px) { .cards { grid-template-columns: 1fr; } }
+.card-pick {
+  background: var(--panel2); border: 3px solid var(--line); border-radius: 10px;
+  padding: 16px 12px; cursor: pointer; text-align: center; color: var(--text);
+  display: flex; flex-direction: column; gap: 8px; min-height: 120px; justify-content: center;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.08);
+  transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+.card-pick:hover { transform: translateY(-4px); }
+/* harsh は赤桃枠＝強いが凶暴/ kind はミント枠＝やさしいが遅い、を縁で示す。 */
+.card-pick.harsh { border-color: #ff9bb2; } .card-pick.harsh:hover { border-color: var(--harsh); }
+.card-pick.kind  { border-color: #94e6da; } .card-pick.kind:hover  { border-color: var(--kind); }
+.card-name { font-size: 15px; font-weight: 800; }
+.card-desc { font-size: 12px; color: var(--text-dim); }
+.card-tag { font-size: 11px; font-weight: 800; }
+.card-pick.harsh .card-tag { color: var(--harsh); }
+.card-pick.kind  .card-tag { color: var(--kind); }
+
+/* ── 学校＝ことばショップ（buy＝1枚 選ぶ）── */
+.shop-panel { text-align: left; }
+.shop-greet { font-size: 14px; color: var(--text); margin-bottom: 14px; text-align: center; }
+.shop-list { display: flex; flex-direction: column; gap: 10px; }
+.shop-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; background: var(--panel2);
+  border: 2px solid var(--line); border-radius: 8px; cursor: pointer;
+  transition: border-color 0.12s, transform 0.1s;
+}
+.shop-item:hover { border-color: var(--gold); transform: translateY(-2px); }
+.shop-item .shop-word { font-weight: 800; font-size: 15px; }
+.shop-item .shop-price { color: var(--gold); font-weight: 800; font-size: 13px; }
+
+/* ── 結末 ── */
+.result-panel .result-title { font-size: 28px; font-weight: 900; letter-spacing: 2px; }
+.result-tone { margin: 4px 0 10px; font-size: 13px; color: var(--text-dim); font-style: italic; }
+.result-text { margin: 12px 0 20px; font-size: 15px; line-height: 1.9; color: var(--text); white-space: pre-line; }
+.result-next { margin-top: 8px; }
+
+/* ════════════════════════════════════════════════════════════
+   フィールド（探索）：マウス追従の床面。
+   .field-road が getBoundingClientRect の基準。ノード(npc/enemy/school/save/sign/exit/boss)を
+   x,y(0..1) に絶対配置し、L(プレイヤー)を近づけて発火する。
+   ════════════════════════════════════════════════════════════ */
+#overlay-field {
+  /* 床面はタップ/ドラッグでスクロール暴発しないよう touch を止める。 */
+}
+#overlay-field, .field-body, .field-road { touch-action: none; }
+.field-body {
+  width: min(760px, 96vw);
+  background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,240,248,0.86));
+  border: 3px solid var(--line); border-radius: 16px; padding: 18px 16px 22px;
+  box-shadow: 0 18px 44px rgba(180,120,160,0.35);
+}
+.field-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.field-area { color: var(--accent); font-weight: 800; font-size: 13px; letter-spacing: 1px; }
+.field-hint { flex: 1; color: var(--text-dim); font-size: 12.5px; text-align: right; }
+
+/* 道の床面：見下ろしの帯。背景は ほのかな草地。中央に点線の小道。 */
+.field-road {
+  position: relative; height: 260px; margin: 6px 0 10px; overflow: hidden;
+  border-radius: 12px; cursor: crosshair;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 22px, rgba(255,255,255,0.18) 22px 24px),
+    linear-gradient(180deg, #d6f0c4, #bfe6a4);
+}
+/* 村の小道（中央のうねり）。点線でドット感。 */
+.field-road::before {
+  content: ""; position: absolute; left: 4%; right: 4%; top: 50%; height: 10px;
+  transform: translateY(-50%); border-radius: 6px;
+  background: repeating-linear-gradient(90deg, #e7d3a6 0 14px, #d8c08a 14px 28px);
+  opacity: 0.9;
+}
+@media (max-width: 520px) { .field-road { height: 220px; } }
+
+/* ノード：道の上の出来事。x,y(0..1) を JS が left/top% で置く（中心寄せ）。 */
+.road-node {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; line-height: 1; transition: filter 0.2s, opacity 0.2s;
+}
+.road-node .creature { width: 44px; height: 44px; }
+.road-node.node-npc    { filter: drop-shadow(0 0 5px rgba(180,140,255,0.5)); }
+.road-node.node-enemy,
+.road-node.node-boss   { filter: drop-shadow(0 0 6px rgba(255,107,138,0.6)); }
+.road-node.node-school { filter: drop-shadow(0 0 5px rgba(255,194,75,0.55)); }
+.road-node.node-save   { filter: drop-shadow(0 0 5px rgba(79,199,184,0.55)); }
+.road-node.node-sign   { opacity: 0.9; }
+.road-node.node-exit   { filter: drop-shadow(0 0 6px rgba(180,140,255,0.6)); }
+/* 近づいて発火できそう＝金色グロー（拾えそう/話せそうの合図）。 */
+.road-node.near { filter: drop-shadow(0 0 9px var(--gold)); z-index: 3; }
+/* 済んだノードは うすく。requires 未達のノードはグレーアウト＝通行不可。 */
+.road-node.done    { opacity: 0.22; filter: grayscale(1); }
+.road-node.locked  { opacity: 0.3; filter: grayscale(0.85); }
+
+/* L（主人公・robotスプライト）。マウス追従ループが left/top を毎フレーム直接書く。
+   transition を left/top に掛けない（JS のイージングと二重がけで“ゴムひも”遅延になるため）。 */
+.field-l {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 46px; height: 46px; z-index: 4;
+  animation: lbob 0.9s ease-in-out infinite;
+}
+.field-l.walking { animation-duration: 0.5s; }
+.field-l .creature { width: 46px; height: 46px; }
+@keyframes lbob { 0%,100% { transform: translate(-50%,-50%); } 50% { transform: translate(-50%, calc(-50% - 3px)); } }
+
+.field-msg { text-align: center; color: var(--text); font-size: 13.5px; min-height: 20px; margin: 8px 0 12px; }
+.field-controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.field-btn {
+  border: 2px solid var(--line); border-radius: 999px; cursor: pointer; padding: 11px 22px;
+  font-size: 14px; font-weight: 800; color: var(--text); background: var(--panel2);
+  transition: transform 0.1s, border-color 0.12s;
+}
+.field-btn:hover { transform: translateY(-2px); border-color: var(--accent); }
+.field-btn.go { background: linear-gradient(90deg, var(--accent), var(--kind)); color: #fff; border-color: transparent; }
+
+/* ════════════════════════════════════════════════════════════
+   バトル/フィールドの演出（playFx が付け外しするクラス群）
+   ★思いやり(omoiyari)の数値・バーは描かない。kind の手応えは speak/calm の“質感”で返す。
+   ════════════════════════════════════════════════════════════ */
+
+/* ことばの吹き出し（中央やや上に ぽんっ）。harsh=とげ / kind=やさしい灯り。 */
+.word-bubble {
+  position: absolute; left: 50%; top: 38%; transform: translate(-50%,-50%);
+  z-index: 43; pointer-events: none; white-space: nowrap;
+  font-weight: 900; font-size: clamp(20px, 5.5vw, 30px); letter-spacing: 1px;
+  padding: 8px 18px; border-radius: 12px; backdrop-filter: blur(2px);
+  animation: wordpop 1.05s cubic-bezier(.2,.85,.3,1) forwards;
+}
+@keyframes wordpop {
+  0%   { opacity: 0; transform: translate(-50%,-46%) scale(0.6); }
+  18%  { opacity: 1; transform: translate(-50%,-50%) scale(1.12); }
+  60%  { opacity: 1; transform: translate(-50%,-52%) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%,-64%) scale(1.0); }
+}
+/* とがった＝鋭い赤、暗めの地に赤縁（可愛い世界に走る“ことばの刃”）。 */
+.word-bubble.harsh {
+  color: #fff; background: rgba(70,20,40,0.6);
+  text-shadow: 0 0 2px #ff3b6b, 1px 1px 0 #2a0410;
+  box-shadow: 0 0 0 2px rgba(255,60,90,0.3) inset;
+}
+/* やさしい＝あたたかい光がにじむミント。 */
+.word-bubble.kind {
+  color: #0c3a34; background: rgba(220,255,250,0.92);
+  text-shadow: 0 0 8px rgba(120,230,210,0.85);
+  box-shadow: 0 0 18px 3px rgba(79,199,184,0.4);
+}
+
+/* 浮かぶ数字（精神HP被弾＝harshのみ数値が出る。kind は数値を出さない非対称）。 */
+.float-num {
+  position: absolute; transform: translateX(-50%);
+  font-weight: 900; font-size: 24px; pointer-events: none; z-index: 41; white-space: nowrap;
+  text-shadow:
+    -2px 0 0 #fff, 2px 0 0 #fff, 0 -2px 0 #fff, 0 2px 0 #fff,
+    -1px -1px 0 #fff, 1px 1px 0 #fff, 0 4px 8px rgba(0,0,0,0.25);
+  animation: floatup 0.82s cubic-bezier(.2,.9,.25,1) forwards;
+}
+@keyframes floatup {
+  0%   { opacity: 0; transform: translate(-50%, 6px) scale(0.7); }
+  18%  { opacity: 1; transform: translate(-50%, -8px) scale(1.18); }
+  32%  { opacity: 1; transform: translate(-50%, -16px) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -48px) scale(0.98); }
+}
+.float-num.hit  { color: var(--harsh); }                       /* 敵の精神HPへ与ダメ */
+.float-num.dead { color: #ff3b6b; font-size: 30px; letter-spacing: 1px; } /* 言い負かした決着 */
+.float-num.pdmg { color: var(--harsh); font-size: 22px; }      /* プレイヤー被弾 */
+.float-num.pheal{ color: var(--kind);  font-size: 18px; }      /* kind の side:healSelf */
+.float-num.calm { color: var(--kind);  font-size: 18px; }      /* 寄り添いの手応え（数値ではなく“ことば”/光） */
+
+/* 撃破/寄り添いのポフ（白い拡散）。 */
+.poof {
+  position: absolute; transform: translate(-50%,-50%); width: 48px; height: 48px;
+  pointer-events: none; z-index: 40;
+  background: radial-gradient(circle, rgba(255,255,255,0.95), rgba(255,200,230,0) 70%);
+  animation: poof 0.5s ease-out forwards;
+}
+@keyframes poof { 0% { transform: translate(-50%,-50%) scale(0.4); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(3); opacity: 0; } }
+
+/* 被弾した敵の揺れ。 */
+.enemy.hitshake { animation: hitshake 0.3s ease; }
+@keyframes hitshake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-4px) rotate(-2deg); }
+  40% { transform: translateX(4px) rotate(2deg); }
+  60% { transform: translateX(-3px); } 80% { transform: translateX(3px); }
+}
+
+/* プレイヤー被弾＝画面が揺れて ふちが赤くにじむ。 */
+#game.screenshake { animation: screenshake 0.36s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes screenshake {
+  0%,100% { transform: translate(0,0) rotate(0); }
+  15% { transform: translate(-7px,2px) rotate(-0.6deg); }
+  30% { transform: translate(6px,-2px) rotate(0.6deg); }
+  50% { transform: translate(-5px,1px) rotate(-0.4deg); }
+  70% { transform: translate(4px,-1px) rotate(0.3deg); }
+}
+.hit-vignette {
+  position: fixed; inset: 0; z-index: 45; pointer-events: none;
+  box-shadow: inset 0 0 70px 8px rgba(255,46,80,0.4), inset 0 0 150px 40px rgba(200,20,55,0.3);
+  animation: vigfade 0.38s ease-out forwards;
+}
+@keyframes vigfade { 0% { opacity: 0; } 22% { opacity: 1; } 55% { opacity: 0.85; } 100% { opacity: 0; } }
+
+/* ダーク化パルス（kyoubou が しきい値を越え dark-N が上がる瞬間の合図）。 */
+.dark-pulse {
+  position: fixed; inset: 0; z-index: 46; pointer-events: none;
+  background: radial-gradient(circle at 50% 40%, rgba(20,6,30,0) 30%, rgba(20,6,30,0.5) 100%);
+  animation: darkpulse 0.7s ease-out forwards;
+}
+@keyframes darkpulse { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ════════════════════════════════════════════════════════════
+   不穏テキスト（.unstable）：L のダーク化で セリフが揺れる/字間が開く/フォントが崩れる。
+   isUnstable()（darkLevel>=1）のとき ui が L のセリフへ .unstable を付ける。
+   可読性は保つ（読めなくはしない。あくまで“翳り”の演出）。
+   ════════════════════════════════════════════════════════════ */
+.unstable {
+  letter-spacing: 2px;
+  color: #6a2f5a;
+  text-shadow: 0 0 1px rgba(120,20,70,0.5), 0.5px 0 0 rgba(0,0,0,0.25);
+  animation: textwobble 2.2s ease-in-out infinite;
+}
+@keyframes textwobble {
+  0%,100% { transform: translateX(0) skewX(0deg); }
+  25% { transform: translateX(-0.5px) skewX(-0.6deg); }
+  50% { transform: translateX(0.5px) skewX(0.4deg); }
+  75% { transform: translateX(-0.4px) skewX(-0.3deg); }
+}
+/* 強い不穏（dark-3 のとき など）：字間さらに開き、にじみを強める。 */
+body.dark-3 .unstable { letter-spacing: 4px; color: #54234a; text-shadow: 0 0 2px rgba(120,10,70,0.7), 1px 0 0 rgba(0,0,0,0.35); }
+
+/* タイプライターの“いま打っている”カーソル（typewriter 用）。 */
+.typing-caret { display: inline-block; width: 0.5em; color: var(--accent); animation: caretblink 0.8s steps(1) infinite; }
+@keyframes caretblink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+
+/* ════════════════════════════════════════════════════════════
+   メタ演出（神様的存在が metricsSummary を提示し見透かす → WO_RD に L を差し込み WORLD）
+   ════════════════════════════════════════════════════════════ */
+/* メタ画面は世界が一段 暗い“外側”。黒に近い背景＋淡い光で“見透かす視線”を作る。 */
+#overlay-meta { background: rgba(8,4,16,0.86); }
+.meta-panel {
+  background: linear-gradient(180deg, #1a1226, #0e0818);
+  border-color: #3a2a52; color: #efe6ff;
+  box-shadow: 0 0 60px rgba(120,80,200,0.3);
+}
+.meta-god { font-size: 13px; letter-spacing: 2px; color: var(--accent); margin-bottom: 10px; }
+.meta-text {
+  font-size: 15px; line-height: 2; color: #efe6ff; min-height: 80px;
+  padding: 14px 16px; background: rgba(255,255,255,0.04);
+  border: 1px solid #3a2a52; border-radius: 10px; white-space: pre-line;
+}
+/* metricsSummary の提示（クリック数・読み飛ばし率・カーソル距離）を“見透かし”として並べる。 */
+.meta-metrics {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 16px 0;
+}
+.meta-metrics > div {
+  background: rgba(255,255,255,0.05); border: 1px solid #3a2a52;
+  border-radius: 8px; padding: 10px 6px;
+}
+.meta-metrics span { display: block; font-size: 11px; color: #b9a9d6; }
+.meta-metrics b { font-size: 20px; color: #fff; font-variant-numeric: tabular-nums; }
+
+/* WO_RD → WORLD の気づき：欠けたスロットに L が ぽんっと差し込まれる演出。
+   ui.renderMeta が .meta-logo の中の綴りを組み替え、.inserting で L をハイライトする。 */
+.meta-logo {
+  font-size: clamp(34px, 9vw, 56px); font-weight: 900; letter-spacing: 8px;
+  margin: 18px 0; display: inline-flex; align-items: baseline; gap: 2px;
+}
+.meta-logo .logo-ch { color: #efe6ff; }
+.meta-logo .logo-slot { color: #5a4a72; opacity: 0.6; animation: slotblink 1.4s ease-in-out infinite; }
+/* 差し込まれる L＝光って入ってくる（“きみが いて、はじめて 世界に なる”）。 */
+.meta-logo .logo-l {
+  color: var(--gold);
+  text-shadow: 0 0 14px rgba(255,194,75,0.9), 0 0 30px rgba(255,194,75,0.5);
+  animation: linsert 0.9s cubic-bezier(.2,.9,.3,1.2) both;
+}
+@keyframes linsert {
+  0%   { opacity: 0; transform: translateY(-18px) scale(0.4); }
+  55%  { opacity: 1; transform: translateY(2px) scale(1.3); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* WORLD 完成後は全体が やわらかな朝の光へ（世界が戻る/満ちる気配）。 */
+.meta-panel.world-done { box-shadow: 0 0 80px rgba(255,210,120,0.4); }
+
+/* ── ポーズ ── */
+.pause-panel .ov-title { color: var(--text); }
+.pause-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+
+/* ════════════════════════════════════════════════════════════
+   トースト（セーブ・気づき・ヒント）
+   ════════════════════════════════════════════════════════════ */
+#toast {
+  position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(20px);
+  background: rgba(74,58,82,0.96); color: #fff;
+  border: 2px solid var(--line); border-radius: 999px;
+  padding: 8px 18px; font-size: 13px; z-index: 60;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ════════════════════════════════════════════════════════════
+   アクセシビリティ：動きを減らす設定では演出アニメを止める（色・縁で意味は伝わる）。
+   ════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .cloud, .flower, .creature svg, .enemy-fig svg, .field-l, .field-l.walking,
+  .word-bubble, .float-num, .poof, .enemy.hitshake, #game.screenshake, .hit-vignette,
+  .dark-pulse, .unstable, .typing-caret, .game-title .logo-slot, .meta-logo .logo-slot,
+  .meta-logo .logo-l, #player-bar.healpulse {
+    animation: none !important;
+  }
+}

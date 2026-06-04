@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WO_RD → WORLD — ことばを おぼえる、ちいさな ぼうけん</title>
+  <meta name="description" content="ことばの カードバトル探索ADV「WO_RD → WORLD」。とがった ことばで言い負かすか、やさしい ことばで寄り添うか。どう勝ったかが、きみと世界を変えていく。" />
+
+  <!-- 日本語ピクセルフォント（DotGothic16）。可愛くポップな村＋ドット絵の雰囲気を底上げする。
+       読み込めない/オフライン時は CSS 側の system フォントへ自動フォールバックするので動作には影響しない。 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<!-- theme-pop が既定（パステルの村）。物語が進み L だけがダーク化すると
+     JS（state.darkLevel）が body へ dark-1 / dark-2 / dark-3 を付け、世界がだんだん翳る。 -->
+<body class="theme-pop">
+
+  <!-- ════════════════════════════════════════════════════════════
+       背景シーン：可愛くポップな村（ドット絵風・CSSのみ）。
+       空・なだらかな丘・パステルの家々・ふわふわ雲・花。
+       不穏化は body.dark-N が #scene 全体の彩度を落として翳らせる（主人公だけのダークが世界に滲む）。
+       操作は透過（pointer-events:none）＝後ろで“気配”に徹し、UI の可読性を邪魔しない。
+       ════════════════════════════════════════════════════════════ -->
+  <div id="scene" aria-hidden="true">
+    <div class="scene-sky"></div>
+    <div class="scene-clouds">
+      <span class="cloud" style="left:8%; top:14%"></span>
+      <span class="cloud" style="left:38%; top:8%"></span>
+      <span class="cloud" style="left:66%; top:18%"></span>
+      <span class="cloud" style="left:84%; top:10%"></span>
+    </div>
+    <div class="scene-hill hill-back"></div>
+    <div class="scene-hill hill-mid"></div>
+    <div class="scene-houses">
+      <span class="house h-pink"  style="left:12%"></span>
+      <span class="house h-mint"  style="left:30%"></span>
+      <span class="house h-cream" style="left:52%"></span>
+      <span class="house h-sky"   style="left:72%"></span>
+      <span class="house h-lilac" style="left:88%"></span>
+    </div>
+    <div class="scene-ground"></div>
+    <div class="scene-flowers">
+      <span class="flower" style="left:18%"></span>
+      <span class="flower" style="left:34%"></span>
+      <span class="flower" style="left:48%"></span>
+      <span class="flower" style="left:63%"></span>
+      <span class="flower" style="left:79%"></span>
+      <span class="flower" style="left:92%"></span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       バトルHUD。タイトル/フィールド/会話などでは class="hidden" で畳む。
+       ui.render() が app.screen=="battle" のときだけ表示する。
+       中身（#topbar #enemy-area #log #player-bar #prompt #command-bar）は ui.js が描画。
+       ※思いやりゲージ(omoiyari)は UI に一切出さない＝ここにも器を置かない。
+       ════════════════════════════════════════════════════════════ -->
+  <div id="game" class="hidden">
+    <!-- 上部バー：進行の気配＋ミュート。管理数値は前に出さない方針（結果は世界の景色で返す）。 -->
+    <header id="topbar"></header>
+
+    <!-- 敵エリア：相手の見た目＋見える精神HPバー（mindHp）。思いやりは描かない。 -->
+    <section id="enemy-area"></section>
+
+    <!-- バトルログ -->
+    <section id="log" aria-live="polite"></section>
+
+    <!-- プレイヤーステータス：見える hp のみ。 -->
+    <section id="player-bar"></section>
+
+    <!-- サブ操作（ことばの案内・Lv表示など） -->
+    <section id="prompt"></section>
+
+    <!-- コマンドバー：手札の ことば を harsh(とがった)/kind(やさしい) で色分け表示。 -->
+    <nav id="command-bar"></nav>
+  </div>
+
+  <!-- 一時メッセージ（セーブ・気づき・ヒントなど） -->
+  <div id="toast"></div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       オーバーレイ群。すべて class="overlay"。hidden でトグルする。
+       中身は ui.js が render 時に流し込む（タイトルは初期表示なので骨格を置いておく）。
+       ════════════════════════════════════════════════════════════ -->
+
+  <!-- タイトル：欠けた綴り「WO_RD」のロゴ＋予想プレイ時間＋「はじめから/つづきから」。
+       ※ logo の l が欠けている＝主人公(L)が世界の欠片だという伏線（終盤に L を差し込み WORLD）。 -->
+  <div id="overlay-title" class="overlay">
+    <div class="ov-panel title-panel">
+      <!-- ロゴは WO[_]RD。欠けた L の位置を空欄スロットで見せる（CSSで“欠け”を強調）。 -->
+      <h1 class="game-title" aria-label="WO_RD">
+        <span class="logo-ch">W</span><span class="logo-ch">O</span><span class="logo-slot" aria-hidden="true">_</span><span class="logo-ch">R</span><span class="logo-ch">D</span>
+      </h1>
+      <p class="game-subtitle">ことばを しらない アンドロイドの、ちいさな ぼうけん。</p>
+
+      <!-- プロローグ（世界・主人公・目的を最小限で渡す。data.TITLE.prologue と揃える）。 -->
+      <p class="title-prologue">ここは、ことばで 心を かわす 村。
+ある日、ことばを ひとつも しらない アンドロイドが 目を さました。
+村人は その子を、型番で 呼んだ。「#L-0」。
+やさしい ことばを おぼえるのも、とがった ことばを おぼえるのも、きみ しだい。</p>
+
+      <div class="title-btns">
+        <!-- はじめから：main.startGame()（音初期化→計測開始→村へ）。 -->
+        <button id="start-btn" class="start-btn">▶ はじめから</button>
+        <!-- つづきから：main.continueGame()（セーブから復帰）。セーブが無いときは ui が disabled にする。 -->
+        <button id="continue-btn" class="continue-btn">つづきから</button>
+      </div>
+
+      <p class="title-foot">プレイ時間 約10分</p>
+      <!-- タイトルでも音の ON/OFF を切れるよう mute を置く（contract の #mute-btn）。 -->
+      <button id="mute-btn" class="mute-btn" title="音の ON/OFF">♪</button>
+    </div>
+  </div>
+
+  <!-- フィールド（探索）：マウス追従の床面で村/洞窟を歩く。
+       .field-body の中に .field-road（getBoundingClientRect でマウス座標→0..1 に変換する床）。 -->
+  <div id="overlay-field" class="overlay hidden">
+    <div class="field-body">
+      <div class="field-road"></div>
+    </div>
+  </div>
+
+  <!-- 会話（NPC）：話すと 3択カード入手。typewriter でテキストを1文字ずつ。 -->
+  <div id="overlay-dialogue" class="overlay hidden">
+    <div class="ov-panel dialogue-panel"></div>
+  </div>
+
+  <!-- カード入手/報酬（3択）：強いが凶暴／弱いが優しい のトレードオフを明示。 -->
+  <div id="overlay-cards" class="overlay hidden">
+    <div class="ov-panel cards-panel"></div>
+  </div>
+
+  <!-- 学校＝ことばショップ：buy＝1枚 選ぶ 体験。 -->
+  <div id="overlay-shop" class="overlay hidden">
+    <div class="ov-panel shop-panel"></div>
+  </div>
+
+  <!-- 結末（傾向比でエンド分岐）。「つづける」でメタ演出へ。 -->
+  <div id="overlay-result" class="overlay hidden">
+    <div class="ov-panel result-panel"></div>
+  </div>
+
+  <!-- メタ演出：神様的存在が metricsSummary（クリック/読み飛ばし/カーソル距離）を提示し見透かす。
+       最後に WO_RD へ L を差し込み WORLD を見せる。 -->
+  <div id="overlay-meta" class="overlay hidden">
+    <div class="ov-panel meta-panel"></div>
+  </div>
+
+  <!-- ポーズ -->
+  <div id="overlay-pause" class="overlay hidden">
+    <div class="ov-panel pause-panel"></div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       スクリプト読み込み順（contract 準拠）：
+       data → audio → metrics → state → save → battle → cards → field → ui → main
+       ════════════════════════════════════════════════════════════ -->
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/metrics.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/battle.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/field.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
