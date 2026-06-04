@@ -209,6 +209,7 @@ function render() {
     case "result":   renderResult(); break;
     case "meta":     renderMeta(); break;
     case "pause":    renderPause(); break;
+    case "gameover": renderGameover(); break;
     default:         renderTitle(); break; // 未知画面はタイトルへ倒す（安全側）。
   }
 }
@@ -226,6 +227,9 @@ function applyScreen(sc) {
   setShow("overlay-result", sc === "result");
   setShow("overlay-meta", sc === "meta");
   setShow("overlay-pause", sc === "pause");
+  setShow("overlay-gameover", sc === "gameover");
+  // 常設メニュー（☰）は探索/戦闘中だけ出す（タイトルや結末・メタでは隠す）。
+  setShow("menu-btn", sc === "field" || sc === "battle");
 }
 
 // 主人公 L の翳り（darkLevel 0..3）を body の class へ反映する。
@@ -332,24 +336,27 @@ function advanceText() {
 function renderTitle() {
   const ov = $("overlay-title");
   if (!ov) return;
-  const body = ov.querySelector(".ov-body") || ov;
+  const body = ov.querySelector(".ov-panel") || ov;
 
   const T = (typeof TITLE !== "undefined") ? TITLE : { logo: "WO_RD", sub: "", prologue: [], estPlay: "" };
-  // 欠けた綴り：W O _ R D。アンダースコア部分を .gap で示し、終盤の WORLD 化への布石にする。
+  // 欠けた綴り：W O _ R D。アンダースコア部分は index.html の静的タイトルと同じ .logo-slot で示す
+  //   （タイトルへ戻ったとき＝renderTitle 実行時も、初期表示とまったく同じ見た目になるようクラスを揃える）。
   const logoChars = String(T.logo || "WO_RD").split("").map((c) =>
-    c === "_" ? `<span class="logo-ch gap">_</span>` : `<span class="logo-ch">${esc(c)}</span>`
+    c === "_" ? `<span class="logo-slot" aria-hidden="true">_</span>` : `<span class="logo-ch">${esc(c)}</span>`
   ).join("");
 
+  // ★ index.html の静的タイトルと同一のクラス構成（.game-title/.game-subtitle/.title-prologue/
+  //   .title-btns/.continue-btn/.title-foot/.mute-btn）にする＝既存CSSがそのまま効く。
   body.innerHTML = `
-    <div class="title-logo" aria-label="WO_RD">${logoChars}</div>
-    <p class="title-sub">${esc(T.sub || "")}</p>
-    <div class="title-prologue">${(T.prologue || []).map((l) => `<p>${esc(l)}</p>`).join("")}</div>
-    <div class="title-actions">
-      <button id="start-btn" class="start-btn">▶ はじめる</button>
-      <button id="continue-btn" class="start-btn ghost">つづきから</button>
-      <button id="mute-btn" class="mute-btn" title="音の ON/OFF">♪</button>
+    <h1 class="game-title" aria-label="WO_RD">${logoChars}</h1>
+    <p class="game-subtitle">${esc(T.sub || "")}</p>
+    <p class="title-prologue">${esc((T.prologue || []).join("\n"))}</p>
+    <div class="title-btns">
+      <button id="start-btn" class="start-btn">▶ はじめから</button>
+      <button id="continue-btn" class="continue-btn">つづきから</button>
     </div>
-    <p class="title-est">${esc(T.estPlay || "")}</p>
+    <p class="title-foot">${esc(T.estPlay || "")}</p>
+    <button id="mute-btn" class="mute-btn" title="音の ON/OFF">♪</button>
   `;
   // つづきから：セーブが無ければ押せない（save.js の hasSave）。
   const cont = $("continue-btn");
@@ -419,7 +426,7 @@ function renderField() {
 function renderDialogue() {
   const ov = $("overlay-dialogue");
   if (!ov) return;
-  const bodyEl = ov.querySelector(".ov-body") || ov;
+  const bodyEl = ov.querySelector(".ov-panel") || ov;
   const d = (typeof game !== "undefined" && game) ? game.dialogue : null;
   if (!d) { bodyEl.innerHTML = ""; return; }
 
@@ -462,7 +469,7 @@ function renderDialogue() {
 function renderCards() {
   const ov = $("overlay-cards");
   if (!ov) return;
-  const bodyEl = ov.querySelector(".ov-body") || ov;
+  const bodyEl = ov.querySelector(".ov-panel") || ov;
   const cards = (typeof game !== "undefined" && game && game.pendingCards) ? game.pendingCards : [];
 
   const ctx = (game && game.cardsContext) ? game.cardsContext : {};
@@ -518,7 +525,7 @@ function onPickCard(i) {
 function renderShop() {
   const ov = $("overlay-shop");
   if (!ov) return;
-  const bodyEl = ov.querySelector(".ov-body") || ov;
+  const bodyEl = ov.querySelector(".ov-panel") || ov;
   const shop = (typeof SHOP !== "undefined") ? SHOP : { greeting: "", words: [] };
 
   bodyEl.innerHTML = `
@@ -924,7 +931,7 @@ function cssEsc(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, "\\$&"); }
 function renderResult() {
   const ov = $("overlay-result");
   if (!ov) return;
-  const bodyEl = ov.querySelector(".ov-body") || ov;
+  const bodyEl = ov.querySelector(".ov-panel") || ov;
   const e = (game && game.ending) ? game.ending : (typeof ENDINGS !== "undefined" ? ENDINGS[ENDINGS.length - 1] : { title: "", body: "", tone: "gray" });
 
   // 結末トーンを body へ（背景の温度を切替）。dark-N とは別レイヤ。
@@ -968,7 +975,7 @@ function renderResult() {
 function renderMeta() {
   const ov = $("overlay-meta");
   if (!ov) return;
-  const bodyEl = ov.querySelector(".ov-body") || ov;
+  const bodyEl = ov.querySelector(".ov-panel") || ov;
   const M = (typeof META !== "undefined") ? META : { godName: "声", openLines: [], skipLines: { high: [], low: [] }, clickLines: { high: [], low: [] }, reveal: [], closeLines: [] };
   const sum = (typeof metricsSummary === "function") ? metricsSummary() : { skipRatio: 0, clicks: 0, readRatio: 1, avgDwellMs: 0, seconds: 0, cursorDist: 0 };
 
@@ -1015,8 +1022,12 @@ function renderMeta() {
       <p class="meta-text" id="meta-text"></p>
       <span class="meta-next">▼ クリックで すすむ</span>
     </div>
+    <div class="meta-end" id="meta-end"></div>
   `;
+  // WORLD が完成したらパネルを淡く発光させる（署名の気づきの瞬間を視覚的に締める）。
+  if (bodyEl.classList) bodyEl.classList.toggle("world-done", spelled);
 
+  const isLast = (idx >= script.length - 1);
   const textEl = $("meta-text");
   typeInto(textEl, script[idx] || "", () => {
     if (!game.metaUi) game.metaUi = { i: 0 };
@@ -1024,11 +1035,38 @@ function renderMeta() {
       game.metaUi.i++;
       renderMeta();         // 次の語りへ。
     } else {
-      // 台本の最後：締めのトーストだけ出して、メタはそのまま余韻を残す（タイトルへは main.js / pause 任せ）。
-      showToast("またね、L。");
+      // 台本の最後：周回示唆＋「タイトルへ／もう一度」で物語を閉じる（コアシステム §0 の周回示唆→タイトル）。
+      showMetaEnd();
     }
   });
-  bodyEl.onclick = advanceText;
+  // 台本を読み終えた状態で再入したとき（既に最後）も、締めの導線を出す。
+  if (isLast) showMetaEnd();
+  bodyEl.onclick = (ev) => { if (ev.target && ev.target.closest && ev.target.closest(".meta-end")) return; advanceText(); };
+}
+
+// メタの締め：周回示唆＋「タイトルへ」「もう一度 あそぶ」。体験版の終端をきちんと閉じる。
+function showMetaEnd() {
+  const end = $("meta-end");
+  if (!end || end._filled) return;
+  end._filled = true;
+  end.innerHTML = `
+    <p class="meta-suggest">――きみの ことばは、ここから はじまる。</p>
+    <div class="meta-end-btns">
+      <button id="meta-again" class="start-btn">もう一度 あそぶ</button>
+      <button id="meta-title" class="start-btn ghost">タイトルへ</button>
+    </div>
+  `;
+  const again = $("meta-again");
+  if (again) again.addEventListener("click", () => {
+    if (typeof playSe === "function") playSe("select");
+    // もう一度：結末トーン/翳りをリセットしてから、新しいランで村へ（計測も測り直す）。
+    if (document.body) document.body.classList.remove("dark-1", "dark-2", "dark-3", "tone-cruel", "tone-gray", "tone-warm");
+    ui.lastDark = -1;
+    if (typeof startGame === "function") startGame();
+    else if (typeof goToTitle === "function") goToTitle();
+  });
+  const title = $("meta-title");
+  if (title) title.addEventListener("click", () => { if (typeof playSe === "function") playSe("select"); goToTitle(); });
 }
 
 // メタ画面のロゴ綴り。
@@ -1053,22 +1091,94 @@ function spelledLogo(spelled, revealing) {
 function renderPause() {
   const ov = $("overlay-pause");
   if (!ov) return;
-  const bodyEl = ov.querySelector(".ov-body") || ov;
+  const bodyEl = ov.querySelector(".ov-panel") || ov;
+  // 戻り先（ポーズを開いた画面）。field か battle。無ければ field 扱い。
+  const back = (game && game._pauseReturn) ? game._pauseReturn : "field";
+  const muted = (typeof isMuted === "function") ? isMuted() : false;
   bodyEl.innerHTML = `
     <h2 class="pause-title">ひとやすみ</h2>
-    <button id="pause-save" class="start-btn">セーブする</button>
-    <button id="pause-resume" class="start-btn ghost">つづける</button>
+    <div class="pause-btns">
+      <button id="pause-resume" class="start-btn">▶ つづける</button>
+      <button id="pause-save" class="start-btn ghost">セーブする</button>
+      <button id="pause-mute" class="start-btn ghost">${muted ? "♪× ミュート中" : "♪ 音 ON"}</button>
+      <button id="pause-title" class="start-btn ghost">タイトルへ</button>
+    </div>
+    <p class="pause-note">セーブから 何度でも やりなおせる（パーマデスではない）。</p>
   `;
+  const resume = $("pause-resume");
+  if (resume) resume.addEventListener("click", () => {
+    if (typeof playSe === "function") playSe("select");
+    // 開いた画面へ戻す。field はマウス追従を再開する backToField を使う。
+    if (back === "battle") { app.screen = "battle"; if (game) game.state = STATES.BATTLE; render(); }
+    else if (typeof backToField === "function") { backToField(); }
+    else { app.screen = "field"; render(); }
+  });
   const save = $("pause-save");
   if (save) save.addEventListener("click", () => {
     const ok = (typeof saveGame === "function") ? saveGame(0) : false;
-    showToast(ok ? "セーブした" : "セーブできなかった…");
+    showToast(ok ? "ここまでを セーブした" : "セーブできなかった…");
   });
-  const resume = $("pause-resume");
-  if (resume) resume.addEventListener("click", () => {
-    // フィールドへ戻す（バトル中のポーズは未対応：体験版はフィールド復帰で十分）。
-    if (typeof backToField === "function") backToField(); else { app.screen = "field"; render(); }
+  const mute = $("pause-mute");
+  if (mute) mute.addEventListener("click", () => {
+    const m = (typeof toggleMute === "function") ? toggleMute() : false;
+    mute.textContent = m ? "♪× ミュート中" : "♪ 音 ON";
   });
+  const title = $("pause-title");
+  if (title) title.addEventListener("click", () => { if (typeof playSe === "function") playSe("select"); goToTitle(); });
+}
+
+// ──────────────────────────────────────────
+// renderGameover — プレイヤー hp 0。やり直し導線（パーマデスではない）
+//   セーブがあれば「セーブから やりなおす」、いつでも「タイトルへ」。
+//   ※ファイルやセーブは消さない（save.js の上書き方針）。
+// ──────────────────────────────────────────
+function renderGameover() {
+  const ov = $("overlay-gameover");
+  if (!ov) return;
+  const bodyEl = ov.querySelector(".ov-panel") || ov;
+  const canLoad = (typeof hasSave === "function") ? (hasSave(0) || hasSave()) : false;
+  bodyEl.innerHTML = `
+    <h2 class="gameover-title">ことばに のまれた</h2>
+    <p class="gameover-text">${lWord("きみは うずくまって、うごけなく なった。\nでも、ことばは まだ きえて いない。")}</p>
+    <div class="gameover-btns">
+      <button id="gameover-retry" class="start-btn" ${canLoad ? "" : "disabled"}>セーブから やりなおす</button>
+      <button id="gameover-title" class="start-btn ghost">タイトルへ</button>
+    </div>
+    ${canLoad ? "" : `<p class="gameover-note">セーブが ない…… タイトルから はじめなおそう。</p>`}
+  `;
+  const retry = $("gameover-retry");
+  if (retry && canLoad) retry.addEventListener("click", () => {
+    if (typeof playSe === "function") playSe("select");
+    // セーブから復帰（game も metrics も戻る）→ いたエリアのフィールドへ。
+    const ok = (typeof loadGame === "function") ? (loadGame(0) || loadGame()) : false;
+    if (ok) {
+      const area = (game && game.currentArea) ? game.currentArea : "mura";
+      if (typeof enterArea === "function") enterArea(area); else { app.screen = "field"; render(); }
+    } else {
+      showToast("つづきが みつからなかった…");
+      goToTitle();
+    }
+  });
+  const toTitle = $("gameover-title");
+  if (toTitle) toTitle.addEventListener("click", () => { if (typeof playSe === "function") playSe("select"); goToTitle(); });
+}
+
+// ──────────────────────────────────────────
+// goToTitle — タイトルへ戻す共通処理（ポーズ／ゲームオーバー／メタの締めから）
+//   翳り(dark-N)・結末トーン(tone-*)をいったん消し、タイトルを描き直す。
+//   ※newGame はしない（タイトルの「はじめから」が改めて行う）。BGM はタイトル曲へ。
+// ──────────────────────────────────────────
+function goToTitle() {
+  if (typeof stopBgm === "function") stopBgm();
+  const body = document.body;
+  if (body) {
+    body.classList.remove("dark-1", "dark-2", "dark-3", "tone-cruel", "tone-gray", "tone-warm");
+  }
+  ui.lastDark = -1; // applyDark の差分判定をリセット（次ランで dark を貼り直せるように）。
+  app.screen = "title";
+  if (game) game.state = STATES.TITLE;
+  if (typeof window !== "undefined") window.game = game;
+  render();
 }
 
 // ──────────────────────────────────────────
@@ -1107,6 +1217,9 @@ if (typeof window !== "undefined") {
   window.renderResult = renderResult;
   window.renderMeta = renderMeta;
   window.renderPause = renderPause;
+  window.renderGameover = renderGameover;
+  window.showMetaEnd = showMetaEnd;
+  window.goToTitle = goToTitle;
   window.playFx = playFx;
   window.showToast = showToast;
 }

@@ -154,6 +154,16 @@
     <div class="ov-panel pause-panel"></div>
   </div>
 
+  <!-- ゲームオーバー：プレイヤー hp が 0。セーブから やりなおす／タイトルへ の導線。
+       パーマデスではない（save.js の上書き方針）＝直前のセーブから何度でも再開できる。 -->
+  <div id="overlay-gameover" class="overlay hidden">
+    <div class="ov-panel gameover-panel"></div>
+  </div>
+
+  <!-- 常設メニュー（☰）：フィールド/バトル中だけ右上に出す。押すとポーズ（中断メニュー）へ。
+       ui.applyScreen が screen に応じて hidden を出し入れし、main.js が click を拾う。 -->
+  <button id="menu-btn" class="menu-btn hidden" title="メニュー（中断）" aria-label="メニュー">☰</button>
+
   <!-- ════════════════════════════════════════════════════════════
        スクリプト読み込み順（contract 準拠）：
        data → audio → metrics → state → save → battle → cards → field → ui → main

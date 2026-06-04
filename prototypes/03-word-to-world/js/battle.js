@@ -296,9 +296,13 @@ function enemyTurn() {
 function onGameOver() {
   if (game.battle) game.battle.phase = "end";
   game.state = STATES.GAMEOVER;
+  // 専用のゲームオーバー画面へ（決着済みのバトル画面に取り残さない）。
+  //   ui.renderGameover が「セーブから やりなおす／タイトルへ」の導線を出す。
+  app.screen = "gameover";
   log(`${game.player.displayName} は ことばに のまれて、うずくまった……`);
   pushFx({ t: "lose" });
   se("lose");
+  if (typeof window !== "undefined") window.game = game;
 }
 
 // ──────────────────────────────────────────

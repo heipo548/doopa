@@ -132,8 +132,17 @@ var drive = [
   // skip 低/click 低 の分岐も描く。
   "metrics.blocksShown=10; metrics.blocksSkipped=1; metrics.skips=1; metrics.clicks=5; game.metaUi=null; renderMeta(); __o.push('render meta (skip低/click低) ok');",
 
-  // ── ポーズ：renderPause（セーブ/つづける）。
-  "app.screen='pause'; render(); __o.push('render pause ok');",
+  // ── ポーズ：renderPause（つづける/セーブ/ミュート/タイトルへ）。戻り先(field/battle)を覚えて開く。
+  "newGame(); enterArea('mura'); game._pauseReturn='field'; app.screen='pause'; render(); __o.push('render pause(field) ok');",
+  "newGame(); startBattle('kojika'); game._pauseReturn='battle'; app.screen='pause'; render(); __o.push('render pause(battle) ok');",
+
+  // ── メタの締め：台本最後で showMetaEnd（周回示唆＋もう一度/タイトルへ）。world-done 発光。
+  "newGame(); startMetrics(); game.metaUi={i:999}; app.screen='meta'; renderMeta(); showMetaEnd(); __o.push('meta end (周回示唆＋導線) ok');",
+
+  // ── ゲームオーバー：敵ターンで hp を 0 にして onGameOver → renderGameover（やりなおす/タイトルへ）。
+  "newGame(); startBattle('villain'); game.player.hp=1; enemyTurn(); __o.push('onGameOver 遷移 ok (state=' + game.state + ', screen=' + app.screen + ')'); render(); __o.push('render gameover ok');",
+  // タイトルへ戻す共通処理（dark/tone を剥がして title へ）。
+  "goToTitle(); __o.push('goToTitle ok (screen=' + app.screen + ')');",
 
   // ── 全 shape × 全 expr のピクセルスプライトが壊れず生成されるか（rect 数で簡易検証）──
   "['robot','villager','circle','ghost','bunny','boss'].forEach(function(sh){ ['neutral','happy','sad','unstable'].forEach(function(ex){ var s=creatureSVG('#8f9ee0',sh,ex); if(!/^<svg/.test(s) || (s.match(/<rect/g)||[]).length < 12) throw 'sprite broken: '+sh+'/'+ex+' (rects=' + ((s.match(/<rect/g)||[]).length) + ')'; }); });",

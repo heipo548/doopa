@@ -116,6 +116,17 @@ window.addEventListener("DOMContentLoaded", () => {
       mute.textContent = muted ? "♪×" : "♪";
       return;
     }
+    // 常設メニュー（☰）：探索/戦闘中の中断。開いた画面を覚えてからポーズへ。
+    const menu = t.closest("#menu-btn");
+    if (menu) {
+      if (typeof app !== "undefined" && app && (app.screen === "field" || app.screen === "battle")) {
+        if (typeof playSe === "function") playSe("select");
+        if (typeof game !== "undefined" && game) game._pauseReturn = app.screen; // 戻り先を記憶。
+        app.screen = "pause";
+        if (typeof render === "function") render();
+      }
+      return;
+    }
   });
 
   // ── ② クリック総数の計測（せっかちさ）──────────────

@@ -193,3 +193,6 @@ function toggleMute() {
   if (masterGain) masterGain.gain.value = _muted ? 0 : 0.5;
   return _muted;
 }
+
+// いまミュート中か（ポーズメニュー等が表示を合わせるために読む）。
+function isMuted() { return _muted; }

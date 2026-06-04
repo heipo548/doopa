@@ -649,13 +649,57 @@ body.dark-3 .unstable { letter-spacing: 4px; color: #54234a; text-shadow: 0 0 2p
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ════════════════════════════════════════════════════════════
+   セカンダリ（ghost）ボタン：start-btn の控えめ版。ショップ「おわる」・ポーズ／結末の
+   サブ操作・タイトルへ などに使う。主操作（塗りつぶし）と並べても序列が一目で分かる。
+   ════════════════════════════════════════════════════════════ */
+.start-btn.ghost {
+  background: var(--panel2);
+  color: var(--text);
+  border: 2px solid var(--line);
+  box-shadow: 0 3px 0 rgba(150,90,140,0.18);
+  font-weight: 700;
+}
+.start-btn.ghost:hover { border-color: var(--accent); box-shadow: 0 5px 12px rgba(180,120,160,0.3); }
+.start-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; transform: none; }
+
+/* ── 常設メニュー（☰）：探索/戦闘中だけ右上に出す中断ボタン ── */
+.menu-btn {
+  position: fixed; top: 12px; right: 12px; z-index: 60;
+  width: 42px; height: 42px; border-radius: 12px;
+  border: 2px solid var(--line); background: rgba(255,250,253,0.9);
+  color: var(--text); font-size: 18px; cursor: pointer; line-height: 1;
+  box-shadow: 0 3px 10px rgba(180,120,160,0.25); backdrop-filter: blur(2px);
+  transition: border-color 0.12s, transform 0.1s;
+}
+.menu-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+.menu-btn.hidden { display: none; }
+
+/* ── ポーズ（中断メニュー）── */
+.pause-title { font-size: 22px; font-weight: 900; color: var(--accent); margin-bottom: 16px; }
+.pause-btns { display: flex; flex-direction: column; gap: 10px; align-items: stretch; max-width: 280px; margin: 0 auto; }
+.pause-note { margin-top: 14px; font-size: 11.5px; color: var(--text-dim); }
+
+/* ── ゲームオーバー（パーマデスではない）── */
+.gameover-panel { text-align: center; }
+.gameover-title { font-size: 26px; font-weight: 900; color: var(--harsh); letter-spacing: 2px; margin-bottom: 12px; }
+.gameover-text { font-size: 15px; line-height: 1.9; color: var(--text); white-space: pre-line; margin-bottom: 20px; }
+.gameover-btns { display: flex; flex-direction: column; gap: 10px; align-items: stretch; max-width: 280px; margin: 0 auto; }
+.gameover-note { margin-top: 12px; font-size: 12px; color: var(--text-dim); }
+
+/* ── メタ演出の締め（周回示唆＋タイトルへ／もう一度）── */
+.meta-end { margin-top: 18px; min-height: 8px; }
+.meta-suggest { font-size: 14px; color: var(--gold); font-weight: 800; letter-spacing: 1px; margin-bottom: 12px; animation: metaEndIn 0.6s ease both; }
+.meta-end-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; animation: metaEndIn 0.8s ease both; }
+@keyframes metaEndIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ════════════════════════════════════════════════════════════
    アクセシビリティ：動きを減らす設定では演出アニメを止める（色・縁で意味は伝わる）。
    ════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   .cloud, .flower, .creature svg, .enemy-fig svg, .field-l, .field-l.walking,
   .word-bubble, .float-num, .poof, .enemy.hitshake, #game.screenshake, .hit-vignette,
   .dark-pulse, .unstable, .typing-caret, .game-title .logo-slot, .meta-logo .logo-slot,
-  .meta-logo .logo-l, #player-bar.healpulse {
+  .meta-logo .logo-l, #player-bar.healpulse, .meta-suggest, .meta-end-btns {
     animation: none !important;
   }
 }
