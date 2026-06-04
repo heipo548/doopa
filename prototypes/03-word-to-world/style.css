@@ -334,15 +334,18 @@ body.dark-3::after { background: radial-gradient(circle at 50% 38%, rgba(10,2,16
   position: absolute; top: 12px; right: 12px;
 }
 
-/* ── 会話（NPC）── */
+/* ── 会話（NPC）── ※ クラス名は ui.renderDialogue の生成（dlg-*）に一致させる。 */
 .dialogue-panel { text-align: left; }
-.dialogue-who { font-weight: 800; color: var(--accent); font-size: 14px; margin-bottom: 8px; }
-.dialogue-text {
-  font-size: 15px; line-height: 1.9; color: var(--text); min-height: 84px;
-  padding: 14px 16px; background: rgba(255,255,255,0.6);
-  border: 2px solid var(--line); border-radius: 10px;
+.dlg-stage { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.dlg-fig { width: 40px; height: 40px; flex: none; display: inline-flex; }
+.dlg-fig svg, .dlg-fig .creature { width: 40px; height: 40px; }
+.dlg-name { font-weight: 800; color: var(--accent); font-size: 14px; }
+.dlg-box {
+  min-height: 84px; padding: 14px 16px; background: rgba(255,255,255,0.6);
+  border: 2px solid var(--line); border-radius: 10px; cursor: pointer;
 }
-.dialogue-next { margin-top: 12px; text-align: right; font-size: 12px; color: var(--text-dim); }
+.dlg-text { font-size: 15px; line-height: 1.9; color: var(--text); white-space: pre-line; margin: 0; }
+.dlg-next { margin-top: 12px; text-align: right; font-size: 12px; color: var(--text-dim); }
 
 /* ── カード入手/報酬（3択：トレードオフを明示）── */
 .ov-title { font-size: 22px; font-weight: 900; color: var(--accent); }
@@ -691,6 +694,48 @@ body.dark-3 .unstable { letter-spacing: 4px; color: #54234a; text-shadow: 0 0 2p
 .meta-suggest { font-size: 14px; color: var(--gold); font-weight: 800; letter-spacing: 1px; margin-bottom: 12px; animation: metaEndIn 0.6s ease both; }
 .meta-end-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; animation: metaEndIn 0.8s ease both; }
 @keyframes metaEndIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ════════════════════════════════════════════════════════════
+   動的描画クラスの補完：ui.js が生成するが既存CSSに無かった構造クラスを、
+   設計意図（harsh=左/速い・kind=右/遅い、Lvバッジ、翳りドット等）どおりに整える。
+   ════════════════════════════════════════════════════════════ */
+/* コマンドバー：harsh（左）/ kind（右）の2列。各列に小見出し＋ボタン縦並び。 */
+.cmd-col { display: flex; flex-direction: column; gap: 8px; }
+.cmd-coltag { font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-align: center; opacity: 0.9; }
+.cmd-coltag.toge { color: var(--harsh); }       /* きつい ことば（速い・凶暴側） */
+.cmd-coltag.yasashii { color: var(--kind); }    /* やさしい ことば（おそい・優しさ側） */
+.cmd-empty { font-size: 12px; color: var(--text-dim); text-align: center; padding: 10px 0; }
+
+/* カードの追加要素：Lvバッジ・トレードオフ文・Lv上げ枠（金）。 */
+.card-lv { font-size: 11px; font-weight: 800; color: var(--gold); }
+.card-lv.new { color: var(--accent); }
+.card-tradeoff { font-size: 11px; line-height: 1.5; color: var(--text); opacity: 0.9; }
+.card-pick.card-levelup { border-color: var(--gold); box-shadow: 0 4px 0 rgba(255,194,75,0.35); }
+
+/* プレイヤーバー：図＋名前（横並びは #player-bar の flex に乗る）。 */
+.pb-fig { width: 26px; height: 26px; display: inline-flex; vertical-align: middle; }
+.pb-fig svg, .pb-fig .creature { width: 26px; height: 26px; }
+.pb-name { font-weight: 800; font-size: 14px; margin-left: 6px; }
+
+/* 上部バー：エリア名・ターン・翳りドット（L だけが翳る指標）。 */
+#topbar { display: flex; align-items: center; gap: 12px; padding: 8px 14px; font-size: 12px; border-bottom: 2px solid var(--line); }
+.tb-area { color: var(--accent); font-weight: 800; }
+.tb-turn { color: var(--text-dim); }
+.tb-dark { margin-left: auto; display: inline-flex; gap: 4px; align-items: center; }
+.dark-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(74,58,82,0.18); display: inline-block; }
+.dark-dot.on { background: var(--accent); box-shadow: 0 0 6px rgba(180,140,255,0.7); }
+
+/* 敵の精神HP数値ラベル・結末の“さいごのことば”。 */
+.enemy-hp { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+.result-words { font-size: 13px; color: var(--gold); font-weight: 800; margin: 6px 0 16px; }
+
+/* メタの背景レイヤ・語りラッパ・送りヒント（神様の“外側”の気配）。 */
+.meta-sky {
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background: radial-gradient(120% 90% at 50% 0%, rgba(120,80,200,0.18), transparent 60%);
+}
+.meta-voice { position: relative; }
+.meta-next { display: block; margin-top: 10px; font-size: 12px; color: #b9a9d6; text-align: right; }
 
 /* ════════════════════════════════════════════════════════════
    アクセシビリティ：動きを減らす設定では演出アニメを止める（色・縁で意味は伝わる）。

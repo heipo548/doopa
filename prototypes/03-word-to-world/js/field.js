@@ -310,10 +310,11 @@ function endNpcDialogue() {
 }
 
 // ──────────────────────────────────────────
-// 戦闘の決着をフィールドが受ける（battle.js が勝敗確定後に呼ぶ想定）
-//   ・ボス撃破ならエリアのフラグを立てて exit を解放（mura_boss / dokutsu_boss）。
-//   ・報酬3択（cards.offerCards）は battle.js 側が出す。ピック後 backToField() に戻る。
-//   winKind は state.js の lastWinKind と同じ意味（true=寄り添い / false=言い負かし）。
+// onBattleResolved — ★現状どこからも呼ばれていない「予約フック」。
+//   実際の決着処理（ボス撃破フラグ立て→報酬3択→ピック後 backToField で復帰）は
+//   battle.js の winBattle() と ui.onPickCard() 側で完結している（そちらが正典）。
+//   ここは将来「戦闘結果をフィールド側で受けて演出を足したい」場合の差し込み口として残す
+//   （削除しない＝拡張の余地。呼ぶ場合は winBattle のフラグ立てと二重にならないよう注意）。
 // ──────────────────────────────────────────
 function onBattleResolved(result) {
   const node = field._pendingNode || (result && result.node) || null;

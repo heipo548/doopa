@@ -411,7 +411,7 @@ function renderField() {
     <div class="field-road">
       <div class="road-line"></div>
       ${nodesHtml}
-      <span class="l-walker ${f.paused ? "" : "walking"}" style="left:${lLeft}%;top:${lTop}%">${playerSVG("happy")}</span>
+      <span class="field-l ${f.paused ? "" : "walking"}" style="left:${lLeft}%;top:${lTop}%">${playerSVG("happy")}</span>
     </div>
     <p class="field-msg">${lWord(f.message || "")}</p>
   `;
@@ -476,23 +476,23 @@ function renderCards() {
   const heading = ctx.reason === "shop" ? "どの ことばを おぼえる?" : "ことばを ひとつ えらぶ";
 
   bodyEl.innerHTML = `
-    <h2 class="cards-title">${esc(heading)}</h2>
-    <p class="cards-sub">速いが 凶暴な ことば／遅いが やさしい ことば。どちらを 選ぶ?</p>
-    <div class="cards-row"></div>
+    <h2 class="ov-title">${esc(heading)}</h2>
+    <p class="ov-sub">速いが 凶暴な ことば／遅いが やさしい ことば。どちらを 選ぶ?</p>
+    <div class="cards"></div>
   `;
-  const row = bodyEl.querySelector(".cards-row");
+  const row = bodyEl.querySelector(".cards");
   cards.forEach((card, i) => {
     const el = document.createElement("button");
-    // harsh＝とげ色／kind＝やさしい色。Lv上げは枠を金色に（成長の手触り）。
-    el.className = "card-pick " + (card.kind === "harsh" ? "card-harsh" : "card-kind") + (card.isLevelUp ? " card-levelup" : "");
+    // harsh＝とげ色／kind＝やさしい色（CSS .card-pick.harsh/.kind）。Lv上げは枠を金色に（成長の手触り）。
+    el.className = "card-pick " + (card.kind === "harsh" ? "harsh" : "kind") + (card.isLevelUp ? " card-levelup" : "");
     const lvBadge = card.isLevelUp
       ? `<span class="card-lv">Lv${card.curLv} → ${card.nextLv}</span>`
       : `<span class="card-lv new">あたらしい ことば</span>`;
     el.innerHTML = `
-      <div class="card-kindtag">${card.kind === "harsh" ? "きつい ことば" : "やさしい ことば"}</div>
+      <div class="card-tag">${card.kind === "harsh" ? "きつい ことば" : "やさしい ことば"}</div>
       <div class="card-name">「${esc(card.label)}」</div>
       ${lvBadge}
-      <div class="card-flavor">${esc(card.flavor || "")}</div>
+      <div class="card-desc">${esc(card.flavor || "")}</div>
       <div class="card-tradeoff">${esc(card.tradeoff || "")}</div>
     `;
     el.addEventListener("click", () => onPickCard(i));
@@ -666,7 +666,7 @@ function renderCommandBar() {
     const sub = c.kind === "harsh"
       ? `精神HP −${c.power}`
       : (sideHint(c.id) || "そっと 寄りそう");
-    return `<button class="cmd ${c.kind === "harsh" ? "c-harsh" : "c-kind"}" data-word="${esc(c.id)}" ${active ? "" : "disabled"}>
+    return `<button class="cmd ${c.kind === "harsh" ? "harsh" : "kind"}" data-word="${esc(c.id)}" ${active ? "" : "disabled"}>
         <span class="cmd-label">「${esc(c.label)}」${lvStar}</span>
         <span class="cmd-sub">${esc(sub)}</span>
       </button>`;
@@ -1018,7 +1018,7 @@ function renderMeta() {
     <div class="meta-sky"></div>
     <div class="meta-logo">${logo}</div>
     <div class="meta-voice">
-      <span class="meta-godname">${esc(M.godName || "声")}</span>
+      <span class="meta-god">${esc(M.godName || "声")}</span>
       <p class="meta-text" id="meta-text"></p>
       <span class="meta-next">▼ クリックで すすむ</span>
     </div>
@@ -1073,14 +1073,14 @@ function showMetaEnd() {
 //   reveal 前：WO_RD（ギャップ _ ）／reveal 中：ギャップが光る／WORLD 完成：_ の位置へ L が差し込まれて WORLD。
 function spelledLogo(spelled, revealing) {
   if (spelled) {
-    // WORLD：W O R L D。差し込まれた L を強調（world の欠片＝主人公）。
+    // WORLD：W O R L D。差し込まれた L は CSS .meta-logo .logo-l で金色に光って入ってくる（linsert）。
     return ["W", "O", "R", "L", "D"].map((c) =>
-      c === "L" ? `<span class="logo-ch inserted">L</span>` : `<span class="logo-ch">${c}</span>`
+      c === "L" ? `<span class="logo-l">L</span>` : `<span class="logo-ch">${c}</span>`
     ).join("");
   }
-  // WO_RD：ギャップを示す。reveal 中はギャップを脈動させて“ここに何かが入る”を予感させる。
+  // WO_RD：欠けたスロット。CSS .meta-logo .logo-slot が脈動（slotblink）して“ここに何か入る”を予感させる。
   return ["W", "O", "_", "R", "D"].map((c) =>
-    c === "_" ? `<span class="logo-ch gap ${revealing ? "glow" : ""}">_</span>` : `<span class="logo-ch">${c}</span>`
+    c === "_" ? `<span class="logo-slot">_</span>` : `<span class="logo-ch">${c}</span>`
   ).join("");
 }
 
