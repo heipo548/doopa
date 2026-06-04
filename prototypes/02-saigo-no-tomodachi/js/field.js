@@ -96,6 +96,8 @@ function _shuffleField(arr) {
 // ──────────────────────────────────────────
 function enterTown() {
   if (!meta) initMeta();
+  // 街は「いくつもの夜」の保存点＝ここに入るたび メタ進行を localStorage に残す（セッションをまたいで続く）。
+  if (typeof saveProgress === "function") saveProgress();
   if (typeof stopFieldLoop === "function") stopFieldLoop();
   app.screen = "town";
   field.activeFriend = null;

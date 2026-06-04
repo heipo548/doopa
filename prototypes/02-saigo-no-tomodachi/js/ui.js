@@ -191,6 +191,8 @@ function applyTone() {
 
 // ── 上部バー（ウェーブ進行ドット・カウンタ） ─────────────
 function renderTopbar() {
+  // 戦闘上部の ♪ を 設定の ミュート状態に同期（タイトル/街と表示を一致させる）。
+  const _mb = $("mute-btn"); if (_mb && typeof SETTINGS !== "undefined") _mb.textContent = SETTINGS.muted ? "♪×" : "♪";
   // 第一夜チュートリアルは ウェーブ管理を見せない＝「何をするゲームか」に集中させる（P0-2）。
   if (game.tutorial) {
     $("wave-info").innerHTML = `<span class="wave-text">よる の はじまり</span>`;
@@ -749,7 +751,7 @@ function playFx(prevRects) {
     setTimeout(() => {
       if (ev.t === "hit") {
         floatOnEnemy(ev.uid, ev.dead ? `${ev.dmg}!` : `${ev.dmg}`, ev.dead ? "dmg dead" : "dmg", prevRects, yoff);
-        if (ev.dead) { deadPoof(ev.uid, prevRects, ev.color); }
+        if (ev.dead) { deadPoof(ev.uid, prevRects, ev.color); hitStop(120); }
         else { shakeEnemy(ev.uid); flashEnemy(ev.uid); }
       } else if (ev.t === "wallhit") {
         floatOnEnemy(ev.uid, `♡ −${ev.amount}`, "calm", prevRects, yoff); flashEnemy(ev.uid);
@@ -757,7 +759,7 @@ function playFx(prevRects) {
         floatOnEnemy(ev.uid, "ほっ…", "calm", prevRects, yoff);
         if (!calmPlayed) { playSe("calm"); calmPlayed = true; }
       } else if (ev.t === "save") {
-        floatOnEnemy(ev.uid, "なかまに なった！", "save", prevRects, yoff); saveBurst(ev.uid, prevRects);
+        floatOnEnemy(ev.uid, "なかまに なった！", "save", prevRects, yoff); saveBurst(ev.uid, prevRects); hitStop(120);
       } else if (ev.t === "evoice") {
         enemyBubble(ev.uid, ev.text, prevRects, yoff); // 対話してる感：効いた子が ことばを返す
       } else if (ev.t === "noeffect") {
@@ -940,6 +942,15 @@ function saveBurst(uid, prevRects) {
   el.style.top = y + "px";
   host.appendChild(el);
   setTimeout(() => el.remove(), 720);
+}
+// ヒットストップ：強い瞬間（撃破・むかえた）に ごく短い“ため”＝手応えに重みを足す（game feel の定石）。
+//   ターン制なので フリーズでなく 微ズーム1発で「効いた」を体に。モーション控えめ設定では出さない。
+function hitStop(ms) {
+  if (typeof SETTINGS !== "undefined" && SETTINGS.reduceMotion) return;
+  const g = $("game");
+  if (!g) return;
+  g.classList.add("hitstop");
+  setTimeout(() => g.classList.remove("hitstop"), ms || 120);
 }
 function screenShake() {
   const g = $("game");
@@ -1193,7 +1204,10 @@ function renderTown() {
   body.innerHTML = `
     <div class="town-head ${coldClass}">
       <span class="town-night">${nightLabel}</span>
-      <button id="town-mute" class="town-mute" title="音のON/OFF">♪</button>
+      <span class="town-head-btns">
+        <button id="town-settings" class="town-mute" title="せってい">⚙</button>
+        <button id="town-mute" class="town-mute" title="音のON/OFF">♪</button>
+      </span>
     </div>
     <h2 class="town-title">よあけまえの 街</h2>
     <div class="town-lanterns ${coldClass}">${lanterns}</div>
@@ -1212,6 +1226,9 @@ function renderTown() {
   if (go) go.addEventListener("click", () => { playSe("select"); goToField(); });
   const mute = $("town-mute");
   if (mute) mute.addEventListener("click", () => { const m = toggleMute(); mute.textContent = m ? "♪×" : "♪"; });
+  if (mute && typeof SETTINGS !== "undefined") mute.textContent = SETTINGS.muted ? "♪×" : "♪";
+  const tset = $("town-settings");
+  if (tset && typeof openSettings === "function") tset.addEventListener("click", () => { playSe("select"); openSettings(); });
   // P1-1：街の友を さわると“生活セリフ”を話す（報酬装置でなく、ここで暮らす存在に）。
   body.querySelectorAll(".town-friend[data-type]").forEach((el) => {
     el.addEventListener("click", () => {

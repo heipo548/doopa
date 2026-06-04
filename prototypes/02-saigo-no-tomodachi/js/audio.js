@@ -23,7 +23,34 @@ function initAudio() {
   audioCtx = new AC();
   masterGain = audioCtx.createGain();
   masterGain.gain.value = _muted ? 0 : 0.5;
-  masterGain.connect(audioCtx.destination);
+  // ── ミックス品質を一段 上げる（Web Audio の定石）──
+  //   コンプレッサで 合成音の凸凹を まとめ（歪み/音割れを防ぐ）、軽いリバーブで“奥行き”を足す。
+  let out = audioCtx.destination;
+  try {
+    const comp = audioCtx.createDynamicsCompressor();
+    comp.threshold.value = -18; comp.knee.value = 24; comp.ratio.value = 3;
+    comp.attack.value = 0.004; comp.release.value = 0.18;
+    comp.connect(out); out = comp; // 以後は全部 コンプ経由で出す
+  } catch (e) { /* 非対応でも素通り */ }
+  masterGain.connect(out);
+  // 軽いリバーブ送り（合成インパルス応答）。dry はそのまま、wet を控えめに足して 温かみ・空気感を出す。
+  try {
+    const conv = audioCtx.createConvolver();
+    conv.buffer = _makeImpulse(1.6, 2.4);
+    const wet = audioCtx.createGain(); wet.gain.value = 0.15;
+    masterGain.connect(conv); conv.connect(wet); wet.connect(out);
+  } catch (e) { /* リバーブ無しでも動く */ }
+}
+
+// 合成インパルス応答（ノイズの指数減衰）＝外部音源なしで かんたんな残響をつくる。
+function _makeImpulse(seconds, decay) {
+  const rate = audioCtx.sampleRate, len = Math.max(1, Math.floor(rate * seconds));
+  const buf = audioCtx.createBuffer(2, len, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+  }
+  return buf;
 }
 
 // 1音を鳴らす（freq=高さ, dur=長さ秒, type=波形, gain=音量, when=開始時刻）
@@ -184,9 +211,15 @@ function stopBgm() {
   }
 }
 
-// ミュート切替（戻り値：ミュート中かどうか）
-function toggleMute() {
-  _muted = !_muted;
+// ミュートを 明示的に設定（設定メニュー/セーブ復元から呼ぶ）。
+function setMuted(v) {
+  _muted = !!v;
   if (masterGain) masterGain.gain.value = _muted ? 0 : 0.5;
+  return _muted;
+}
+// ミュート切替（戻り値：ミュート中かどうか）。設定にも反映して永続化する。
+function toggleMute() {
+  setMuted(!_muted);
+  if (typeof SETTINGS !== "undefined") { SETTINGS.muted = _muted; if (typeof saveSettings === "function") saveSettings(); }
   return _muted;
 }

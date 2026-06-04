@@ -80,7 +80,24 @@
       <p class="title-prologue">ながい よるの はなし。
 ともだちは みんな いなくなった。
 それでも 夜は、だれかを つれてくる。</p>
+      <!-- セーブがある時だけ「つづきから」を出す（main.js が表示制御）。 -->
+      <button id="title-continue" class="start-btn hidden">▶ つづきから</button>
       <button id="start-btn" class="start-btn">▶ はじめる</button>
+      <button id="title-settings" class="title-settings" title="せってい">⚙ せってい</button>
+    </div>
+  </div>
+
+  <!-- 設定（アクセシビリティ）：音・モーション・文字の大きさ・セーブ消去。タイトル/街から開く。 -->
+  <div id="overlay-settings" class="overlay hidden">
+    <div class="ov-panel settings-panel">
+      <div class="ov-body">
+        <h2 class="ov-title">せってい</h2>
+        <button class="set-row" id="set-mute"><span>♪ おと</span><b id="set-mute-v">ON</b></button>
+        <button class="set-row" id="set-motion"><span>🌀 うごき（モーション）</span><b id="set-motion-v">ふつう</b></button>
+        <button class="set-row" id="set-text"><span>🔤 もじの おおきさ</span><b id="set-text-v">ふつう</b></button>
+        <button class="set-row danger" id="set-clear"><span>🗑 セーブを けして はじめから</span></button>
+        <button class="start-btn" id="set-close">とじる</button>
+      </div>
     </div>
   </div>
 
@@ -128,6 +145,7 @@
   <!-- スクリプト：データ→音→状態→戦闘→カード→（街/道/周回）→UI→起動 の順で読み込む -->
   <script src="js/data.js"></script>
   <script src="js/audio.js"></script>
+  <script src="js/save.js"></script>
   <script src="js/state.js"></script>
   <script src="js/battle.js"></script>
   <script src="js/cards.js"></script>

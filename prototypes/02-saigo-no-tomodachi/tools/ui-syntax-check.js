@@ -18,7 +18,7 @@ function readFile(p) {
 var cwd = $.NSFileManager.defaultManager.currentDirectoryPath.js;
 var base = cwd + "/js/";
 // index.html と同じ読み込み順（field.js は cards→ui の間）
-var files = ["data.js", "audio.js", "state.js", "battle.js", "cards.js", "field.js", "ui.js", "main.js"];
+var files = ["data.js", "audio.js", "save.js", "state.js", "battle.js", "cards.js", "field.js", "ui.js", "main.js"];
 var src = files.map(function (f) { return readFile(base + f); }).join("\n");
 
 // ── 最小 DOM/Window スタブ ─────────────────────────────

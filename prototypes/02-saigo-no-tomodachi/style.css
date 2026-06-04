@@ -1309,3 +1309,39 @@ body.theme-town { background: radial-gradient(circle at 50% 120%, #4a3a6e 0%, #2
 /* 群れの おく の名残＝倒した子の声。灰色で faint・ゆらぐ（拾うと一言・語彙にならない）。 */
 .road-node.node-ghost { filter: grayscale(1) brightness(0.55); opacity: 0.5; }
 .road-node.node-ghost.near { opacity: 0.78; }
+
+/* ══════════════════════════════════════════════════════════════
+   v0.13 システム底上げ：設定（アクセシビリティ）・セーブ・hit-stop
+   ══════════════════════════════════════════════════════════════ */
+
+/* タイトルの ⚙設定 ／ 設定パネル */
+.title-settings { margin-top: 10px; background: transparent; border: 1px solid var(--line); color: var(--text-dim); border-radius: 999px; padding: 8px 16px; cursor: pointer; font-size: 13px; }
+.title-settings:hover { color: var(--text); border-color: var(--accent); }
+.settings-panel { width: min(420px, 92vw); }
+.settings-panel .ov-title { margin: 4px 0 14px; }
+.set-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 10px;
+  padding: 14px 16px; margin: 8px 0; cursor: pointer; font-size: 15px; min-height: 52px; text-align: left; }
+.set-row:hover { border-color: var(--accent); }
+.set-row b { color: var(--gold); font-weight: 800; }
+.set-row.danger { border-color: #a6476a; color: #ff9db0; }
+.set-row.danger:hover { background: #3a2030; }
+.town-head-btns { display: flex; gap: 8px; }
+
+/* ヒットストップ＝強い瞬間の微ズーム1発（撃破・むかえた）。 */
+@keyframes hitstop { 0% { transform: scale(1); } 35% { transform: scale(1.02); } 100% { transform: scale(1); } }
+#game.hitstop { animation: hitstop 0.12s ease-out; }
+
+/* アクセシビリティ：モーション控えめ＝アニメ/トランジションをほぼ止める（手動トグル＝OSに依らず効く）。 */
+body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after {
+  animation-duration: 0.001s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important;
+}
+/* アクセシビリティ：文字 大きめ＝読む要素を一段 大きく（操作系・本文・ログ）。 */
+body.big-text .field-msg, body.big-text .town-line, body.big-text .prompt-hint,
+body.big-text .result-text, body.big-text .town-foot, body.big-text .field-hint { font-size: 16px; line-height: 1.75; }
+body.big-text .sub-btn { font-size: 16px; }
+body.big-text .sub-btn small { font-size: 13px; }
+body.big-text .cmd-label { font-size: 17px; }
+body.big-text .cmd-sub { font-size: 12px; }
+body.big-text .log-line { font-size: 14px; }
+body.big-text .set-row { font-size: 16px; }
