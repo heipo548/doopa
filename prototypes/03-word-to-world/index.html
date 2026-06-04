@@ -58,24 +58,29 @@
        中身（#topbar #enemy-area #log #player-bar #prompt #command-bar）は ui.js が描画。
        ※思いやりゲージ(omoiyari)は UI に一切出さない＝ここにも器を置かない。
        ════════════════════════════════════════════════════════════ -->
+  <!-- #game はフルスクリーンの“暗幕”兼 fx の配置基準（ui.playFx が #game に絶対配置で重ねる）。
+       実際のバトル盤面は中央の .battle-card にまとめ、他の画面（タイトル/会話/カード…）と同じ
+       “中央カード”の佇まいに揃える（散漫さの解消）。 -->
   <div id="game" class="hidden">
-    <!-- 上部バー：進行の気配＋ミュート。管理数値は前に出さない方針（結果は世界の景色で返す）。 -->
-    <header id="topbar"></header>
+    <div class="battle-card">
+      <!-- 上部バー：エリア名・ターン・主人公の翳り。管理数値は前に出さない方針。 -->
+      <header id="topbar"></header>
 
-    <!-- 敵エリア：相手の見た目＋見える精神HPバー（mindHp）。思いやりは描かない。 -->
-    <section id="enemy-area"></section>
+      <!-- 敵エリア：相手の見た目＋見える精神HPバー（mindHp）。思いやりは描かない。 -->
+      <section id="enemy-area"></section>
 
-    <!-- バトルログ -->
-    <section id="log" aria-live="polite"></section>
+      <!-- バトルログ -->
+      <section id="log" aria-live="polite"></section>
 
-    <!-- プレイヤーステータス：見える hp のみ。 -->
-    <section id="player-bar"></section>
+      <!-- プレイヤーステータス：見える hp のみ。 -->
+      <section id="player-bar"></section>
 
-    <!-- サブ操作（ことばの案内・Lv表示など） -->
-    <section id="prompt"></section>
+      <!-- サブ操作（ことばの案内・Lv表示など） -->
+      <section id="prompt"></section>
 
-    <!-- コマンドバー：手札の ことば を harsh(とがった)/kind(やさしい) で色分け表示。 -->
-    <nav id="command-bar"></nav>
+      <!-- コマンドバー：手札の ことば を harsh(とがった)/kind(やさしい) で色分け表示。 -->
+      <nav id="command-bar"></nav>
+    </div>
   </div>
 
   <!-- 一時メッセージ（セーブ・気づき・ヒントなど） -->
