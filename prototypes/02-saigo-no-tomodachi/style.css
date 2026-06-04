@@ -1283,3 +1283,13 @@ body.theme-town { background: radial-gradient(circle at 50% 120%, #4a3a6e 0%, #2
 @media (prefers-reduced-motion: reduce) {
   .town-stage .town-friend, .town-stage .town-friend.justhome, .town-stage-hint { animation: none; }
 }
+
+/* ① 倒した子の「空席」＝消えかけた輪郭（灰・半透明・名前なし）。救いの隣に 不在を そっと置く（Toby）。 */
+.town-vacancy {
+  position: absolute; bottom: 22px; width: 46px; height: 46px; transform: translateX(-50%);
+  opacity: 0.28; filter: grayscale(1) brightness(0.6); cursor: pointer;
+  animation: vacancyFade 3.6s ease-in-out infinite;
+}
+@keyframes vacancyFade { 0%,100% { opacity: 0.2; } 50% { opacity: 0.4; } }
+.town-vacancy:hover { opacity: 0.6; }
+@media (prefers-reduced-motion: reduce) { .town-vacancy { animation: none; } }

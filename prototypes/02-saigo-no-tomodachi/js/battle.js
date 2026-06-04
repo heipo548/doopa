@@ -37,6 +37,33 @@ function noteWordUse(id) {
   }
 }
 
+// 敵の声を ひとつ選ぶ（こころのかべが まだ残るうちは closed＝はねのける声／ほどけたら opening＝やさしい声）。
+//   ＝救いは「正しい手順で開く宝箱」でなく「根気で ほどける」もの。旧形式（配列）は opening 扱いでフォールバック。
+function pickEnemyVoice(t) {
+  if (typeof ENEMY_VOICE === "undefined" || !ENEMY_VOICE[t.type]) return null;
+  const v = ENEMY_VOICE[t.type];
+  let pool;
+  if (Array.isArray(v)) pool = v;
+  else pool = (t.wall > 0 && v.closed && v.closed.length) ? v.closed : (v.opening || []);
+  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+}
+
+// 一度 心を見せた相手を 消すときの“言いかけて切れた声”（語尾を断つ）。説教でなく後味のため。
+function cutoffVoice(type) {
+  const v = (typeof ENEMY_VOICE !== "undefined") ? ENEMY_VOICE[type] : null;
+  const src = v ? (Array.isArray(v) ? v[0] : (v.opening && v.opening[0])) : null;
+  if (!src) return "……";
+  const cut = src.replace(/[。？、…）]+$/, "");
+  return cut.slice(0, Math.max(3, Math.ceil(cut.length * 0.6))) + "——";
+}
+
+// この旅で言った ことばを数える（結末で「いちばん いえた ことば」を返すため）。meta が無ければ無視＝検証に影響なし。
+function bumpWord(id) {
+  if (typeof meta === "undefined" || !meta) return;
+  meta.wordCount = meta.wordCount || {};
+  meta.wordCount[id] = (meta.wordCount[id] || 0) + 1;
+}
+
 // uid から “まだ場にいる” 敵を探す
 function findEnemy(uid) {
   return game.enemies.find((e) => e.uid === uid && !e.dead && !e.saved) || null;
@@ -66,7 +93,13 @@ function applyDamage(enemy, dmg) {
       enemy.dead = true;
       game.counters.kill++;
       game.player.exp += BALANCE.expPerKill; // ぶつけて退けると EXP 多め＝早く強くなる
-      log(`  ${enemy.name} は ことばに 背を向けて 消えた…（おいはらった +1）`);
+      // ④ 一度 こえを返した（心を見せた）相手を 消すと、言いかけて 切れる＝罪悪感の手前の気まずさ（説教しない・1行）。
+      if (enemy._heardVoice) {
+        log(`  ${enemy.name}「……」と 言いかけて、消えた。`);
+        pushFx({ t: "speak", text: cutoffVoice(enemy.type), cat: "toi" });
+      } else {
+        log(`  ${enemy.name} は ことばに 背を向けて 消えた…（おいはらった +1）`);
+      }
       pushFx({ t: "hit", uid: enemy.uid, dmg: dmg, dead: true, color: enemy.color }); // とどめ＝はじけて消える演出
     }
   } else {
@@ -131,9 +164,12 @@ function cmdFight(weaponId, targetUid) {
   game.lastWord = said;
   game.lastWeapon = weaponId; // SE をことばごとに変えるため（バカ/だまれ/うるさい…の鳴き分け）
   noteWordUse(weaponId);      // きついことばの使いすぎに 小さな反応（P1-3）
+  bumpWord(weaponId);         // 旅で言った ことばを集計（結末の「いちばん いえた ことば」用・⑦）
+  // ⑧ ミームの嘲笑は、心を見せた子（_heardVoice）や 泣いている子（sad）には ひびかない＝笑いが沈黙に変わる。
+  const memeFlat = !!w.meme && targets.some((t) => t._heardVoice || t.sad);
   log(`▶ ${game.player.name}「${said}」！`);
-  // 言ったことばを吹き出しで見せる（とげとげ＝不穏なトーン）。meme は専用の小演出キー。
-  pushFx({ t: "speak", text: said, cat: w.category || "toge", meme: w.meme });
+  // 言ったことばを吹き出しで見せる（とげとげ＝不穏なトーン）。meme は専用の小演出（ひびかない時は出さない）。
+  pushFx({ t: "speak", text: said, cat: w.category || "toge", meme: memeFlat ? undefined : w.meme });
   for (const t of targets) {
     let dmg = base;
     // パッシブ「ふかいかなしみ」：悲しむ相手への与ダメ＋
@@ -156,6 +192,12 @@ function cmdFight(weaponId, targetUid) {
       t.atk = Math.max(0, t.atk - w.atkDown);
       log(`  ${t.name} の 勢いが そがれた（攻撃 ${t.atk}）`);
     }
+  }
+  // ⑧ 笑いが から回りした余韻＝相手は 笑い返さず、ただ こちらを見る（または沈黙）。
+  if (memeFlat) {
+    log(`  わらいは、うまく ひびかなかった。`);
+    const tgt = targets.find((t) => (t._heardVoice || t.sad) && !t.dead && !t.saved);
+    if (tgt) pushFx({ t: "evoice", uid: tgt.uid, text: pickEnemyVoice(tgt) || "……" });
   }
   // ことばの性質に応じて 狂気／ぬくもり を積む（「いっしょに かえろう」は ぬくもり側）
   if (w.kyoki) { gainKyoki(w.kyoki); pushFx({ t: "kyoki", amount: w.kyoki }); }
@@ -188,6 +230,7 @@ function cmdAct(actId, targetUid) {
   if (!game.tutorial) game.player.kokoro -= BALANCE.actCost; // 第一夜は こころ非表示＝消費なし（要素を絞る）
   game.listened = true;                  // この夜「きいてみる」をした（第一夜の街の返し方＝P0-4 の分岐に使う）
   noteWordUse(actId);                    // 同じことばの使いすぎに 小さな反応（P1-3）
+  bumpWord(actId);                       // 旅で言った ことばを集計（結末の「いちばん いえた ことば」用・⑦）
   const said = word.word || word.name;
   game.lastWord = said;
   log(`▶ ${game.player.name}「${said}」（みんなへ）`);
@@ -215,17 +258,19 @@ function cmdAct(actId, targetUid) {
       didSomething = true;
       // 対話してる感：効いた子が ことばを返す（多すぎないよう最大2体）
       if (voices < 2 && typeof ENEMY_VOICE !== "undefined" && ENEMY_VOICE[t.type]) {
-        // 第一夜チュートリアルの くろまる は、きいてみると“本音”が漏れる（説明でなく ことばで核を伝える）。
+        // 第一夜チュートリアルの くろまる は本音が漏れる。通常は 壁が残るうち＝はねのける声／ほどけたら やさしい声。
         let line;
         if (game.tutorial && typeof TUTORIAL !== "undefined" && t.type === TUTORIAL.enemy) {
           line = TUTORIAL.listen;
         } else {
-          const lines = ENEMY_VOICE[t.type];
-          line = lines[Math.floor(Math.random() * lines.length)];
+          line = pickEnemyVoice(t);
         }
-        log(`  ${t.name}「${line}」`);
-        pushFx({ t: "evoice", uid: t.uid, text: line });
-        voices++;
+        if (line) {
+          t._heardVoice = true; // 一度 声を返した＝心を見せた。後で消すと“言いかけて切れる”（applyDamage ④）
+          log(`  ${t.name}「${line}」`);
+          pushFx({ t: "evoice", uid: t.uid, text: line });
+          voices++;
+        }
       }
     }
   }
@@ -273,6 +318,7 @@ function cmdSave(targetUid) {
   t.saved = true;
   game.counters.save++;
   game.counters.memory++;
+  bumpWord("_save"); // 「いっしょに かえろう」＝救いの言葉を集計（結末の「いちばん いえた ことば」用・⑦）
   game.player.exp += BALANCE.expPerSave; // むかえると EXP 少なめ（代わりに きずな と ことば が積み上がる）
   game.lastWord = "いっしょに かえろう";
   log(`▶ ${game.player.name}「いっしょに かえろう」 — ${t.name} に 手をのばした（ともだち +1・あかり +1）`);
@@ -428,6 +474,16 @@ function runEnemyTurn() {
       continue;
     }
     let dmg = e.atk;
+    // ③ ボスは こころのかべが ほどけるほど 攻撃が ためらう＝弾が性格（説得が進むと“心拍が遅くなる”）。
+    //   壁が満タンのうちは そのまま（harsh は壁を下げないので威圧は変わらない＝非対称を壊さない）。
+    if (e.boss && e.maxWall > 0) {
+      dmg = Math.max(1, Math.round(e.atk * (e.wall / e.maxWall)));
+      if (!e._phaseSaid && e.wall <= Math.floor(e.maxWall / 2)) {
+        e._phaseSaid = true;
+        const base = ENEMIES[e.type];
+        if (base && base.phaseLine) { log(`  ${e.name}「${base.phaseLine}」`); pushFx({ t: "evoice", uid: e.uid, text: base.phaseLine }); }
+      }
+    }
     if (game.player.defending) {
       dmg = Math.ceil(dmg * (1 - BALANCE.defendReduction)); // 70%カット
     }

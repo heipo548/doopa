@@ -62,6 +62,9 @@ function initMeta() {
     townGiven: 0,  // 街で授けた くらしのことば の数（次に授ける語を決めるカーソル）
     totalKill: 0,  // マクロ結末用の累計
     totalSave: 0,
+    lostTypes: [], // 倒した子の種類（街に“空席”の名残を残す・数えない＝STORY §3「不在を残す」）
+    wordCount: {}, // 旅で言った ことばの回数（結末の「いちばん いえた ことば」用・⑦）
+    _retried: 0,   // HP0で倒れて やり直した回数（世界が薄く覚える・⑤）
     history: [],   // 各夜の記録 {night, saveRate, endingId}
     // 物語ビート（一度きり）の既読フラグ。遊びながら小出しに見せ、二度目は出さない。
     _seenFirstWalk: false, _seenFirstFriend: false, _seenFirstSave: false,
@@ -463,6 +466,13 @@ function returnToTown() {
     (game.savedFriends || []).forEach((f) => {
       if (!meta.friends.some((m) => m.type === f.type)) meta.friends.push(f);
     });
+    // この夜 倒した子の種類を「空席」として街に残す（数えない・顔のある喪失＝STORY §3「不在を残す」・①）。
+    (game.enemies || []).forEach((e) => {
+      if (e.dead && !e.saved) {
+        meta.lostTypes = meta.lostTypes || [];
+        if (meta.lostTypes.indexOf(e.type) < 0) meta.lostTypes.push(e.type);
+      }
+    });
     // この夜 覚えたことばを 持ち越し
     (game.player.words || []).forEach((id) => {
       if (meta.learnedWords.indexOf(id) < 0) meta.learnedWords.push(id);
@@ -488,6 +498,8 @@ function returnToTown() {
 // HP0 で 夜が明けなかったとき：夜カウンタは進めず、街にもどって もう一度（メタは保持）
 function townRetry() {
   if (!meta) initMeta();
+  meta._retried = (meta._retried || 0) + 1; // やり直しを 世界が薄く覚える（⑤）
+  meta._retryJustNow = true;                // この街帰還で 一度だけ やり直しの語りを出す
   enterTown();
 }
 

@@ -99,6 +99,10 @@ var drive = [
   // 第一夜チュートリアル：きいて→1体むかえて→夜明け（結末グリッドを出さない最小表示）→街へ
   "initMeta(); goToField(); startNightBattle(); game.enemies[0].wall=0; onCommand('save'); __o.push('tutorial: 1体むかえる ok (save=' + game.counters.save + ', tutorial=' + game.tutorial + ', state=' + game.state + ')');",
   "render(); __o.push('tutorial dawn 最小表示 ok (screen=' + app.screen + ')');",
+  // Toby改善：敵の声 closed/opening の出し分け（壁が残る=はねのける／ほどけた=やさしい）
+  "newGame(); startWave(); var __ev=livingEnemies()[0]; __ev.wall=2; var __cl=pickEnemyVoice(__ev); __ev.wall=0; var __op=pickEnemyVoice(__ev); __o.push('敵の声 段階 ok (closed=' + JSON.stringify(__cl) + ' / opening=' + JSON.stringify(__op) + ')');",
+  // Toby改善：旅で いちばん 言った ことば（_save→「いっしょに かえろう」/ namida→「バカ」）
+  "meta.wordCount={namida:3,_save:1}; __o.push('topSaidWord ok (' + topSaidWord() + ')'); meta.wordCount={};",
   // 夜明け→街へかえる（returnToTown）：戦果がメタに積まれ 夜が進むか
   "initMeta(); game.counters.kill=2; game.counters.save=3; game.ending=ENDINGS[0]; game.state=STATES.DAWN; meta.nightStartFriends=0; returnToTown(); render(); __o.push('returnToTown ok (night=' + meta.night + ', totalSave=' + meta.totalSave + ', screen=' + app.screen + ')');",
   // さいごの夜を越える → マクロ結末（総和で結末確定・画面遷移）

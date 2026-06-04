@@ -1090,12 +1090,19 @@ function renderTown() {
   // 初めて街に友がいる回だけ「さわって みて」を一度（能動的に関わる入口）。
   let touchHint = "";
   if (hasFriends && !meta._seenTownTouch) { touchHint = `<span class="town-stage-hint">👆 友を さわって みて</span>`; meta._seenTownTouch = true; }
-  const friendsSection = hasFriends ? `
+  // ① 倒した子の「空席」＝消えかけた輪郭。数が増えても席は1つ（さわると 違う子の名残）。救いと喪失を同じ街に。
+  const hasLost = !!(meta.lostTypes && meta.lostTypes.length);
+  const vacancyHtml = hasLost
+    ? `<span class="town-vacancy tappable" data-ghost="1" style="left:${nF ? 88 : 50}%" title="…いなくなった子">${creatureSVG("#45416a", "circle", "neutral")}</span>`
+    : "";
+  const showStage = hasFriends || hasLost;
+  const friendsSection = showStage ? `
     <div class="town-section">
       <div class="town-cap">🫂 なかま（${meta.friends.length}）</div>
       <div class="town-stage">
         <div class="town-ground"></div>
         ${stageFriends}
+        ${vacancyHtml}
         ${touchHint}
       </div>
     </div>` : `
@@ -1155,6 +1162,14 @@ function renderTown() {
     }
   }
 
+  // ⑤ やり直し（HP0で倒れて戻った）を 世界が薄く覚えている＝この帰還で一度だけ（責めない・断定しない）。
+  let retryLine = "";
+  if (meta._retryJustNow) {
+    meta._retryJustNow = false;
+    const rl = (typeof RETRY_LINES !== "undefined" && RETRY_LINES.length) ? RETRY_LINES : ["……まえも、ここで たおれた きが する。"];
+    retryLine = `<p class="town-nolight">${meta._retried >= 2 ? rl[rl.length - 1] : rl[0]}</p>`;
+  }
+
   // 第一夜（友0）は 唯一の出口「夜へ でかける」を点滅させて 視線を誘導する（迷わせない）。
   const goPulse = (meta.night === 1 && !hasFriends) ? "pulse" : "";
 
@@ -1165,6 +1180,7 @@ function renderTown() {
     </div>
     <h2 class="town-title">よあけまえの 街</h2>
     <div class="town-lanterns ${coldClass}">${lanterns}</div>
+    ${retryLine}
     ${n1Line}
     ${firstLight}
     <p class="town-line">${line}</p>
@@ -1191,6 +1207,16 @@ function renderTown() {
       showToast(`${name}「${lines[Math.floor(Math.random() * lines.length)]}」`);
       if (typeof playSe === "function") playSe("calm");
     });
+  });
+  // ① 空席をさわると、いなくなった子の名残（途中で切れた flavor）が ひとつ（数えない・名前を出さない）。
+  const vac = body.querySelector(".town-vacancy[data-ghost]");
+  if (vac) vac.addEventListener("click", () => {
+    const lost = (meta.lostTypes && meta.lostTypes.length) ? meta.lostTypes : null;
+    if (!lost) return;
+    const t = lost[Math.floor(Math.random() * lost.length)];
+    const line = (typeof TOWN_GHOST_LINES !== "undefined" && TOWN_GHOST_LINES[t]) ? TOWN_GHOST_LINES[t] : "……もう、いない。";
+    showToast(line);
+    if (typeof playSe === "function") playSe("miss");
   });
 }
 
@@ -1284,6 +1310,20 @@ function renderField() {
 }
 
 // ── マクロ結末（いくつもの夜の総和）─────────
+// 旅で いちばん 言った ことば を ひとつ返す（meta.wordCount の最頻→表示テキスト）。無ければ null。
+function topSaidWord() {
+  if (!meta || !meta.wordCount) return null;
+  let best = null, bestN = 0;
+  for (const id in meta.wordCount) {
+    if (meta.wordCount[id] > bestN) { bestN = meta.wordCount[id]; best = id; }
+  }
+  if (!best) return null;
+  if (best === "_save") return "いっしょに かえろう";
+  const w = (typeof ALL_WORDS !== "undefined" && ALL_WORDS[best]) ? ALL_WORDS[best]
+          : (typeof WEAPONS !== "undefined" && WEAPONS[best]) ? WEAPONS[best] : null;
+  return w ? (w.word || w.name) : best;
+}
+
 function showMacroResult() {
   const ov = $("overlay-macro");
   if (!ov || !field.macro) return;
@@ -1312,12 +1352,18 @@ function showMacroResult() {
   };
   const closeLine = closeMap[e.id] ? `<p class="result-tone">${closeMap[e.id]}</p>` : "";
 
+  // ⑦ この旅で ぽちが いちばん いえた ことば を ひとつ返す（数えてる感は出さない・自分の夜の声）。
+  //   harsh周回なら「バカ」、gentle周回なら「いっしょに かえろう」が出る＝説教なしの自己認識。
+  const topWord = topSaidWord();
+  const topLine = topWord ? `<p class="result-words">きみが いちばん いえた ことば　「${topWord}」</p>` : "";
+
   body.innerHTML = `
     <h2 class="result-title">${e.title}</h2>
     <p class="result-text">${intro.replace(/\n/g, "<br>")}</p>
     ${nameLine}
     <p class="result-text">${e.text.replace(/\n/g, "<br>")}</p>
     ${closeLine}
+    ${topLine}
     <div class="macro-friends">${friendsHtml}</div>
     <div class="result-stats">
       <div><span>こえた夜</span><b>${meta.maxNights}</b></div>
