@@ -46,6 +46,19 @@ function findEnemy(uid) {
 // ダメージを与える（HP0で「祓った＝殲滅」）
 // ──────────────────────────────────────────
 function applyDamage(enemy, dmg) {
+  // ── 第一夜の くろまる は ぶつけても倒れない（v0.9・堀井案）──
+  //   コンセプト「ぽちは きついことばしか知らない」を活かし、初手で押したくなる「ぶつける」を
+  //   わざと“空振り”させる：手応え（ゆれ・数字・HP減）は出すが HP は 1 で踏みとどまり「消えない」。
+  //   「……あれ。きえ ない」→ きいてみる へ、プレイヤー自身の指で 核へ向かわせる（予想の裏切り）。
+  if (game.tutorial && typeof TUTORIAL !== "undefined" && enemy.type === TUTORIAL.enemy && !enemy.saved) {
+    enemy.hp = Math.max(1, enemy.hp - dmg);
+    pushFx({ t: "hit", uid: enemy.uid, dmg: dmg, dead: false });
+    log(`  くろまる「…………」`);
+    game._tutHitCount = (game._tutHitCount || 0) + 1;
+    flash(game._tutHitCount >= 2 ? TUTORIAL.coachHit : (TUTORIAL.surprise || "……あれ。きえ ない。"));
+    return;
+  }
+
   enemy.hp -= dmg;
   if (enemy.hp <= 0) {
     enemy.hp = 0;
@@ -53,15 +66,7 @@ function applyDamage(enemy, dmg) {
       enemy.dead = true;
       game.counters.kill++;
       game.player.exp += BALANCE.expPerKill; // ぶつけて退けると EXP 多め＝早く強くなる
-      // 第一夜チュートリアルの くろまる だけは“もう いない”と静かに返す（説明でなく結果で伝える）。
-      if (game.tutorial && typeof TUTORIAL !== "undefined" && enemy.type === TUTORIAL.enemy) {
-        log(`  ${TUTORIAL.hit}`);
-        // 初手で“ぶつける”だけして 核（きく→本音→手をのばす）に触れず終わるのを拾う。
-        //   責めず・断定せず、“もう一つの道があった”ことを そっと一度だけ（桜井レビュー#1）。
-        if (!game.listened) flash("ぶつけて、追い払った。……きいて みたら、どうだったろう。");
-      } else {
-        log(`  ${enemy.name} は ことばに 背を向けて 消えた…（おいはらった +1）`);
-      }
+      log(`  ${enemy.name} は ことばに 背を向けて 消えた…（おいはらった +1）`);
       pushFx({ t: "hit", uid: enemy.uid, dmg: dmg, dead: true, color: enemy.color }); // とどめ＝はじけて消える演出
     }
   } else {
@@ -113,7 +118,8 @@ function cmdFight(weaponId, targetUid) {
 
   // こころ＝「ことばを発する力（心のゆとり）」。きついことばも これを消費する（重い/卑劣なほど痛む）。
   //   足りなければ弾く＝“最大威力の連打”が利かなくなり、「軽い手で凌いで こころを残す」判断が生まれる。
-  const cost = w.cost || 0;
+  //   ※第一夜は こころ を見せない＝コスト0（要素を一度に出さない・実機FB「こころが分からない」対策）。
+  const cost = game.tutorial ? 0 : (w.cost || 0);
   if (game.player.kokoro < cost) { flash("こころが たりない（軽いことば／こらえる）"); return false; }
   game.player.kokoro -= cost;
   if (cost > 0) pushFx({ t: "kspend", amount: cost }); // こころが減った手応え（プレイヤー側に小さく）
@@ -173,13 +179,13 @@ function cmdAct(actId, targetUid) {
   if (game.state !== STATES.PLAYER_TURN) return false;
   if (!knowsWord(actId)) return false;         // まだ覚えていないことばは使えない
   if (livingEnemies().length === 0) return false;
-  if (game.player.kokoro < BALANCE.actCost) {
+  if (!game.tutorial && game.player.kokoro < BALANCE.actCost) {
     flash("こころが足りない");
     return false;
   }
   const word = wordById(actId);
   if (!word) return false;
-  game.player.kokoro -= BALANCE.actCost; // 効いても外しても こころは減る（＝手探りのコスト・群れ全体で1回ぶん）
+  if (!game.tutorial) game.player.kokoro -= BALANCE.actCost; // 第一夜は こころ非表示＝消費なし（要素を絞る）
   game.listened = true;                  // この夜「きいてみる」をした（第一夜の街の返し方＝P0-4 の分岐に使う）
   noteWordUse(actId);                    // 同じことばの使いすぎに 小さな反応（P1-3）
   const said = word.word || word.name;
@@ -259,11 +265,11 @@ function cmdSave(targetUid) {
     flash("まだこころのかべがある（先に きいてみる）");
     return false;
   }
-  if (game.player.kokoro < BALANCE.saveCost) {
+  if (!game.tutorial && game.player.kokoro < BALANCE.saveCost) {
     flash("こころが足りない");
     return false;
   }
-  game.player.kokoro -= BALANCE.saveCost;
+  if (!game.tutorial) game.player.kokoro -= BALANCE.saveCost; // 第一夜は こころ非表示＝消費なし
   t.saved = true;
   game.counters.save++;
   game.counters.memory++;
@@ -381,6 +387,7 @@ function endPlayerTurn() {
 //   毎ターン少しずつ戻す（エネルギー制）。こらえたターンは追加で戻る＝立て直しの一手に意味を持たせる。
 //   ★これにより 旧「被弾0のときだけ回復(calmKokoroRegen)」は不要になり、回復の窓口を一本化（要素を増やさない）。
 function applyKokoroRegen() {
+  if (game.tutorial) return; // 第一夜は こころ非表示＝回復も走らせない（動かない緑バーの違和感を根絶）
   const p = game.player;
   if (p.kokoro >= p.maxKokoro) return;
   let amt = BALANCE.kokoroRegenPerTurn || 0;

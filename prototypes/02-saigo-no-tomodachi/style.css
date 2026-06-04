@@ -1233,3 +1233,53 @@ body.theme-town { background: radial-gradient(circle at 50% 120%, #4a3a6e 0%, #2
 /* 街の友は さわると“生活セリフ”を話す（P1-1）＝報酬装置でなく ここで暮らす存在に。 */
 .town-friend.tappable { cursor: pointer; transition: transform 0.12s ease; }
 .town-friend.tappable:hover { transform: translateY(-3px) scale(1.06); }
+
+/* ══════════════════════════════════════════════════════════════
+   v0.9：実機FB対応（第一夜の根本作り直し・こころ非表示・スマホ操作・街を“居る場所”に）
+   ══════════════════════════════════════════════════════════════ */
+
+/* 第一夜チュートリアルは 見る計器を HP 1本に絞る＝こころ／きもち／敵HP数値 を隠す（実機FB「情報が多い/こころが分からない」）。 */
+#game.tutorial .kokoro-gauge,
+#game.tutorial .mood-row,
+#game.tutorial .enemy-hp { display: none; }
+
+/* スマホの誤タップ対策：タップ域を縦に広げる（Apple推奨44px超）＋選択中の他コマンドは沈める。 */
+.cmd { min-height: 56px; }
+#prompt .sub-btn { min-height: 52px; }
+.cmd:disabled { opacity: 0.4; filter: grayscale(0.5); cursor: default; }
+
+/* 街を“みんながいる場所”に：地面ラインの上に友が立ち、ふわふわ待機。連れ帰った子は ぽっと現れる（#7）。 */
+.town-stage {
+  position: relative; height: 132px; margin: 10px 0 6px; border-radius: 14px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(40,34,70,0.0) 0%, rgba(40,34,70,0.32) 70%, rgba(26,22,56,0.5) 100%);
+  border: 1px solid var(--line);
+}
+.town-ground {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 34px;
+  background: linear-gradient(180deg, #2a2450, #19153a); border-top: 2px solid #3a3470;
+}
+.town-stage .town-friend {
+  position: absolute; bottom: 22px; width: 50px; height: 50px; margin: 0;
+  transform: translateX(-50%); animation: townIdle 2.6s ease-in-out infinite;
+}
+@keyframes townIdle {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-5px); }
+}
+/* 連れ帰った直後の子＝ぽっと立ち上がって あらわれる（“いま連れてきた”を絵で繋ぐ）。 */
+.town-stage .town-friend.justhome { animation: townArrive 0.85s ease-out, townIdle 2.6s ease-in-out 0.85s infinite; }
+@keyframes townArrive {
+  0%   { transform: translateX(-50%) translateY(16px) scale(0.5); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+}
+.town-stage-hint {
+  position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
+  font-size: 12px; color: var(--gold); background: rgba(0,0,0,0.35);
+  padding: 3px 10px; border-radius: 999px; animation: hintbob 1.6s ease-in-out infinite;
+}
+@keyframes hintbob { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-3px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .town-stage .town-friend, .town-stage .town-friend.justhome, .town-stage-hint { animation: none; }
+}

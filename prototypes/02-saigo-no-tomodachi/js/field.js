@@ -124,7 +124,7 @@ function buildTutorialField() {
   field.dusk = 0; field._lastT = 0; field._maxv = field.goal / 4; field._lastStep = 0;
   field.picked = []; field.activeFriend = null;
   field.tutorial = true;       // renderField/歩行で よふけバーを隠す目印
-  field.message = "よるの みち。マウスで ぽちを みぎへ。……だれかが、いる。";
+  field.message = "よるの みち。マウスで ぽちを みぎへ。むこうに、だれか いる。"; // 歩く目的を先に灯す（予告）
   if (meta) meta._seenFirstWalk = true;
   field.nodes = [{ at: field.goal, y: 0, type: "battle", done: false }];
 }
@@ -267,7 +267,8 @@ function fieldCheckNodes() {
       n.done = true;
       field.reachedBattle = true;
       field.paused = true;
-      field.message = "みちの おわり。群れの けはい…！";
+      // 第一夜は「群れ」を出さず、正面の くろまる を見せる（戦いの始まりを やさしく予告）。
+      field.message = field.tutorial ? "くろまるが、みちを ふさいでる。にらんでる。" : "みちの おわり。群れの けはい…！";
       if (typeof render === "function") render();
       return;
     }
@@ -418,6 +419,11 @@ function startNightBattle() {
   if (typeof document !== "undefined" && document.body) document.body.className = "theme-night";
   if (typeof startBgm === "function") startBgm("night");
   if (typeof render === "function") render();
+  // 道→戦闘の“無音の切替”を避け、始まりを言葉で立てる（誰の番か・何が始まるか）＝桜井#5。
+  //   さいごの夜だけは上で専用の語りを出しているので、それ以外で出す。
+  if (typeof showToast === "function" && !(typeof isLastNight === "function" && isLastNight())) {
+    showToast(game && game.tutorial ? "くろまるが、こっちを にらんでいる…" : "群れと むきあう。きみの ばんだ。");
+  }
 }
 
 // よふけ(field.dusk)を「戦闘開始時だけ」の有利/不利に変換する（battle.js には一切触れない）。

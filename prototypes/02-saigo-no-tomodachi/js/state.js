@@ -85,6 +85,7 @@ function newGame() {
     savedFriends: [],        // むかえた友（{type,name,color,shape}）＝画面上部の「なかま」に並べて“救った感”を出す
     tutorial: false,         // この夜が 第一夜チュートリアルか（startWave で wave.tutorial から設定）
     listened: false,         // この夜「きいてみる」を1回でもしたか（第一夜の街の返し方＝P0-4 の分岐に使う）
+    _tutHitCount: 0,         // 第一夜で「ぶつける」した回数（消えない演出＆コーチ/脈動の切替に使う）
   };
   return game;
 }

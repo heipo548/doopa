@@ -185,6 +185,8 @@ function applyTone() {
   if (nLv) g.classList.add("nukumori-" + nLv);
   // ウェーブ1のあいだは「きもち」「なかま」を隠して画面を3段に＝最初の30秒の情報量を絞る。
   g.classList.toggle("first-wave", waveNumber() === 1);
+  // 第一夜チュートリアルは さらに絞る：こころ／きもち／敵HP数値 を隠し、見る計器を HP 1本に（実機FB対策）。
+  g.classList.toggle("tutorial", !!game.tutorial);
 }
 
 // ── 上部バー（ウェーブ進行ドット・カウンタ） ─────────────
@@ -337,7 +339,7 @@ function renderPlayer() {
       <div class="bar hp"><div class="fill" style="width:${hpPct}%"></div></div>
       <span class="g-num">${p.hp}/${p.maxHp}</span>
     </div>
-    <div class="p-gauge">
+    <div class="p-gauge kokoro-gauge">
       <span class="g-label">こころ</span>
       <div class="bar kokoro"><div class="fill" style="width:${koPct}%"></div></div>
       <span class="g-num">${p.kokoro}/${p.maxKokoro}</span>
@@ -386,19 +388,24 @@ function renderCommands() {
   const shown = defs.filter((d) => d.show);
   bar.style.gridTemplateColumns = `repeat(${shown.length}, 1fr)`; // 表示数に合わせて中央寄せ
   bar.innerHTML = "";
+  const tut = game.tutorial;
   for (const d of shown) {
     const b = document.createElement("button");
     b.className = "cmd " + d.cls;
-    if (ui.mode === d.cmd || (d.cmd === "fight" && (ui.mode === "weapon" || ui.mode === "fightTarget")) ||
-        (d.cmd === "act" && (ui.mode === "act" || ui.mode === "actTarget"))) {
-      b.classList.add("on");
-    }
-    if (d.cmd === "fight" && firstTurn && ui.mode === "idle") b.classList.add("pulse"); // 最初の入口
-    // 「手をのばす」が解禁された瞬間（壁0の子がいて まだ誰も迎えていない）は脈動で強調＝救いの一手に気づかせる（P0-2）。
-    if (d.cmd === "save" && d.on && savableExists && game.counters.save === 0 && ui.mode === "idle") b.classList.add("pulse");
-    b.disabled = !d.on;
+    // いま選択中（武器/ことば/対象）のコマンドを強調するための active 判定。
+    const isActiveSub = (ui.mode === d.cmd) ||
+      (d.cmd === "fight" && (ui.mode === "weapon" || ui.mode === "fightTarget")) ||
+      (d.cmd === "act" && (ui.mode === "act" || ui.mode === "actTarget"));
+    if (isActiveSub) b.classList.add("on");
+    // 入口の脈動＝視線誘導。第一夜は「ぶつける→（効かない）→きいてみる→手をのばす」と脈動を移す（堀井案）。
+    if (d.cmd === "fight" && ui.mode === "idle" && (tut ? (game._tutHitCount === 0 && !game.listened) : firstTurn)) b.classList.add("pulse");
+    if (d.cmd === "act"   && ui.mode === "idle" && tut && game._tutHitCount >= 1 && !game.listened) b.classList.add("pulse");
+    // 「手をのばす」が解禁された瞬間（壁0の子がいて まだ誰も迎えていない）は脈動で強調＝救いの一手に気づかせる。
+    if (d.cmd === "save"  && d.on && savableExists && game.counters.save === 0 && ui.mode === "idle") b.classList.add("pulse");
+    // 何かを選んでいる最中は、選択中コマンド以外を押せなくする＝スマホの誤タップ防止（桜井）。
+    b.disabled = !d.on || (ui.mode !== "idle" && !isActiveSub);
     b.innerHTML = `<span class="cmd-label">${d.label}</span><span class="cmd-sub">${d.sub}</span>`;
-    if (d.on) b.addEventListener("click", () => onCommand(d.cmd));
+    if (!b.disabled) b.addEventListener("click", () => onCommand(d.cmd));
     bar.appendChild(b);
   }
 }
@@ -540,19 +547,22 @@ function shuffleArr(arr) {
 function coachLine() {
   if (waveNumber() !== 1) return null;
   const p = game.player;
-  // 失敗理由は短く先に伝える（こころ不足＝なぜ押せないか）＝P1-4。
-  if (p.kokoro < BALANCE.actCost) return "💡 こころが たりない。【こらえる】で ひと息つこう。";
-  // おだやかに なった子がいる＝手をのばせる（解禁を名指しで）。
+  // 失敗理由は短く先に伝える（こころ不足＝なぜ押せないか）＝P1-4。第一夜は こころ非表示なので出さない。
+  if (!game.tutorial && p.kokoro < BALANCE.actCost) return "💡 こころが たりない。【こらえる】で ひと息つこう。";
+  // こころのかべが ほどけた子がいる＝手をのばせる（解禁を名指しで・最優先）。
   if (livingEnemies().some((e) => e.wall === 0)) {
     return game.tutorial
-      ? "💡 おだやかに なった。いまなら【手をのばす】＝ともだちに。"
+      ? "💡 こころのかべが ほどけた。いまなら【手をのばす】＝ともだちに。"
       : "💡 ♡が消えた子は【手をのばす】＝ともだちに！";
   }
-  // まだ何もしていない最初の一手。チュートリアルは“2つの関わり方”を並べて選ばせる。
-  //   （turn 条件は外す＝「ぶつける」脈動の表示タイミングと一致させる・桜井#4）
+  // 第一夜：ぶつけたのに 消えなかった → 「きいてみる」へ手を引く（予想の裏切りの回収・堀井案）。
+  if (game.tutorial && game._tutHitCount >= 1 && !game.listened) {
+    return "💡 ぶつけても、この子は きえない。【きいてみる】で こえを きいてみよう。";
+  }
+  // まだ何もしていない最初の一手。第一夜は“きみの ばん”の主語＋2つの関わり方を並べて選ばせる（桜井）。
   if (game.counters.kill === 0 && game.counters.save === 0 && !game.listened) {
     return game.tutorial
-      ? "💡【ぶつける】で 追い払う？ それとも【きいてみる】で 声を きく？"
+      ? "🐾 きみの ばん。【ぶつける】で 追い払う？ それとも【きいてみる】で こえを きく？"
       : "💡 きついことばで【ぶつける】と すぐ退けられる。まず ためしてみよう。";
   }
   // きいてみた後、まだ壁が残るなら「もう少し きく」を短く示す。
@@ -1067,12 +1077,27 @@ function renderTown() {
   const words = (meta.learnedWords || []).map((id) => KIND_WORDS[id] ? KIND_WORDS[id].word : id);
   const hasWords = words.length > 0;
 
-  // 友がいるときは「なかま」セクション。いない（第一夜）ときは“伸びしろ”を予告するプレースホルダ
-  //   ＝空っぽで第一印象が決まらないよう「救うと、この街が あかるくなる」を 灰のシルエットで見せる。
+  // 友がいるときは「街に みんなが いる場所」として 地面に立たせる（メニューでなく帰る場所に・実機FB#7）。
+  //   ゆうべ連れ帰った子（index >= nightStartFriends）は ぽっと あらわれる（justhome）＝「連れ帰った」が絵で繋がる。
+  //   さわると 生活セリフを話す（下のクリック配線）。いない（第一夜前）ときは“伸びしろ”の灰シルエット。
+  const newFrom = (typeof meta.nightStartFriends === "number") ? meta.nightStartFriends : meta.friends.length;
+  const nF = meta.friends.length;
+  const stageFriends = meta.friends.map((f, i) => {
+    const left = nF === 1 ? 50 : Math.round(13 + (74 * i) / (nF - 1)); // 横に均等に散らす
+    const isNew = i >= newFrom;
+    return `<span class="town-friend tappable ${isNew ? "justhome" : ""}" data-type="${f.type}" title="${f.name}" style="left:${left}%; animation-delay:${(i % 5) * 0.35}s">${creatureSVG(f.color, f.shape, "happy")}</span>`;
+  }).join("");
+  // 初めて街に友がいる回だけ「さわって みて」を一度（能動的に関わる入口）。
+  let touchHint = "";
+  if (hasFriends && !meta._seenTownTouch) { touchHint = `<span class="town-stage-hint">👆 友を さわって みて</span>`; meta._seenTownTouch = true; }
   const friendsSection = hasFriends ? `
     <div class="town-section">
-      <div class="town-cap">🫂 なかま（${meta.friends.length}）・さわると はなす</div>
-      <div class="town-friends">${meta.friends.map((f) => `<span class="town-friend tappable" data-type="${f.type}" title="${f.name}">${creatureSVG(f.color, f.shape, "happy")}</span>`).join("")}</div>
+      <div class="town-cap">🫂 なかま（${meta.friends.length}）</div>
+      <div class="town-stage">
+        <div class="town-ground"></div>
+        ${stageFriends}
+        ${touchHint}
+      </div>
     </div>` : `
     <div class="town-section town-preview">
       <div class="town-cap">🫂 なかま（0）</div>
@@ -1148,7 +1173,9 @@ function renderTown() {
     ${friendsSection}
     ${wordsSection}
     <button id="town-go" class="start-btn town-go ${goPulse}">▶ 夜へ でかける</button>
-    <p class="town-foot">夜の道を 歩いて、群れと むきあう。むかえた子は この街に かえってくる。</p>
+    <p class="town-foot">${meta.night === 1
+      ? "夜の道を 歩いて、あの子に あいに いく。むかえた子は、この街に かえってくる。"
+      : "夜の道を 歩いて、むきあう。むかえた子は この街に かえってくる。"}</p>
   `;
   const go = $("town-go");
   if (go) go.addEventListener("click", () => { playSe("select"); goToField(); });
@@ -1209,7 +1236,10 @@ function renderField() {
       <button class="field-btn greet" id="f-greet">🤝 こえをかける（むかえる・夜が 濃くなる）</button>
       <button class="field-btn pass" id="f-pass">… とおりすぎる（夜は 浅いまま）</button>`;
   } else if (field.reachedBattle) {
-    controls = `<button class="field-btn battle" id="f-battle">⚔ 群れと むきあう</button>`;
+    // 第一夜は「群れ」という未知語を出さず「むきあう」だけ＝戦いの始まりを やさしく予告。
+    controls = field.tutorial
+      ? `<button class="field-btn battle" id="f-battle">むきあう（たたかいが はじまる）</button>`
+      : `<button class="field-btn battle" id="f-battle">⚔ 群れと むきあう</button>`;
   } else {
     // ふだんは ボタン無し＝マウスでぽちを みちびく。やさしい操作ヒントだけ出す。
     //   第一夜（チュートリアル）は 寄り道/よふけ を言わない＝「歩いて、出会う」だけに絞る（P0-2）。
