@@ -1,0 +1,209 @@
+/*
+ * style.css — 「言葉サイコロ装填バトル」モックの見た目
+ * 方針：村（相手）はポップなパステル＝かわいい。主人公(L)側は等幅＋走査線＝無機質。
+ *       そのズレで「ポップだけど少し不穏」を出す。派手な演出より遊びやすさ優先。
+ * ベースの配色は mock01（言葉デッキバトル）に合わせて Battle Lab で統一感を出す。
+ */
+
+:root {
+  --sky-top:#ffd9ea; --sky-mid:#e7dbf7; --sky-low:#d2eafb; --meadow:#d9efcf;
+  --cream:#fffaf1; --parch:#fff4dc; --ink:#6f5b48; --ink-dim:#a98f76;
+  --line:#efe0c4; --line-deep:#e7cf9f;
+  --pink:#ef93a8; --gold:#f3cf7a; --mint:#8fd09a; --sky-btn:#8fc3ea;
+  --heart:#ef93a8;            /* 閉じた心バー */
+  --noise:#7fc6c9;            /* ノイズ耐性バー（主人公＝無機質な青緑） */
+  --android:#5d6b78;          /* 主人公まわりの無機質グレー */
+  --fit:#5aa86f;              /* 入れられる装置の合図（緑） */
+}
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+html, body {
+  min-height:100%;
+  color:var(--ink);
+  font-family:-apple-system, BlinkMacSystemFont, "Hiragino Maru Gothic ProN",
+    "Hiragino Sans", "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+  line-height:1.6;
+  background:
+    radial-gradient(120% 60% at 50% -8%, #fff2f8 0%, rgba(255,255,255,0) 42%),
+    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 26%, var(--sky-low) 46%,
+      #e9f3e2 60%, var(--meadow) 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ───────── ヘッダー ───────── */
+.lab-head { max-width:780px; margin:0 auto; padding:18px 16px 6px; }
+.back { display:inline-block; font-size:13px; color:#bb6f86; text-decoration:none;
+  background:#fff7; border:1px solid var(--line-deep); border-radius:999px; padding:3px 12px; margin-bottom:10px; }
+.back:hover { background:#fff; }
+.lab-name { font-size:12px; letter-spacing:.08em; color:var(--ink-dim); }
+.mock-title { font-size:22px; color:#7a5f49; margin:2px 0 0;
+  /* タイトルだけ ほんのり グリッチ＝言葉が欠けた感じ */
+  text-shadow:1.2px 0 #f7c0cf, -1.2px 0 #b9d8e6; }
+.mock-title-en { font-size:12px; letter-spacing:.12em; color:var(--ink-dim); margin-bottom:6px; }
+.disclaimer { font-size:12px; color:var(--ink-dim); background:#fff6; display:inline-block;
+  border:1px dashed var(--line-deep); border-radius:8px; padding:2px 9px; }
+.howto { margin-top:8px; background:#fffaf1cc; border:1px solid var(--line);
+  border-radius:12px; padding:9px 13px; }
+.howto p { font-size:12.5px; color:#7a6a55; margin:1px 0; }
+.howto p:first-child { color:#9c5e74; }
+
+/* ───────── 盤面 ───────── */
+.board { max-width:780px; margin:0 auto; padding:6px 14px 44px; }
+
+/* 次の感情（行動予告）。すこし不穏な帯にする */
+.intent { display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  background:linear-gradient(90deg, #fff0f4, #efe7f7);
+  border:1px solid #e6cdd9; border-radius:12px; padding:8px 12px; margin-bottom:8px; }
+.intent-cap { font-size:11px; color:#a06f86; background:#fff; border-radius:6px; padding:1px 7px; }
+.intent-name { font-weight:800; color:#9c5e74; }
+.intent-name.intent-attack { color:#c0506a; }
+.intent-name.intent-attack.intent-soft { color:#7d9a7d; } /* ノイズ0（やさしい予告）は緑よりに */
+.intent-name.intent-charge { color:#7d7aa8; }
+.intent-detail { font-size:12px; color:var(--ink-dim); }
+
+/* 相手カード（ポップ） */
+.enemy-zone { margin-bottom:10px; }
+.enemy-card { display:flex; gap:14px; align-items:center;
+  background:var(--cream); border:2px solid var(--line-deep); border-radius:18px;
+  padding:12px 14px; box-shadow:0 6px 16px #e8c98a33; }
+.enemy-face { flex:0 0 auto; }
+.enemy-info { flex:1 1 auto; min-width:0; }
+.enemy-name { font-size:18px; font-weight:800; color:#7a5f49; }
+.enemy-title { font-size:12px; color:var(--ink-dim); margin-bottom:6px; }
+
+/* バー共通 */
+.bar { position:relative; height:22px; border-radius:999px; background:#0000000d;
+  border:1px solid var(--line); overflow:hidden; }
+.bar-fill { position:absolute; inset:0 auto 0 0; height:100%; border-radius:999px;
+  transition:width .35s ease; }
+.bar-fill.heart { background:linear-gradient(90deg, #f6a6b8, var(--heart)); }
+.bar-fill.noise { background:linear-gradient(90deg, #a7dadc, var(--noise)); }
+.bar-cap { position:absolute; left:10px; top:0; line-height:22px; font-size:11px; color:#5b4a36cc; z-index:1; }
+.bar-num { position:absolute; right:10px; top:0; line-height:22px; font-size:11px; color:#5b4a36cc; z-index:1;
+  font-variant-numeric:tabular-nums; }
+
+/* 状態チップ（受容/乱れ/溜め など） */
+.status-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:7px; min-height:4px; }
+.chip { font-size:11px; border-radius:999px; padding:2px 9px; border:1px solid; }
+.chip-charge { background:#efeaf7; color:#7a6aa6; border-color:#d7cbeb; }
+.chip-soft  { background:#e7f6f3; color:#3f8f86; border-color:#bfe6dd; }
+.chip-bonus { background:#fff3df; color:#b08f4a; border-color:#ecd9af; }
+
+/* 場（ターン／一言ヒント） */
+.field { display:flex; justify-content:center; align-items:center; gap:12px; margin:10px 0; flex-wrap:wrap; }
+.field .turn { font-size:12px; color:var(--ink-dim);
+  background:#fff8; border:1px solid var(--line); border-radius:10px; padding:5px 12px; }
+.field .turn span { font-weight:800; color:#7a5f49; }
+.hint { font-size:12px; color:var(--ink-dim); background:#fff8;
+  border:1px solid var(--line); border-radius:10px; padding:5px 12px; }
+.hint.warn { color:#c0506a; background:#fdeef1; border-color:#f0c6cf; }
+
+/* プレイヤー（無機質）。等幅＋うすいスキャンライン */
+.player-zone { background:#f4f6f8;
+  background-image:repeating-linear-gradient(0deg, #00000005 0 2px, transparent 2px 4px);
+  border:1.5px solid #cfd8df; border-radius:16px; padding:11px 14px; margin-top:8px; }
+.player-row { display:flex; gap:14px; align-items:center; }
+.player-face { flex:0 0 auto; }
+.player-stats { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:7px; }
+.player-tag { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size:11px; letter-spacing:.1em; color:var(--android); }
+.block-line { font-size:12px; color:var(--android); }
+.block-line span { font-weight:800; color:#3f8f86; font-variant-numeric:tabular-nums; }
+
+/* 見出し（各ゾーン共通） */
+.zone-cap { font-size:12px; color:var(--ink-dim); margin:14px 0 6px; }
+.zone-sub { font-size:11px; color:#b7a489; margin-left:6px; }
+
+/* ───────── ことばの欠片（プール） ───────── */
+.kakera-pool { display:flex; gap:12px; flex-wrap:wrap; justify-content:center;
+  min-height:74px; align-items:center;
+  background:#fffaf1aa; border:1px dashed var(--line-deep); border-radius:14px; padding:10px; }
+.kakera-empty { color:var(--ink-dim); font-size:13px; }
+/* 欠片＝小さな“言葉の素材”。サイコロより四角めで、音(数字)を大きく見せる */
+.kakera { position:relative; width:60px; height:62px; cursor:pointer; font:inherit;
+  background:linear-gradient(180deg, #fffdf8, #fff1e3); color:#7a5f49;
+  border:2px solid var(--line-deep); border-radius:12px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  box-shadow:0 4px 9px #e8c98a33; transition:transform .12s ease, box-shadow .12s ease; }
+.kakera:hover:not(:disabled) { transform:translateY(-3px); box-shadow:0 8px 16px #e8c98a55; }
+.kakera:disabled { cursor:default; opacity:.6; }
+.kakera .k-val { font-size:26px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
+.kakera .k-tag { font-size:9px; color:var(--ink-dim); margin-top:3px; letter-spacing:.06em; }
+.kakera.selected { border-color:#d76a82; box-shadow:0 0 0 3px #f3b9c7, 0 8px 16px #e8c98a55;
+  transform:translateY(-3px); }
+/* 白い欠片＝どの条件にも使える。ひかえめに光らせる */
+.kakera-white { background:linear-gradient(180deg, #ffffff, #eef6ff); border-color:#bcd6ec; color:#5d7f9c; }
+.kakera-white .k-tag { color:#7fa3c0; }
+/* かすれ欠片＝音1固定。グリッチ＆くすみで“欠けた”感じ */
+.kakera-kasure { filter:grayscale(.4) contrast(.95); color:#8a8378;
+  text-shadow:1px 0 #f0c6cf66, -1px 0 #b9d8e666; }
+.kakera-kasure .k-tag { color:#b06a6a; }
+
+/* ───────── 言葉装置 ───────── */
+.devices { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+.device { position:relative; background:var(--cream); border:2px solid var(--line-deep);
+  border-radius:13px; padding:10px 11px; cursor:pointer; transition:transform .12s ease, box-shadow .12s ease;
+  box-shadow:0 3px 8px #e8c98a26; }
+.device:hover { transform:translateY(-2px); box-shadow:0 7px 14px #e8c98a40; }
+.device-opt { border-style:dashed; } /* 「余裕があれば」枠の装置は破線で軽く区別 */
+.d-name { font-size:15px; font-weight:800; color:#7a5f49; margin-bottom:4px; }
+.d-cap { font-size:11px; color:#fff; background:var(--android); border-radius:999px; padding:1px 6px; margin-left:6px; }
+.d-cond { font-size:11px; color:#9c5e74; }
+.d-eff { font-size:11px; color:#5aa86f; margin-top:1px; }
+.d-note { font-size:10px; color:var(--ink-dim); margin-top:5px; line-height:1.4; }
+/* 選んだ欠片が入る装置は緑で強調、入らない装置は薄く */
+.device.fit { border-color:var(--fit); box-shadow:0 0 0 2px #bfe6c7, 0 7px 14px #bfe6c755; }
+.device.nofit { opacity:.45; filter:grayscale(.3); }
+/* 装填中（ほんとう？の途中） */
+.device.loading { border-color:#d7cbeb; background:#faf7ff; }
+.d-slot { display:flex; align-items:center; gap:6px; margin-top:7px; flex-wrap:wrap; }
+.d-slot-k { width:22px; height:22px; border-radius:6px; background:#efeaf7; border:1px solid #d7cbeb;
+  display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#7a6aa6; }
+.d-slot-hint { font-size:10px; color:#7a6aa6; }
+.d-undo { font:inherit; font-size:10px; cursor:pointer; color:#9c5e74;
+  background:#fff; border:1px solid #e6cdd9; border-radius:999px; padding:1px 8px; }
+.d-undo:hover { background:#fdeef1; }
+
+/* ターン終了 */
+.end-turn { display:block; margin:16px auto 0; cursor:pointer; font:inherit;
+  background:linear-gradient(180deg, #fff, #ffeef3); color:#b0556d;
+  border:2px solid #f0bcc7; border-radius:999px; padding:9px 28px; font-weight:800;
+  box-shadow:0 4px 10px #efb6c733; }
+.end-turn:hover:not(:disabled) { background:#fff; }
+.end-turn:disabled { opacity:.55; cursor:default; color:var(--android);
+  background:#eef1f4; border-color:#cfd8df; }
+
+/* ログ */
+.log-zone { margin-top:18px; }
+.log { height:108px; overflow-y:auto; background:#fbf7ef; border:1px solid var(--line);
+  border-radius:10px; padding:8px 10px;
+  font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; color:#7a6a55; }
+.log-line { padding:1px 0; }
+
+/* 勝敗オーバーレイ */
+.overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+  background:#2a2330cc; backdrop-filter:blur(3px); z-index:50; padding:20px; }
+.overlay.show { display:flex; }
+.overlay-box { background:var(--cream); border-radius:20px; padding:26px 24px; max-width:440px;
+  text-align:center; border:2px solid var(--line-deep); box-shadow:0 16px 40px #0006; }
+.overlay-title { font-size:22px; margin-bottom:14px; }
+.overlay-title.win { color:#5aa86f; }
+.overlay-title.lose { color:#9c5e74; text-shadow:1px 0 #f7c0cf, -1px 0 #b9d8e6; }
+.overlay-text p { font-size:13.5px; color:#6f5b48; margin:6px 0; line-height:1.7; }
+.overlay-actions { margin-top:18px; display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap; }
+.restart { cursor:pointer; font:inherit; font-weight:800;
+  background:linear-gradient(180deg, #fff, #eef6ff); color:#4f7fae;
+  border:2px solid #bcd6ec; border-radius:999px; padding:9px 26px; }
+.restart:hover { background:#fff; }
+.to-lab { font-size:13px; color:#bb6f86; text-decoration:none;
+  background:#fff7; border:1px solid var(--line-deep); border-radius:999px; padding:8px 16px; }
+.to-lab:hover { background:#fff; }
+
+/* 狭い画面 */
+@media (max-width:520px) {
+  .mock-title { font-size:19px; }
+  .devices { grid-template-columns:repeat(auto-fill, minmax(132px, 1fr)); }
+  .kakera { width:54px; height:58px; }
+}
