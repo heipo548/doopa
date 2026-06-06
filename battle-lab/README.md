@@ -22,7 +22,7 @@
 | 03 | [03-inscryption-kotoba](./mocks/03-inscryption-kotoba/) | Inscryption | 🟢 PLAYABLE |
 | 04 | [04-dicey-dungeons-kotoba](./mocks/04-dicey-dungeons-kotoba/) | Dicey Dungeons | 🟢 PLAYABLE |
 | 05 | [05-pokemon-kotoba](./mocks/05-pokemon-kotoba/) | Pokémon | 🟢 PLAYABLE |
-| 06 | （逆転裁判型・言葉の矛盾を突く） | 逆転裁判 | 🌱 準備中 |
+| 06 | [06-persona-kotoba](./mocks/06-persona-kotoba/) | ペルソナ（心象弱点・総鳴り） | 🟢 PLAYABLE |
 
 ## 新しいバトルモックを足すには
 
