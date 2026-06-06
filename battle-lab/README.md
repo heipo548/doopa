@@ -21,7 +21,8 @@
 | 02 | [02-undertale-kotoba](./mocks/02-undertale-kotoba/) | UNDERTALE | 🟢 PLAYABLE |
 | 03 | （Inscryption型） | Inscryption | 🌱 準備中 |
 | 04 | （Dicey Dungeons型） | Dicey Dungeons | 🌱 準備中 |
-| 05 | （逆転裁判型・言葉の矛盾を突く） | 逆転裁判 | 🌱 準備中 |
+| 05 | [05-pokemon-kotoba](./mocks/05-pokemon-kotoba/) | Pokémon | 🟢 PLAYABLE |
+| 06 | （逆転裁判型・言葉の矛盾を突く） | 逆転裁判 | 🌱 準備中 |
 
 ## 新しいバトルモックを足すには
 
