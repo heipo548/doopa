@@ -174,20 +174,36 @@ function onPick(wordId) {
 // ── バトル ──
 function enterBattle(enemyId) {
   if (app._raf) { cancelAnimationFrame(app._raf); app._raf = null; }
+  app.battleBusy = false; // 念のためターン待ちフラグをリセット
   startBattle(enemyId);   // state=BATTLE / screen=battle
   render();
 }
 function onCard(wordId) {
-  if (!game.battle || isBattleOver()) return;
-  playerCard(wordId);     // 勝てば winBattle が screen=result/field、死ねば onGameOver が screen=gameover
-  render();
-  if (app.screen === "field") {
-    // 中ボス(かどっこ)撃破で村へ戻った：戦間 全回復・奥に くちなし が現れている。
-    toast("ことばの泉で 息を ととのえた。……村の おくに、だれか いる。");
-    app.player.tx = app.player.x; app.player.ty = app.player.y; app.player.pendingNode = null;
-    positionAvatar(app.player.x, app.player.y);
-    startFieldLoop();
-  }
+  if (!game.battle || isBattleOver() || app.battleBusy) return; // 敵ターン待ち中の連打を無視
+  if (!knowsCard(wordId)) return;
+  app.battleBusy = true;
+  playerCard(wordId, { defer: true }); // プレイヤーの一手だけ適用（敵ターンは少し“間”をおく）
+  render();                            // 一手を即反映＝手応え
+  if (app.screen === "field") { afterBattleToField(); app.battleBusy = false; return; } // 中ボス撃破→村へ
+  if (app.screen !== "battle") { app.battleBusy = false; return; }                       // ボス撃破→結果 等
+  // “間”をおいて相手が言い返す（テンポ・読みやすさ）。reduced-motion は即時。
+  const wait = _prefersReduce() ? 0 : 480;
+  setTimeout(function () {
+    if (game.battle && !isBattleOver()) {
+      enemyTurn();
+      render();
+      if (app.screen === "field") afterBattleToField();
+    }
+    app.battleBusy = false;
+  }, wait);
+}
+
+// 中ボス撃破で村へ戻ったときの後処理（戦間 全回復・奥に次の相手）。
+function afterBattleToField() {
+  toast("ことばの泉で 息を ととのえた。……村の おくに、だれか いる。");
+  app.player.tx = app.player.x; app.player.ty = app.player.y; app.player.pendingNode = null;
+  positionAvatar(app.player.x, app.player.y);
+  startFieldLoop();
 }
 
 // ── 学校＝ことばショップ ──
@@ -360,20 +376,18 @@ function wireEvents() {
     }
   });
 
-  // フィールド：床クリック/タップで移動目標を決める（ノード近くなら そのノードへ歩く）
+  // フィールド：床の空きをクリック＝そこへ“ぶらつく”だけ（演出）。ノードは click(onNodeActivate)で即発火。
   document.addEventListener("pointerdown", (e) => {
     if (app.screen !== "field") return;
+    if (e.target.closest("[data-node]")) return; // ノードは即発火に任せる
     const fld = app._field;
     if (!fld || !fld.plaza) return;
     if (!e.target.closest(".field-plaza")) return;
     const rect = fld.plaza.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const nx = _clamp01((e.clientX - rect.left) / rect.width);
-    const ny = _clamp01((e.clientY - rect.top) / rect.height);
-    const node = nearestNode(nx, ny, 0.09); // クリック地点の近くにノードがあれば そこへ
-    app.player.tx = node ? node.x : nx;
-    app.player.ty = node ? node.y : ny;
-    app.player.pendingNode = node || null;
+    app.player.tx = _clamp01((e.clientX - rect.left) / rect.width);
+    app.player.ty = _clamp01((e.clientY - rect.top) / rect.height);
+    app.player.pendingNode = null;
   });
 
   // カーソル移動距離（落ち着きのなさ）を計測
@@ -404,8 +418,11 @@ function wireEvents() {
         // ノードボタンにフォーカスがあるならボタン側の click に任せる
         const af = document.activeElement;
         if (af && af.closest && af.closest("[data-node]")) return;
-        const n = nearestNode(app.player.x, app.player.y, 0.13);
-        if (n) { app.player.tx = n.x; app.player.ty = n.y; app.player.pendingNode = n; e.preventDefault(); }
+        // フォーカス無しなら：目的ノード→一番近いノード を 即発火
+        const objId = (typeof objectiveNodeId === "function") ? objectiveNodeId() : null;
+        const near = nearestNode(app.player.x, app.player.y, 0.16);
+        const target = objId || (near && near.id);
+        if (target) { e.preventDefault(); onNodeActivate(target); }
         return;
       }
     }
@@ -425,12 +442,16 @@ function wireEvents() {
   });
 }
 
-// ノードをクリック/Enter で起動（＝そのノードへ歩いて触れる）。キーボード操作の入口でもある。
+// ノードをクリック/Enter で起動＝会話/バトルを“即”始める（歩いて到着するのを待たせない＝もたつき解消）。
+//   アバターはそのノードへ寄せてから発火（空間的な納得感は残しつつ、反応は即）。
 function onNodeActivate(nodeId) {
+  if (app.screen !== "field") return;
   const n = (typeof areaNodes === "function") ? areaNodes().find((x) => x.id === nodeId) : null;
   if (!n) return;
-  app.player.tx = n.x; app.player.ty = n.y; app.player.pendingNode = n;
-  if (!app._raf) startFieldLoop(); // 念のため止まっていたら歩行再開
+  app.player.x = n.x; app.player.y = n.y; app.player.tx = n.x; app.player.ty = n.y; app.player.pendingNode = null;
+  positionAvatar(n.x, n.y);
+  if (typeof playSe === "function") playSe("click");
+  fieldInteract(n); // ← 即・発火（クリックした瞬間に会話/バトル/ショップへ）
 }
 
 // 起動

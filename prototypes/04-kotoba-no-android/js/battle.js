@@ -65,7 +65,7 @@ function startBattle(enemyId) {
 // playerCard(wordId) — プレイヤーターン：手札のことばを1枚使う。
 //   harsh→精神HPを削る（数字が浮かぶ）／kind→思いやりを満たす（数字は出さない）。
 // ──────────────────────────────────────────
-function playerCard(wordId) {
+function playerCard(wordId, opts) {
   const b = game.battle;
   if (!b || b.phase === "end") return false; // バトル外/決着後は無視（多重操作の安全弁）
   const w = WORDS[wordId];
@@ -97,7 +97,8 @@ function playerCard(wordId) {
 
   b.turn++;
   if (checkWin()) return true; // 決着したら敵ターンは回さない
-  enemyTurn();
+  if (opts && opts.defer) return true; // 敵ターンは呼び側(main)が“間”をおいて回す（テンポ＆手応え）
+  enemyTurn();                 // headless 等は従来どおり同期で回す
   return true;
 }
 

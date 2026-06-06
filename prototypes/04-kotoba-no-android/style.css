@@ -386,9 +386,79 @@ body.dark-3 .well-eye { fill: #c98bd9; opacity: 0.4; }
 .scene-flower { position: absolute; bottom: 13%; width: 9px; height: 9px; border-radius: 50%; background: var(--fl, #f2a9c4); box-shadow: 0 0 0 2px rgba(255,255,255,0.55); }
 .scene-flower::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--gold); }
 
+/* ════════════ フィールドの作り込み（広場・ノード・誘導・アバター） ════════════ */
+/* 安っぽい conic ピンウィールをやめ、やわらかい“村の広場”の地面に */
+.field-plaza {
+  background:
+    radial-gradient(120% 90% at 50% 26%, #fcfbff 0%, rgba(252,251,255,0) 56%),
+    radial-gradient(95% 78% at 50% 120%, #d8edd6 0%, rgba(216,237,214,0) 64%),
+    linear-gradient(180deg, #eceffb 0%, #e7ecf6 58%, #e6efe0 100%) !important;
+  box-shadow: inset 0 2px 12px rgba(70,60,120,0.06), inset 0 -24px 44px rgba(150,200,150,0.12);
+}
+/* ノード：大きく・押せそうに・地面に立つ影。マウスで反応する */
+.node { cursor: pointer; transition: transform 0.12s; }
+.node-ic { width: 50px; height: 50px; transition: box-shadow 0.15s, transform 0.12s; }
+.node-ic svg { width: 100%; height: 100%; }
+.node-label { font-size: 12px; padding: 2px 8px; }
+.node::after { content: ""; position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%);
+  width: 30px; height: 7px; border-radius: 50%; background: rgba(70,60,120,0.16); filter: blur(1px); z-index: -1; }
+.node:hover { transform: translate(-50%, -50%) scale(1.08); }
+.node:hover .node-ic { box-shadow: 0 0 0 4px rgba(91,99,214,0.28), 0 6px 12px rgba(70,60,120,0.25); }
+.node.done .node-ic { opacity: 0.6; }
+/* 目的地：金のパルス＋バウンドする矢印（次にどこへ行くか一目で） */
+.node.objective .node-ic { box-shadow: 0 0 0 4px rgba(242,169,60,0.6), 0 6px 14px rgba(242,169,60,0.35);
+  animation: objPulse 1.3s ease-in-out infinite; }
+@keyframes objPulse {
+  0%,100% { box-shadow: 0 0 0 4px rgba(242,169,60,0.6), 0 6px 14px rgba(242,169,60,0.3); }
+  50%     { box-shadow: 0 0 0 9px rgba(242,169,60,0.16), 0 6px 16px rgba(242,169,60,0.45); }
+}
+.node-arrow { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); color: var(--gold);
+  font-size: 22px; line-height: 1; text-shadow: 0 1px 2px rgba(150,110,40,0.5); animation: arrowBounce 1s ease-in-out infinite; }
+@keyframes arrowBounce { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(4px); } }
+/* アバター：少し大きく・ふわふわ idle・足元の影 */
+.avatar { width: 42px; height: 52px; transform: translate(-50%, -66%); z-index: 6; }
+.avatar svg { animation: avatarBob 2.4s ease-in-out infinite; transform-origin: bottom center; }
+@keyframes avatarBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.avatar::after { content: ""; position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%);
+  width: 26px; height: 6px; border-radius: 50%; background: rgba(70,60,120,0.18); filter: blur(1px); z-index: -1; }
+/* 目的バナー（field-msg）＝クエスト表示 */
+.field-msg { font-size: 14px; font-weight: 800; color: var(--accent); background: var(--paper2);
+  border: 2px solid var(--line); border-radius: 10px; padding: 9px 12px; text-align: center; margin-top: 10px; }
+.field-sub { text-align: center; }
+
+/* ════════════ バトルの作り込み（手応え・テンポ） ════════════ */
+#enemy-area { position: relative; }
+#enemy-area .enemy-sprite { width: 84px; height: 84px; }   /* 敵を大きく＝存在感 */
+.enemy-sprite svg, .player-sprite svg { animation: spriteBob 2.6s ease-in-out infinite; transform-origin: bottom center; }
+.player-sprite svg { animation-duration: 3s; }
+@keyframes spriteBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+/* 反応モーション（react() がクラスを一瞬付与） */
+.enemy-sprite.fx-hit { animation: fxHit 0.34s ease; }
+.enemy-sprite.fx-lunge { animation: fxLunge 0.34s ease; }
+.enemy-sprite.fx-soften { animation: fxSoften 0.36s ease; }
+.player-sprite.fx-hit { animation: fxHitP 0.34s ease; }
+@keyframes fxHit { 0% { transform: translateX(0); } 30% { transform: translateX(6px) rotate(3deg); } 100% { transform: translateX(0); } }
+@keyframes fxLunge { 0% { transform: translateY(0); } 35% { transform: translateY(10px) scale(1.06); } 100% { transform: translateY(0); } }
+@keyframes fxSoften { 0% { transform: scale(1); } 40% { transform: scale(0.93); } 100% { transform: scale(1); } }
+@keyframes fxHitP { 0% { transform: translateX(0); } 30% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+/* kind の“見えない手応え”＝緑の波紋（数値は出さない） */
+.kind-ripple { position: absolute; left: 42px; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px;
+  border-radius: 50%; border: 2.5px solid var(--kind); pointer-events: none; animation: kindRipple 0.7s ease-out forwards; }
+@keyframes kindRipple { 0% { transform: scale(0.4); opacity: 0.9; } 100% { transform: scale(5); opacity: 0; } }
+/* コマンド：敵ターン待ちは無効化、押下に手応え */
+.cmd[disabled] { opacity: 0.45; cursor: default; filter: saturate(0.6); }
+.cmd:not([disabled]):active { transform: translateY(2px); }
+
+/* 画面が出るときの ふわっ（安っぽさ解消の小技） */
+.overlay:not(.hidden), #game:not(.hidden) { animation: ovFade 0.22s ease both; }
+@keyframes ovFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
 /* ════════════ アクセシビリティ：動きを減らす ════════════ */
 @media (prefers-reduced-motion: reduce) {
-  .scene-clouds .cloud, .float-num, .shake, .well-water, .well-eye { animation: none !important; }
+  .overlay:not(.hidden), #game:not(.hidden) { animation: none !important; }
+  .scene-clouds .cloud, .float-num, .shake, .well-water, .well-eye,
+  .node.objective .node-ic, .node-arrow, .avatar svg,
+  .enemy-sprite svg, .player-sprite svg, .kind-ripple { animation: none !important; }
   .well-eye { opacity: 0.4; }
   .bar-fill, .tend-fill, .meta-logo .rv-l { transition: none !important; }
   #scene { transition: none !important; }

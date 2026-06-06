@@ -77,6 +77,24 @@ function canAdvance() {
   return hasFlag("battle_done");
 }
 
+// いま向かうべきノードid（誘導用）。進行フラグで次の目的地を返す。
+function objectiveNodeId() {
+  if (!hasFlag("talked_npc_kona")) return "n_kona";
+  if (!hasFlag("kado_done")) return "n_enemy";
+  if (!hasFlag("boss_done")) return "n_boss";
+  return "n_exit";
+}
+// 目的地の一言ガイド（画面上部に出す）。
+function objectiveHint() {
+  switch (objectiveNodeId()) {
+    case "n_kona": return "つぎ：村の子「こな」に はなしかけよう（クリック）。";
+    case "n_enemy": return "つぎ：「かどっこ」と ことばで はなしを つけよう。";
+    case "n_boss": return "つぎ：村の おく「くちなし」が 待っている。";
+    case "n_exit": return "村の そとへ いける。";
+    default: return "";
+  }
+}
+
 // ── window へ明示エクスポート ──
 if (typeof window !== "undefined") {
   window.enterArea = enterArea;
@@ -84,4 +102,6 @@ if (typeof window !== "undefined") {
   window.nearestNode = nearestNode;
   window.interact = interact;
   window.canAdvance = canAdvance;
+  window.objectiveNodeId = objectiveNodeId;
+  window.objectiveHint = objectiveHint;
 }

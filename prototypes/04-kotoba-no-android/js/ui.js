@@ -102,13 +102,17 @@ function renderField() {
 
   // ノード（NPC/敵/セーブ/立て札/出口）をボタンで配置＝Tab で辿れて Enter/クリックで発火（アクセシブル）。
   const nodes = areaNodes();
+  const objId = (typeof objectiveNodeId === "function") ? objectiveNodeId() : null;
   let html = "";
   nodes.forEach((n) => {
     const lockCls = (n.type === "exit" && n.locked) ? " locked" : "";
     const doneCls = (n.type === "npc" && n.done) ? " done" : "";
-    html += '<button class="node node-' + n.type + lockCls + doneCls + '" data-node="' + _esc(n.id) + '"' +
+    const objCls = (n.id === objId) ? " objective" : "";   // いま向かうべきノードを強調
+    const arrow = (n.id === objId) ? '<span class="node-arrow" aria-hidden="true">▾</span>' : "";
+    html += '<button class="node node-' + n.type + lockCls + doneCls + objCls + '" data-node="' + _esc(n.id) + '"' +
             ' style="left:' + (n.x * 100) + '%; top:' + (n.y * 100) + '%"' +
             ' aria-label="' + _esc(n.label) + '">' +
+            arrow +
             '<span class="node-ic" aria-hidden="true">' + nodeArt(n) + '</span>' +
             '<span class="node-label">' + _esc(n.label) + (n.type === "exit" && n.locked ? "（まだ）" : "") + '</span>' +
             '</button>';
@@ -125,8 +129,8 @@ function renderField() {
   };
   nodes.forEach((n) => { app._field.nodeEls[n.id] = plaza.querySelector('[data-node="' + n.id + '"]'); });
 
-  body.querySelector(".field-msg").textContent = "クリック／タップした ばしょへ あるく。ひかった ものに 近づくと はなせる。";
-  body.querySelector(".field-sub").textContent = "";
+  body.querySelector(".field-msg").textContent = (typeof objectiveHint === "function") ? objectiveHint() : "";
+  body.querySelector(".field-sub").textContent = "ひかっている ところを クリック（キーボードは Tab→Enter）。";
 }
 
 function nodeIcon(type) {
@@ -252,19 +256,23 @@ function renderBattle() {
         '<span class="bar-num">' + Math.max(0, game.player.hp) + '/' + game.player.maxHp + '</span></div>' +
     '</div>';
 
-  // 翳り段に応じてルゥの内心が不穏化（DARK_LINES。世界は可愛いまま、主人公だけ翳る）。
-  const dl = (typeof DARK_LINES !== "undefined" && DARK_LINES[Math.min(d, DARK_LINES.length - 1)]) || "ことばを えらぶ。";
-  _el("prompt").innerHTML = '<span class="prompt-text' + (d >= 1 ? " unstable" : "") + '">' + _esc(dl) + '</span>';
+  // 敵ターン待ちは“相手が考えている”を出す。それ以外は翳り段に応じてルゥの内心（DARK_LINES）。
+  const busy = !!app.battleBusy;
+  const dl = busy
+    ? ("…… " + en.name + " が、ことばを さがしている。")
+    : ((typeof DARK_LINES !== "undefined" && DARK_LINES[Math.min(d, DARK_LINES.length - 1)]) || "ことばを えらぶ。");
+  _el("prompt").innerHTML = '<span class="prompt-text' + (!busy && d >= 1 ? " unstable" : "") + '">' + _esc(dl) + '</span>';
 
   // command-bar：手札を harsh 列 / kind 列で（色＋形＋効果語の三重表現）
   const cmd = battleCommandList();
+  const busyAttr = app.battleBusy ? " disabled" : "";
   function btns(idList, isHarsh) {
     return idList.map((id) => {
       const lv = cardLevel(id);
       const face = cardFace(id);
       const icon = isHarsh ? "▲" : "●";
       const eff = isHarsh ? "削る" : "寄りそう";
-      return '<button class="cmd ' + (isHarsh ? "cmd-harsh" : "cmd-kind") + '" data-action="card" data-word="' + _esc(id) + '">' +
+      return '<button class="cmd ' + (isHarsh ? "cmd-harsh" : "cmd-kind") + '" data-action="card" data-word="' + _esc(id) + '"' + busyAttr + '>' +
         '<span class="cmd-face">' + icon + " " + _esc(face) + '</span>' +
         '<span class="cmd-eff">' + eff + (lv > 1 ? " ・Lv" + lv : "") + '</span></button>';
     }).join("");
@@ -438,23 +446,49 @@ function toast(msg) {
 function playFx() {
   if (!game || !game.fx || !game.fx.length) return;
   const fxs = game.fx.splice(0, game.fx.length);
+  const enemySp = document.querySelector("#enemy-area .enemy-sprite");
+  const playerSp = document.querySelector("#player-bar .player-sprite");
   fxs.forEach((ev) => {
     if (ev.type === "harshHit") {
       floatNum(_el("enemy-area"), "-" + ev.n, "fx-harsh");
+      react(enemySp, "hit");          // 敵がのけぞる
       shake(_el("enemy-area"));
     } else if (ev.type === "enemyHit") {
       floatNum(_el("player-bar"), "-" + ev.n, "fx-enemy");
+      react(enemySp, "lunge");        // 敵が言葉を“突き出す”
+      react(playerSp, "hit");         // ルゥがのけぞる
       shake(_el("game"));
     } else if (ev.type === "heal") {
       floatNum(_el("player-bar"), "+" + ev.n, "fx-heal");
     }
-    // kindUse / lowerAtk は“数値を出さない”（見えない手応え）。光のみ。
+    // kindUse / lowerAtk は“数値を出さない”（見えない手応え）。緑の波紋＋敵がふっと和らぐ。
     else if (ev.type === "kindUse") {
+      ripple(_el("enemy-area"));
+      react(enemySp, "soften");
       glow(_el("enemy-area"));
     } else if (ev.type === "lowerAtk") {
-      glow(_el("enemy-area"));
+      ripple(_el("enemy-area"));
+      react(enemySp, "soften");
     }
   });
+}
+// スプライトに一瞬だけ反応クラスを付ける（CSSのkeyframesで動く）。
+function react(elm, cls) {
+  if (!elm) return;
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  elm.classList.remove("fx-hit", "fx-lunge", "fx-soften");
+  // reflow を挟んで再アニメ
+  void elm.offsetWidth;
+  elm.classList.add("fx-" + cls);
+  setTimeout(() => elm.classList.remove("fx-" + cls), 380);
+}
+// 緑の波紋（kindの“見えない手応え”を見える化。数値は出さない）。
+function ripple(host) {
+  if (!host) return;
+  const r = document.createElement("span");
+  r.className = "kind-ripple";
+  host.appendChild(r);
+  setTimeout(() => { if (r.parentNode) r.parentNode.removeChild(r); }, 700);
 }
 function floatNum(host, text, cls) {
   if (!host) return;
