@@ -14,6 +14,7 @@
 ## 🌐 公開URL
 
 - 🎮 ハブ（プロト一覧）: **https://heipo548.github.io/doopa/**
+- 🧪 バトルシステム試作場 / Battle Lab: **https://heipo548.github.io/doopa/battle-lab/**
 - 🛠 リポジトリ: https://github.com/heipo548/doopa
 - 📨 アイデア/バグ投稿: https://github.com/heipo548/doopa/issues/new/choose
 
@@ -27,6 +28,16 @@
 | 04 | [kotoba-no-android](./prototypes/04-kotoba-no-android/) | ルゥと せかいの あいだ | 手を出せない村のことばカードバトル探索。言い負かすか寄り添うか、勝ち方が人格を染め、終盤『井戸の こえ』が操作の癖を見透かす。ことばに きみを 足すと せかいに なる | 🟢 active | @heipo548 |
 
 詳細は [prototypes/README.md](./prototypes/README.md)。
+
+## 🧪 バトルシステム試作場 / Battle Lab
+
+これから作るゲームの**バトルシステムだけ**を、いろいろ試す場所。完成版ではなく検証用のモック置き場です。
+**敵を倒すのではなく、言葉で「閉じた心」をほどく**——複数のバトル型（Slay the Spire / UNDERTALE / Inscryption / Dicey Dungeons …）を並べて比較します。
+
+- 入口: [battle-lab/](./battle-lab/) ／ 公開: https://heipo548.github.io/doopa/battle-lab/
+- 最初のモック: [言葉デッキバトル（Slay the Spire 参考）](./battle-lab/mocks/01-slay-the-spire-kotoba/)
+
+詳細は [battle-lab/README.md](./battle-lab/README.md)。
 
 ## 👥 参加方法
 
@@ -52,6 +63,14 @@ doopa/
 │       ├── style.css
 │       ├── js/
 │       └── README.md
+├── battle-lab/             # 🧪 バトルシステム試作場（バトルだけを試す場）
+│   ├── index.html          #   モック一覧ハブ
+│   ├── README.md
+│   └── mocks/
+│       └── 01-slay-the-spire-kotoba/  # 言葉デッキバトル（最初のモック）
+│           ├── index.html
+│           ├── js/         #   data/engine/ui/main（data.jsにカード・敵を集約）
+│           └── tools/      #   headless-check.js（JXAでロジック検証）
 └── .github/
     └── ISSUE_TEMPLATE/
         ├── bug_report.md

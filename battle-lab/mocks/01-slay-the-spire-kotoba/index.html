@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>言葉デッキバトル — Battle Lab / DOOPA</title>
+  <meta name="description" content="DOOPA バトルシステム試作場：Slay the Spire 参考の「言葉デッキバトル」モック。敵を倒すのではなく、言葉で『閉じた心』をほどく。" />
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <!--
+    Slay the Spire 参考「言葉デッキバトル」モック
+    ・主人公＝言葉を持たない無機質なアンドロイド（プレイヤー側は等幅＋わずかなノイズ表現）
+    ・相手＝ポップでかわいい村人（村長）。倒すのではなく「閉じた心」を言葉でほどく
+    ・依存ゼロ：HTML/CSS/JS のみ。data.js を増やせばカード・敵を足せる
+  -->
+
+  <header class="lab-head">
+    <a class="back" href="../../">← Battle Lab</a>
+    <div class="head-titles">
+      <p class="lab-name">バトルシステム試作場 / Battle Lab</p>
+      <h1 class="mock-title">Slay the Spire参考：言葉デッキバトル</h1>
+      <p class="disclaimer">これは完成版ではなく、バトルシステム検証用のモックです。</p>
+      <p class="premise">敵を倒すのではなく、言葉で「閉じた心」をほどいていく。</p>
+    </div>
+  </header>
+
+  <main class="board">
+
+    <!-- ===== 相手（村長） ===== -->
+    <section class="enemy-zone">
+      <div class="intent" aria-live="polite">
+        <span class="intent-cap">次の感情</span>
+        <span id="intent-label" class="intent-name">—</span>
+        <span id="intent-detail" class="intent-detail"></span>
+      </div>
+
+      <div class="enemy-card">
+        <div class="enemy-face" aria-hidden="true">
+          <!-- ポップでかわいい村長（インラインSVG・画像依存なし） -->
+          <svg viewBox="0 0 120 120" width="92" height="92">
+            <ellipse cx="60" cy="108" rx="30" ry="6" fill="#0000000f"/>
+            <circle cx="60" cy="60" r="40" fill="#ffe4b5" stroke="#e7b870" stroke-width="2"/>
+            <path d="M28 44 q32 -22 64 0" fill="none" stroke="#c9a15e" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="46" cy="58" r="4.5" fill="#5b4a36"/>
+            <circle cx="74" cy="58" r="4.5" fill="#5b4a36"/>
+            <path d="M40 50 q6 -4 12 0 M68 50 q6 -4 12 0" fill="none" stroke="#b48a4e" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M50 76 q10 6 20 0" fill="none" stroke="#a86b4a" stroke-width="3" stroke-linecap="round"/>
+            <path d="M52 84 q8 14 16 0" fill="#e9c39a" stroke="#cf9f6e" stroke-width="2"/>
+            <ellipse cx="40" cy="70" rx="5" ry="3" fill="#f6a8a8" opacity=".6"/>
+            <ellipse cx="80" cy="70" rx="5" ry="3" fill="#f6a8a8" opacity=".6"/>
+          </svg>
+        </div>
+        <div class="enemy-info">
+          <div class="enemy-name" id="enemy-name">村長</div>
+          <div class="enemy-title" id="enemy-title"></div>
+          <div class="bar enemy-bar">
+            <div class="bar-fill heart" id="enemy-heart-fill"></div>
+            <span class="bar-cap">閉じた心</span>
+            <span class="bar-num" id="enemy-heart-num">42 / 42</span>
+          </div>
+          <div class="status-row" id="enemy-status"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 場：山札 / ターン / 捨て札 ===== -->
+    <section class="field">
+      <div class="pile">山札<span id="pile-draw">0</span></div>
+      <div class="turn">ターン <span id="turn-num">1</span></div>
+      <div class="pile">捨て札<span id="pile-discard">0</span></div>
+    </section>
+
+    <!-- ===== プレイヤー（無機質な主人公） ===== -->
+    <section class="player-zone">
+      <div class="player-tag">YOU — kotoba-android</div>
+      <div class="player-stats">
+        <div class="bar player-bar">
+          <div class="bar-fill noise" id="player-noise-fill"></div>
+          <span class="bar-cap">ノイズ耐性</span>
+          <span class="bar-num" id="player-noise-num">40 / 40</span>
+        </div>
+        <div class="energy">
+          <span class="energy-cap">こころ</span>
+          <span class="pips" id="energy-pips"></span>
+          <span class="energy-num" id="energy-num">3 / 3</span>
+        </div>
+        <div class="status-row" id="player-status"></div>
+      </div>
+    </section>
+
+    <!-- ===== 手札（今いえる言葉） ===== -->
+    <section class="hand-zone">
+      <div class="hand-cap">今いえる言葉</div>
+      <div class="hand" id="hand"></div>
+      <button class="end-turn" id="end-turn-btn">ターン終了</button>
+    </section>
+
+    <!-- ===== ログ ===== -->
+    <section class="log-zone">
+      <div class="log-cap">やりとりの記録</div>
+      <div class="log" id="log"></div>
+    </section>
+
+  </main>
+
+  <!-- ===== 勝敗オーバーレイ ===== -->
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+    <div class="overlay-box">
+      <h2 class="overlay-title" id="overlay-title"></h2>
+      <div class="overlay-text" id="overlay-text"></div>
+      <button class="restart" id="restart-btn">もう一度 試す</button>
+    </div>
+  </div>
+
+  <!-- 読み込み順：データ → 進行ルール → 描画 → 配線 -->
+  <script src="js/data.js?v=1"></script>
+  <script src="js/engine.js?v=1"></script>
+  <script src="js/ui.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+</body>
+</html>

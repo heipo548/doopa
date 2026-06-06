@@ -254,6 +254,24 @@
     .card.placeholder .plus { font-size: 46px; font-weight: 300; line-height: 1; }
     .card.placeholder .ph-text { font-size: 14px; letter-spacing: 2px; font-weight: 800; }
 
+    /* ============ BATTLE LAB バナー ============ */
+    /* プロト一覧の“下”に置く、別種の場所（試作場）。無機質さを出すためタイトルだけ淡くグリッチ */
+    .lab-banner {
+      display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+      background: linear-gradient(120deg, rgba(255,250,241,0.95), rgba(231,219,247,0.55));
+      border: 2px solid var(--line-deep); border-radius: 22px;
+      padding: 22px 24px; box-shadow: 0 12px 30px rgba(232,201,138,0.22);
+    }
+    .lab-banner .lab-emoji { font-size: 38px; line-height: 1; }
+    .lab-banner .lab-body { flex: 1 1 260px; min-width: 0; }
+    .lab-banner .lab-name { font-size: 22px; font-weight: 900; color: #5f4a38;
+      text-shadow: 1.4px 0 #f7c0cf, -1.4px 0 #b9d8e6; }
+    .lab-banner .lab-name .en { font-size: 14px; color: var(--ink-dim); text-shadow: none; margin-left: 6px; }
+    .lab-banner .lab-desc { font-size: 13.5px; color: #7c6450; margin-top: 6px; }
+    .lab-banner .lab-tags { margin-top: 9px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .lab-banner .lab-tag { font-size: 11px; color: #8175ab; background: #f1eef8;
+      border: 1px solid #d8cfeb; border-radius: 999px; padding: 1px 9px; }
+
     /* ============ フッター ============ */
     footer {
       padding: 40px 22px 60px; text-align: center; font-size: 12px; color: var(--ink-dim);
@@ -537,6 +555,29 @@
           <div style="font-size:11px; margin-top:6px; opacity:0.75;">GitHub Issue でアイデア投稿</div>
         </a>
 
+      </div>
+    </section>
+
+    <!-- ============ BATTLE LAB ============ -->
+    <!-- プロト一覧の“下”に置く独立セクション。バトルシステムだけを試す試作場への入口 -->
+    <section class="block">
+      <h2 class="section-title">BATTLE LAB</h2>
+      <div class="lab-banner">
+        <div class="lab-emoji" aria-hidden="true">🧪🗨️</div>
+        <div class="lab-body">
+          <div class="lab-name">バトルシステム試作場 <span class="en">/ Battle Lab</span></div>
+          <p class="lab-desc">
+            これから作るゲームの <b>バトルだけ</b> を、いろいろ試す場所。完成版ではなく検証用のモック置き場です。
+            敵を倒すのではなく、言葉で「閉じた心」をほどく——まずは <b>Slay the Spire 参考「言葉デッキバトル」</b> から。
+          </p>
+          <div class="lab-tags">
+            <span class="lab-tag">Slay the Spire型 ✅</span>
+            <span class="lab-tag">UNDERTALE型 🌱</span>
+            <span class="lab-tag">Inscryption型 🌱</span>
+            <span class="lab-tag">Dicey Dungeons型 🌱</span>
+          </div>
+        </div>
+        <a class="card-play" href="./battle-lab/">▶ 試作場へ</a>
       </div>
     </section>
 
