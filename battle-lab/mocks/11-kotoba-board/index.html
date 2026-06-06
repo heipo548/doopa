@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Battle 11：ことばを置く盤面バトル — Battle Lab / DOOPA</title>
+  <meta name="description" content="DOOPA バトルシステム試作場：5×5の盤面に言葉を置き、泣いている影をベンチまで導くバトル。" />
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <!--
+    Battle 11「ことばを置く盤面バトル」モック
+    ・5×5の盤面に「言葉」を置いて、敵を攻撃せず“場を整える”。
+    ・泣いている影を、ベンチまで導く。しるしで誘導、ここにいるで止める。
+    ・依存ゼロ：HTML/CSS/JS。影AIは乱数なし（engine.js）。
+  -->
+  <header class="lab-head">
+    <a class="back" href="../../">← Battle Lab</a>
+    <p class="lab-name">バトルシステム試作場 / Battle Lab</p>
+    <h1 class="mock-title">Battle 11：ことばを置く盤面バトル</h1>
+    <p class="mock-en">Words Upon the World</p>
+    <div class="intro" id="mock-intro"></div>
+  </header>
+
+  <main class="stage">
+    <section class="panel statusbar">
+      <div class="bar-row"><div class="bar"><div class="bar-fill zawameki" id="zawameki-fill"></div></div><span class="bar-num" id="zawameki-num"></span></div>
+      <div class="bar-row"><div class="bar"><div class="bar-fill kokoro" id="kokoro-fill"></div></div><span class="bar-num" id="kokoro-num"></span></div>
+      <div class="turn" id="turn-num"></div>
+    </section>
+
+    <section class="panel">
+      <div class="board" id="board"></div>
+      <p class="legend">L＝あなた　影＝泣いている影　ベンチ＝目的地　出口＝逃げ道　木＝通れない　水＝水たまり　•＝しるし</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="sec-cap">行動（1ターンに2回）</h2>
+      <div id="actions"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="sec-cap">ログ</h2>
+      <div class="log" id="log"></div>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+    <div class="overlay-box" id="overlay-box">
+      <h2 class="overlay-title" id="overlay-title"></h2>
+      <div class="overlay-text" id="overlay-text"></div>
+      <div class="overlay-actions">
+        <button class="restart" id="restart-btn">もう一度 遊ぶ</button>
+        <a class="to-lab" href="../../">Battle Lab に戻る</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js?v=1"></script>
+  <script src="js/engine.js?v=1"></script>
+  <script src="js/ui.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+</body>
+</html>

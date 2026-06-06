@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Battle 08：こころの時間差バトル — Battle Lab / DOOPA</title>
+  <meta name="description" content="DOOPA バトルシステム試作場：時間軸式バトル『こころの時間差バトル』。村長の爆発ゲージが満ちる前に、言葉を間に合わせる。" />
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <!--
+    Battle 08「こころの時間差バトル」モック
+    ・ターン制ではなく、敵味方の行動が一本の時間軸（tick）に並ぶ。
+    ・自分の言葉には発動までの待ち時間（cast）がある。
+    ・村長の爆発ゲージが満ちる前に、強い言葉を“間に合わせる”のが核。
+    ・依存ゼロ：HTML/CSS/JS のみ。数値・文章は js/data.js に集約。
+  -->
+  <header class="lab-head">
+    <a class="back" href="../../">← Battle Lab</a>
+    <p class="lab-name">バトルシステム試作場 / Battle Lab</p>
+    <h1 class="mock-title">Battle 08：こころの時間差バトル</h1>
+    <p class="mock-en">Timeline of the Heart</p>
+    <div class="intro" id="mock-intro"></div>
+  </header>
+
+  <main class="stage">
+
+    <!-- 相手と自分の状態 -->
+    <section class="panel status">
+      <div class="enemy">
+        <div class="enemy-face" aria-hidden="true">
+          <svg viewBox="0 0 120 120" width="64" height="64">
+            <circle cx="60" cy="60" r="40" fill="#ffe4b5" stroke="#e7b870" stroke-width="2"/>
+            <path d="M28 44 q32 -22 64 0" fill="none" stroke="#c9a15e" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="46" cy="58" r="4.5" fill="#5b4a36"/><circle cx="74" cy="58" r="4.5" fill="#5b4a36"/>
+            <path d="M50 76 q10 7 20 0" fill="none" stroke="#a86b4a" stroke-width="3" stroke-linecap="round"/>
+            <ellipse cx="40" cy="70" rx="5" ry="3" fill="#f6a8a8" opacity=".55"/>
+            <ellipse cx="80" cy="70" rx="5" ry="3" fill="#f6a8a8" opacity=".55"/>
+          </svg>
+        </div>
+        <div class="enemy-meta">
+          <div class="enemy-name" id="enemy-name">村長</div>
+          <div class="bar-row"><span class="cap">ざわめき</span>
+            <div class="bar"><div class="bar-fill zawameki" id="zawameki-fill"></div></div>
+            <span class="bar-num" id="zawameki-num"></span></div>
+          <div class="bar-row"><span class="cap">爆発</span>
+            <div class="bar"><div class="bar-fill bakuhatsu" id="bakuhatsu-fill"></div></div>
+            <span class="pip danger-pip" id="bakuhatsu-num"></span></div>
+        </div>
+      </div>
+
+      <div class="player">
+        <div class="player-tag">YOU — L / kotoba-android</div>
+        <div class="bar-row"><span class="cap">こころ</span>
+          <div class="bar"><div class="bar-fill kokoro" id="kokoro-fill"></div></div>
+          <span class="bar-num" id="kokoro-num"></span></div>
+        <div class="pip-row"><span class="cap">ことば</span><span class="pip" id="kotoba-pips"></span></div>
+        <div class="pip-row"><span class="cap">おちつき</span><span class="pip" id="ochitsuki-pips"></span></div>
+      </div>
+    </section>
+
+    <!-- タイムライン（現在 → 未来） -->
+    <section class="panel">
+      <h2 class="sec-cap">タイムライン</h2>
+      <div class="timeline" id="timeline"></div>
+    </section>
+
+    <!-- コマンド -->
+    <section class="panel">
+      <h2 class="sec-cap">ことば（はやい言葉・おそい言葉）</h2>
+      <div class="cmd-grid" id="cmd-area"></div>
+    </section>
+
+    <!-- ログ -->
+    <section class="panel">
+      <h2 class="sec-cap">ログ</h2>
+      <div class="log" id="log"></div>
+    </section>
+  </main>
+
+  <!-- 勝敗オーバーレイ -->
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+    <div class="overlay-box" id="overlay-box">
+      <h2 class="overlay-title" id="overlay-title"></h2>
+      <div class="overlay-text" id="overlay-text"></div>
+      <div class="overlay-actions">
+        <button class="restart" id="restart-btn">もう一度 遊ぶ</button>
+        <a class="to-lab" href="../../">Battle Lab に戻る</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js?v=1"></script>
+  <script src="js/engine.js?v=1"></script>
+  <script src="js/ui.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+</body>
+</html>

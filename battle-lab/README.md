@@ -24,6 +24,17 @@
 | 05 | [05-pokemon-kotoba](./mocks/05-pokemon-kotoba/) | Pokémon | 🟢 PLAYABLE |
 | 06 | [06-persona-kotoba](./mocks/06-persona-kotoba/) | ペルソナ（心象弱点・総鳴り） | 🟢 PLAYABLE |
 | 07 | [07-gyakuten-saiban-kotoba](./mocks/07-gyakuten-saiban-kotoba/) | 逆転裁判 | 🟢 PLAYABLE |
+| 08 | [08-kokoro-timeline](./mocks/08-kokoro-timeline/) | こころの時間差（タイムライン式） | 🟢 PLAYABLE |
+| 09 | [09-kotoba-action](./mocks/09-kotoba-action/) | ことばアクションコマンド（届け方のタイミング） | 🟢 PLAYABLE |
+| 10 | [10-kokoro-bui](./mocks/10-kokoro-bui/) | こころの部位（部位ごとにほどく） | 🟢 PLAYABLE |
+| 11 | [11-kotoba-board](./mocks/11-kotoba-board/) | ことばを置く盤面（言葉を世界に置く） | 🟢 PLAYABLE |
+| 12 | [12-kodou-rhythm](./mocks/12-kodou-rhythm/) | 鼓動リズム（呼吸を合わせる） | 🟢 PLAYABLE |
+| 13 | [13-maai-yomiai](./mocks/13-maai-yomiai/) | 間合いと読み合い（距離の同時選択） | 🟢 PLAYABLE |
+| 14 | [14-tabishitaku-auto](./mocks/14-tabishitaku-auto/) | 旅支度オート（準備が戦い） | 🟢 PLAYABLE |
+
+> 01〜07 は既存のゲーム構造を参考にした検証群、08〜14 は「言葉を使う世界観」に寄せたオリジナル発想の検証群。
+> 自動点検は JXA（`osascript -l JavaScript`）で行う。進行ルールは各モックの `tools/headless-check.js`、
+> UI配線は `tools/dom-smoke.js`（08〜14 と 04・07 に同梱）。
 
 ## 新しいバトルモックを足すには
 

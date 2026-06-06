@@ -1,0 +1,72 @@
+/*
+ * data.js — Battle 13「間合いと言葉の読み合いバトル」のデータ集約
+ *
+ * 遊びの核：相手との距離（5段階）を管理しながら、毎ターン同時選択で読み合う。
+ *   近づきすぎても遠すぎてもダメ。相手の“癖”を読んで対応する。
+ *   人との距離感そのものを戦闘にする。
+ */
+
+var PLAYER_INIT = { name:'L', kokoro:6, maxKokoro:6 };
+// 裁判所の証人。悪者かもしれないし、ただ怖がっているだけかもしれない。
+var ENEMY_INIT  = { name:'証人', zawameki:8, maxZawameki:8, keikai:4, maxKeikai:4 };
+
+var DIST_START = 3;             // ふつう から始まる
+var DIST_LABEL = { 1:'遠い', 2:'少し遠い', 3:'ふつう', 4:'近い', 5:'近すぎる' };
+var DIST_OK = 3;               // 維持すべき“適切な距離”
+var DIST_STREAK_WIN = 3;       // ふつうを3ターン維持で勝利
+var READ_WIN = 3;             // 読み勝ち3回で勝利
+var TURN_LIMIT = 16;
+
+// プレイヤー行動
+var PLAYER_ACTS = [
+  { id:'chikaduku',  name:'近づく',     hint:'距離 −（近づく）' },
+  { id:'hanareru',   name:'離れる',     hint:'距離 ＋（離れる）。拒絶を空振りさせる。' },
+  { id:'kiku',       name:'きく',       hint:'黙りの理由が見える。癖が読める。' },
+  { id:'hanasu',     name:'はなす',     hint:'黙り・思い出しに ことばが届く。' },
+  { id:'damaru',     name:'だまる',     hint:'叫びを空回りさせる。' },
+  { id:'tewonobasu', name:'てをのばす', hint:'相手が近づいた時に 大成功。' },
+  { id:'namaewoyobu',name:'なまえをよぶ', hint:'逃走を止める。ブレイク中は決め手。' },
+  { id:'unazuku',    name:'うなずく',   hint:'試しに応える。ブレイク中は決め手。' }
+];
+
+// 敵行動（表示名）
+var ENEMY_LABEL = {
+  kyozetsu:'拒絶する', nigeru:'逃げる', sakebu:'叫ぶ', damaru:'黙る',
+  tamesu:'試す', chikaduku:'近づく', omoidasu:'思い出す'
+};
+
+// 敵行動への“正しい読み”（このプレイヤー行動なら読み勝ち）
+var GOOD_COUNTER = {
+  kyozetsu:'hanareru', nigeru:'namaewoyobu', sakebu:'damaru', damaru:'kiku',
+  tamesu:'unazuku', chikaduku:'tewonobasu', omoidasu:'namaewoyobu'
+};
+
+// 証人の“癖”（読みのヒント。観察で少しずつ分かる想定）
+var TELLS = [
+  '近い距離では、拒絶しやすい。',
+  '遠い距離では、逃げやすい。',
+  '2回 黙ったあとは、叫びやすい。',
+  '「きく」をされると、次に 試す を選びやすい。'
+];
+
+var INTRO_TEXT = [
+  '裁判所。証言台の前に、証人が ひとり。',
+  '悪者かもしれない。ただ 怖がっているだけかもしれない。',
+  '',
+  '毎ターン、あなたと証人は 同時に動く。距離は 5段階（いまは ふつう）。',
+  '近づきすぎても、遠すぎても ダメ。証人の癖を 読む。'
+];
+var OPENING_LOG = '証人は、Lの 型番を じっと見ている。';
+
+var WIN_TITLE = 'とどいた';
+var WIN_TEXT = {
+  zawameki: ['証人の ざわめきが しずまった。','証人「……あなたは、こわく ない」','言葉には、距離が あった。'],
+  read:    ['三度、証人の心を 読み勝った。','証人「……どうして わかるの」','読むことは、近づくことでは なかった。'],
+  maai:    ['ちょうどいい距離を、Lは 守りつづけた。','証人の肩から、力が ぬけていく。','近すぎず、遠すぎず。そこに 言葉が 立てた。'],
+  stepdown:['ブレイクした証人に、Lは そっと うなずいた。','','証人は、証言台から 一歩だけ 降りた。']
+};
+var LOSE_TITLE = 'とどかなかった';
+var LOSE_TEXT = {
+  kokoro:  ['踏み込みすぎて、Lの こころが 削れた。','証人は、もう 口を ひらかない。'],
+  timeout: ['時間切れ。証人は 証言台を 降りなかった。','また、別の日に。']
+};

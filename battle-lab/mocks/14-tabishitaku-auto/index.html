@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Battle 14：旅支度オートバトル — Battle Lab / DOOPA</title>
+  <meta name="description" content="DOOPA バトルシステム試作場：カバンに詰めた言葉や思い出が、半自動で戦い方を決める準備型バトル。" />
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <!--
+    Battle 14「旅支度オートバトル」モック
+    ・戦闘前に カバン(3×3) へ 持ち物を配置。配置とシナジーで戦い方が変わる。
+    ・戦闘は半自動。見守る／ひとつ使う で介入。準備が、すでに戦い。
+    ・依存ゼロ：HTML/CSS/JS。prep→battle→done（engine）。
+  -->
+  <header class="lab-head">
+    <a class="back" href="../../">← Battle Lab</a>
+    <p class="lab-name">バトルシステム試作場 / Battle Lab</p>
+    <h1 class="mock-title">Battle 14：旅支度オートバトル</h1>
+    <p class="mock-en">What You Packed</p>
+    <div class="intro" id="mock-intro"></div>
+  </header>
+
+  <main class="stage">
+    <section class="panel">
+      <h2 class="sec-cap">カバン（3×3）— 持ち物を 詰める</h2>
+      <div class="bag" id="bag"></div>
+    </section>
+
+    <!-- 準備フェーズ -->
+    <section class="panel" id="prep-area">
+      <h2 class="sec-cap">持ち物（選んで、カバンの マスを タップ）</h2>
+      <div class="tray" id="tray"></div>
+      <div class="syn-preview" id="syn-preview"></div>
+      <button class="start" id="start-btn">この支度で 旅に出る ▶</button>
+    </section>
+
+    <!-- 戦闘フェーズ -->
+    <section class="panel" id="battle-area" style="display:none">
+      <div class="bar-row"><span class="cap">ざわめき</span>
+        <div class="bar"><div class="bar-fill zawameki" id="zawameki-fill"></div></div>
+        <span class="bar-num" id="zawameki-num"></span></div>
+      <div class="bar-row"><span class="cap">こころ</span>
+        <div class="bar"><div class="bar-fill kokoro" id="kokoro-fill"></div></div>
+        <span class="bar-num" id="kokoro-num"></span></div>
+      <div class="battle-controls" id="battle-controls"></div>
+      <p class="battle-hint">基本は自動で進む。「見守る」で1つずつ、「ひとつ使う」でカバンから選んで先に発動。</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="sec-cap">ログ</h2>
+      <div class="log" id="log"></div>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+    <div class="overlay-box" id="overlay-box">
+      <h2 class="overlay-title" id="overlay-title"></h2>
+      <div class="overlay-text" id="overlay-text"></div>
+      <div class="overlay-actions">
+        <button class="restart" id="restart-btn">もう一度 遊ぶ</button>
+        <a class="to-lab" href="../../">Battle Lab に戻る</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js?v=1"></script>
+  <script src="js/engine.js?v=1"></script>
+  <script src="js/ui.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+</body>
+</html>

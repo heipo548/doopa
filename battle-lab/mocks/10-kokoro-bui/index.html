@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Battle 10：こころの部位バトル — Battle Lab / DOOPA</title>
+  <meta name="description" content="DOOPA バトルシステム試作場：敵のこころを複数の部位として見立て、壊すのではなくほどいていくバトル。" />
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <!--
+    Battle 10「こころの部位バトル」モック
+    ・敵（捨てられたぬいぐるみ）は複数の「こころの部位」を持つ。
+    ・部位を選び、効くことばで“ほどく”。強引に「封じる」と後味（結末）が変わる。
+    ・依存ゼロ：HTML/CSS/JS。状態は engine.js（部位ごとに idx と resolved/hurt）。
+  -->
+  <header class="lab-head">
+    <a class="back" href="../../">← Battle Lab</a>
+    <p class="lab-name">バトルシステム試作場 / Battle Lab</p>
+    <h1 class="mock-title">Battle 10：こころの部位バトル</h1>
+    <p class="mock-en">Unravel, Don't Break</p>
+    <div class="intro" id="mock-intro"></div>
+  </header>
+
+  <main class="stage">
+    <section class="panel status">
+      <div class="enemy">
+        <div class="enemy-face" aria-hidden="true">
+          <svg viewBox="0 0 120 120" width="64" height="64">
+            <circle cx="44" cy="50" r="14" fill="#f6d8c2" stroke="#d7a884" stroke-width="2"/>
+            <circle cx="76" cy="50" r="14" fill="#f6d8c2" stroke="#d7a884" stroke-width="2"/>
+            <ellipse cx="60" cy="84" rx="30" ry="24" fill="#f6d8c2" stroke="#d7a884" stroke-width="2"/>
+            <circle cx="44" cy="50" r="3.4" fill="#5b4a36"/>
+            <path d="M70 46 l12 8 M82 46 l-12 8" stroke="#5b4a36" stroke-width="2" stroke-linecap="round"/>
+            <path d="M52 88 q8 5 16 0" fill="none" stroke="#a86b4a" stroke-width="2.4" stroke-linecap="round"/>
+            <rect x="54" y="104" width="12" height="9" rx="2" fill="#fff" stroke="#cbb" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="enemy-meta">
+          <div class="enemy-name" id="enemy-name">捨てられたぬいぐるみ</div>
+          <div class="bar-row"><span class="cap">ざわめき</span>
+            <div class="bar"><div class="bar-fill zawameki" id="zawameki-fill"></div></div>
+            <span class="bar-num" id="zawameki-num"></span></div>
+        </div>
+      </div>
+      <div class="player">
+        <div class="player-tag">YOU — L / kotoba-android</div>
+        <div class="bar-row"><span class="cap">こころ</span>
+          <div class="bar"><div class="bar-fill kokoro" id="kokoro-fill"></div></div>
+          <span class="bar-num" id="kokoro-num"></span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="sec-cap">こころの部位（どれをほどく?）</h2>
+      <div class="parts" id="parts"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="sec-cap">ことば</h2>
+      <div id="cmd-area"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="sec-cap">ログ</h2>
+      <div class="log" id="log"></div>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+    <div class="overlay-box" id="overlay-box">
+      <h2 class="overlay-title" id="overlay-title"></h2>
+      <div class="overlay-text" id="overlay-text"></div>
+      <div class="overlay-actions">
+        <button class="restart" id="restart-btn">もう一度 遊ぶ</button>
+        <a class="to-lab" href="../../">Battle Lab に戻る</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js?v=1"></script>
+  <script src="js/engine.js?v=1"></script>
+  <script src="js/ui.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+</body>
+</html>

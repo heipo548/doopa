@@ -1,0 +1,90 @@
+/*
+ * style.css — Battle 12「鼓動リズムバトル」
+ * 静かで少し不安な夜。鼓動ドットと、同調／飲まれゲージを主役に。
+ */
+:root{
+  --sky-top:#ffd9ea; --sky-mid:#e7dbf7; --sky-low:#d2eafb; --meadow:#d9efcf; --meadow-deep:#bfe4b0;
+  --cream:#fffaf1; --paper:#fffdf8; --ink:#6f5b48; --ink-dim:#a98f76; --ink-strong:#5b4a36;
+  --line:#efe0c4; --line-deep:#e7cf9f; --gold:#f3cf7a; --zawa:#b48ad6; --kokoro:#ef93a8; --danger:#e07b8b; --sync:#5fa3c7; --drown:#8a6f9c;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ min-height:100%; color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Helvetica Neue",Arial,sans-serif;
+  line-height:1.7;
+  background:radial-gradient(120% 60% at 50% -8%,#eef0fb 0%,rgba(255,255,255,0) 42%),
+    linear-gradient(180deg,#cdd6f0 0%,#d8d2ec 30%,#d2e0f0 55%,#dce9e0 78%,#cfe2cf 100%);
+  background-attachment:fixed; -webkit-font-smoothing:antialiased; }
+a{ color:#7f8fc7; text-decoration:none; } a:hover{ text-decoration:underline; }
+
+.lab-head{ max-width:680px; margin:0 auto; padding:18px 16px 4px; text-align:center; }
+.back{ display:inline-block; font-size:13px; color:#7a86b8; background:#fff7; border:1px solid #cfd6ec; border-radius:999px; padding:3px 12px; margin-bottom:12px; }
+.back:hover{ background:#fff; text-decoration:none; }
+.lab-name{ font-size:12px; letter-spacing:.12em; color:var(--ink-dim); }
+.mock-title{ font-size:23px; color:#5b5680; line-height:1.4; text-shadow:1.2px 0 #b9c6ec,-1.2px 0 #cbb6e6; }
+.mock-en{ font-size:12px; letter-spacing:.16em; color:var(--ink-dim); margin-top:2px; }
+.intro{ max-width:600px; margin:14px auto 0; background:#fff8; border:1px dashed #cfd6ec; border-radius:12px; padding:12px 16px; font-size:13px; color:#5f5b78; text-align:left; }
+.intro p.blank{ line-height:.6; }
+
+.stage{ max-width:680px; margin:0 auto; padding:10px 16px 64px; }
+.panel{ background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:14px 16px; margin-top:14px; box-shadow:0 6px 16px #9aa6cf22; }
+.sec-cap{ font-size:12px; letter-spacing:.1em; color:#8f8ab0; margin-bottom:10px; }
+
+.status{ display:flex; gap:12px; flex-wrap:wrap; }
+.enemy,.player{ background:var(--cream); border:1px solid #e3def0; border-radius:14px; padding:12px 14px; box-shadow:0 4px 10px #9aa6cf22; }
+.enemy{ flex:1 1 240px; } .player{ flex:1 1 240px; display:flex; flex-direction:column; justify-content:center; }
+.enemy-name{ font-size:15px; font-weight:800; color:#5b5680; margin-bottom:6px; }
+.player-tag{ font-family:"SFMono-Regular",Menlo,Consolas,monospace; font-size:11px; color:#8b79a6; margin-bottom:8px; }
+.bar-row,.pip-row{ display:flex; align-items:center; gap:8px; margin:4px 0; }
+.cap{ font-size:11px; color:var(--ink-dim); flex:0 0 50px; }
+.bar{ position:relative; flex:1; height:16px; background:#eceaf4; border:1px solid #d7d2e8; border-radius:999px; overflow:hidden; }
+.bar-fill{ position:absolute; inset:0 auto 0 0; height:100%; border-radius:999px; transition:width .25s ease; }
+.bar-fill.zawameki{ background:linear-gradient(90deg,#cdb3e8,var(--zawa)); }
+.bar-fill.kokoro{ background:linear-gradient(90deg,#f6c2cf,var(--kokoro)); }
+.bar-fill.kokoro.danger{ background:linear-gradient(90deg,#f0a6b3,var(--danger)); }
+.bar-num{ font-size:11px; color:#5f5170; min-width:40px; text-align:right; }
+.pip{ letter-spacing:3px; font-size:14px; }
+.pip.sync{ color:var(--sync); } .pip.drown{ color:var(--drown); } .pip.drown.danger{ color:var(--danger); }
+
+/* 鼓動 */
+.beat-panel{ text-align:center; }
+.pattern-label{ font-size:13px; font-weight:700; color:#5b5680; margin-bottom:10px; }
+.beat-row{ display:flex; gap:10px; justify-content:center; align-items:center; padding:10px 0; }
+.beat{ font-size:22px; color:#cfd0e0; transition:transform .1s,color .1s; }
+.beat.on{ color:#9a86c0; }
+.beat.now{ transform:scale(1.5); color:#5b5680; text-shadow:0 0 8px #9a86c088; }
+.beat.on.now{ color:#7a4f9c; text-shadow:0 0 12px #b48ad6aa; }
+.beat-hint{ font-size:11px; color:var(--ink-dim); margin-top:6px; }
+
+.cmd-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; }
+.cmd{ text-align:left; width:100%; font:inherit; color:var(--ink); cursor:pointer; background:linear-gradient(180deg,#fff,#f3f1fb); border:2px solid #d7d2e8; border-radius:14px; padding:10px 12px; transition:transform .06s,background .12s,opacity .12s; }
+.cmd:hover:not(:disabled){ background:#fff; } .cmd:active:not(:disabled){ transform:translateY(1px); } .cmd:disabled{ opacity:.45; cursor:default; }
+.cmd.silence{ border-color:#c9d6c2; background:linear-gradient(180deg,#fff,#f1f6ee); }
+.cmd-name{ font-size:16px; font-weight:800; color:#5b5680; }
+.cmd-hint{ font-size:12px; color:#7c7894; margin-top:4px; }
+
+.log{ max-height:240px; overflow-y:auto; padding:4px 2px; }
+.log-block{ border-radius:10px; padding:8px 12px; margin:8px 0; background:#fbfaff; border:1px solid #e6e2f0; }
+.log-block .ln{ font-size:13.5px; } .log-block .ln.blank{ line-height:.5; }
+.ln.l{ font-family:"SFMono-Regular",Menlo,Consolas,monospace; color:#5a4a6e; }
+.log-block.open{ background:#eef0fb; border-color:#d7dcef; color:#5f5b80; }
+.log-block.system{ background:#f3f4fb; border-color:#dde0ef; color:#6f6b90; font-size:12.5px; }
+.log-block.player{ background:#fbfaff; }
+.log-block.hint{ background:#eef6f1; border-color:#cfe6d6; color:#4f7a64; }
+.log-block.fail{ background:#f6ecf0; border-color:#e6cdd8; color:#a05f7a; }
+.log-block.success{ background:linear-gradient(180deg,#eef3fb,#f3eefb); border:2px solid #b9c6ec; box-shadow:0 4px 16px #b9c6ec55; }
+.log-block.result{ background:#eef0fb; border-color:#d7dcef; }
+
+.overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:20px; background:#2f2f4a77; backdrop-filter:blur(2px); z-index:50; }
+.overlay.show{ display:flex; }
+.overlay-box{ max-width:520px; width:100%; max-height:86vh; overflow-y:auto; background:var(--paper); border-radius:18px; padding:24px 22px; box-shadow:0 18px 50px #00000033; }
+.overlay-box.win{ border:2px solid #b9c6ec; } .overlay-box.lose{ border:2px solid #c9b6d6; }
+.overlay-title{ font-size:20px; text-align:center; margin-bottom:14px; color:#5b5680; }
+.overlay-box.lose .overlay-title{ text-shadow:1.2px 0 #c0c0e7,-1.2px 0 #d8b6e6; }
+.overlay-text .ln{ font-size:14px; } .overlay-text .ln.blank{ line-height:.5; }
+.overlay-actions{ display:flex; gap:10px; justify-content:center; align-items:center; margin-top:18px; flex-wrap:wrap; }
+.restart{ font-size:15px; font-weight:800; cursor:pointer; color:#5b5680; background:linear-gradient(180deg,#fff,#f1f1fb); border:2px solid #c6c6ec; border-radius:999px; padding:10px 22px; }
+.restart:hover{ background:#fff; }
+.to-lab{ font-size:13px; color:#7a86b8; border:1px solid #cfd6ec; border-radius:999px; padding:9px 16px; background:#fff8; }
+.to-lab:hover{ background:#fff; text-decoration:none; }
+
+@media (max-width:520px){ .mock-title{ font-size:20px; } .cmd-grid{ grid-template-columns:1fr; } .cap{ flex-basis:44px; } }
