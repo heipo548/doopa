@@ -19,8 +19,8 @@
 |---|---|---|---|
 | 01 | [01-slay-the-spire-kotoba](./mocks/01-slay-the-spire-kotoba/) | Slay the Spire | 🟢 PLAYABLE |
 | 02 | [02-undertale-kotoba](./mocks/02-undertale-kotoba/) | UNDERTALE | 🟢 PLAYABLE |
-| 03 | （Inscryption型） | Inscryption | 🌱 準備中 |
-| 04 | （Dicey Dungeons型） | Dicey Dungeons | 🌱 準備中 |
+| 03 | [03-inscryption-kotoba](./mocks/03-inscryption-kotoba/) | Inscryption | 🟢 PLAYABLE |
+| 04 | [04-dicey-dungeons-kotoba](./mocks/04-dicey-dungeons-kotoba/) | Dicey Dungeons | 🟢 PLAYABLE |
 | 05 | （逆転裁判型・言葉の矛盾を突く） | 逆転裁判 | 🌱 準備中 |
 
 ## 新しいバトルモックを足すには
