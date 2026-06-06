@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>なぐれない むら の ルゥ — ことばで けんかする、ちいさな ぼうけん（仮）</title>
+  <meta name="description" content="DOOPA プロト#04（MVP・仮）。手を出せない村で、ひろった ことばだけが きみの きばに なる。とげの ことばで言い負かすか、やわらかい ことばで寄り添うか——どう勝ったかが、きみを 染める。探索×ことばのカードバトル。" />
+
+  <!-- 日本語ピクセルフォント（DotGothic16）。可愛いポップ＋ドット絵の雰囲気を底上げ。
+       読み込めない/オフラインでも CSS 側 system フォントへ自動フォールバックするので動作に影響しない。 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<!-- theme-pop が既定（涼ラベンダーの村）。凶暴が溜まると JS（state.darkLevel）が body へ
+     dark-1/2/3 を付け、世界の色温度が寒色へ冷えていく＝主人公ルゥだけが翳る演出。 -->
+<body class="theme-pop">
+
+  <!-- ════════════ 背景：手を出せない村（CSS/SVG のみ・操作透過） ════════════ -->
+  <div id="scene" aria-hidden="true">
+    <div class="scene-sky"></div>
+    <div class="scene-clouds">
+      <span class="cloud" style="left:10%; top:12%"></span>
+      <span class="cloud" style="left:40%; top:7%"></span>
+      <span class="cloud" style="left:68%; top:16%"></span>
+      <span class="cloud" style="left:86%; top:9%"></span>
+    </div>
+    <div class="scene-hill hill-back"></div>
+    <div class="scene-hill hill-mid"></div>
+    <div class="scene-houses">
+      <span class="house h-1" style="left:14%"></span>
+      <span class="house h-2" style="left:33%"></span>
+      <span class="house h-3" style="left:55%"></span>
+      <span class="house h-4" style="left:74%"></span>
+      <span class="house h-5" style="left:89%"></span>
+    </div>
+    <div class="scene-ground"></div>
+  </div>
+
+  <!-- ════════════ バトルHUD（タイトル/フィールド等では hidden） ════════════
+       中身（#topbar #enemy-area #log #player-bar #prompt #command-bar）は ui.js が描画。
+       ※思いやり(omoiyari)は UI に一切出さない＝ここに器を置かない。 -->
+  <div id="game" class="hidden">
+    <div class="battle-card">
+      <header id="topbar"></header>
+      <section id="enemy-area"></section>
+      <section id="log" aria-live="polite"></section>
+      <section id="player-bar"></section>
+      <section id="prompt"></section>
+      <nav id="command-bar"></nav>
+    </div>
+  </div>
+
+  <!-- 一時メッセージ（セーブ・気づき・ヒント） -->
+  <div id="toast"></div>
+
+  <!-- ════════════ オーバーレイ群（すべて class="overlay"・hidden でトグル） ════════════ -->
+
+  <!-- タイトル -->
+  <div id="overlay-title" class="overlay">
+    <div class="ov-panel title-panel"></div>
+  </div>
+
+  <!-- フィールド（探索）：広場（俯瞰）。ノードと主人公ルゥは ui が描画。 -->
+  <div id="overlay-field" class="overlay hidden">
+    <div class="field-body">
+      <div class="field-top">
+        <span class="field-area"></span>
+        <span class="field-hint"></span>
+      </div>
+      <div class="field-plaza"></div>
+      <div class="field-msg"></div>
+      <div class="field-sub"></div>
+    </div>
+  </div>
+
+  <!-- 会話（NPC） -->
+  <div id="overlay-dialogue" class="overlay hidden">
+    <div class="ov-panel dialogue-panel"></div>
+  </div>
+
+  <!-- カード入手（3択） -->
+  <div id="overlay-cards" class="overlay hidden">
+    <div class="ov-panel cards-panel"></div>
+  </div>
+
+  <!-- 結果／簡易エンド（傾向反映＋軽いメタ1行） -->
+  <div id="overlay-result" class="overlay hidden">
+    <div class="ov-panel result-panel"></div>
+  </div>
+
+  <!-- ゲームオーバー（非パーマデス：直前セーブから再開／タイトルへ） -->
+  <div id="overlay-gameover" class="overlay hidden">
+    <div class="ov-panel gameover-panel"></div>
+  </div>
+
+  <!-- ポーズ（中断メニュー） -->
+  <div id="overlay-pause" class="overlay hidden">
+    <div class="ov-panel pause-panel"></div>
+  </div>
+
+  <!-- 常設メニュー（☰）：フィールド/バトル中だけ右上に。 -->
+  <button id="menu-btn" class="menu-btn hidden" title="メニュー（中断）" aria-label="メニュー">☰</button>
+
+  <!-- ════════════ スクリプト読み込み順（house 様式・contract 準拠） ════════════
+       data → audio → metrics → state → save → battle → cards → field → ui → main -->
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/metrics.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/battle.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/field.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
