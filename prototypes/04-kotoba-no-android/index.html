@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>なぐれない むら の ルゥ — ことばで けんかする、ちいさな ぼうけん（仮）</title>
+  <title>ルゥと せかいの あいだ — ことばに ひとつ 足すと、せかいに なる</title>
   <meta name="description" content="DOOPA プロト#04（MVP・仮）。手を出せない村で、ひろった ことばだけが きみの きばに なる。とげの ことばで言い負かすか、やわらかい ことばで寄り添うか——どう勝ったかが、きみを 染める。探索×ことばのカードバトル。" />
 
   <!-- 日本語ピクセルフォント（DotGothic16）。可愛いポップ＋ドット絵の雰囲気を底上げ。
@@ -29,6 +29,7 @@
     </div>
     <div class="scene-hill hill-back"></div>
     <div class="scene-hill hill-mid"></div>
+    <div class="scene-path"></div>
     <div class="scene-houses">
       <span class="house h-1" style="left:14%"></span>
       <span class="house h-2" style="left:33%"></span>
@@ -36,6 +37,39 @@
       <span class="house h-4" style="left:74%"></span>
       <span class="house h-5" style="left:89%"></span>
     </div>
+    <!-- 木・茂み・花（家と同じ床〜手前。村を少し賑やかに） -->
+    <span class="scene-tree" style="left:5%"><span class="leaves"></span><span class="trunk"></span></span>
+    <span class="scene-tree t-r t-small" style="left:46%"><span class="leaves"></span><span class="trunk"></span></span>
+    <span class="scene-bush" style="left:22%"></span>
+    <span class="scene-bush" style="left:62%"></span>
+    <span class="scene-flower" style="left:20%; --fl:#f2a9c4"></span>
+    <span class="scene-flower" style="left:25%; --fl:#9ab8f0"></span>
+    <span class="scene-flower" style="left:60%; --fl:#f2c46a"></span>
+    <span class="scene-flower" style="left:66%; --fl:#c79af0"></span>
+
+    <!-- 井戸（いど）：神様「井戸の こえ」の居場所。水底に“見ているだれか”の気配。 -->
+    <div class="scene-well" aria-hidden="true">
+      <svg viewBox="0 0 64 86" width="100%" height="100%" preserveAspectRatio="xMidYMax meet" role="img" aria-label="井戸">
+        <rect x="11" y="30" width="5" height="34" rx="2" fill="#a98c74"/>
+        <rect x="48" y="30" width="5" height="34" rx="2" fill="#a98c74"/>
+        <path d="M32 8 L60 32 L4 32 Z" fill="#c9a27e"/>
+        <path d="M32 8 L32 32 L4 32 Z" fill="rgba(255,255,255,0.18)"/>
+        <rect x="3" y="30" width="58" height="5" rx="2.5" fill="#b58b66"/>
+        <ellipse cx="32" cy="80" rx="26" ry="6" fill="rgba(70,60,120,0.18)"/>
+        <path d="M8 58 Q8 52 14 52 L50 52 Q56 52 56 58 L54 78 Q54 82 48 82 L16 82 Q10 82 10 78 Z" fill="#cdbfae"/>
+        <g stroke="#b3a48f" stroke-width="1.4" stroke-linecap="round">
+          <line x1="20" y1="56" x2="19" y2="80"/>
+          <line x1="32" y1="55" x2="32" y2="81"/>
+          <line x1="44" y1="56" x2="45" y2="80"/>
+        </g>
+        <ellipse cx="32" cy="54" rx="24" ry="7" fill="#ded2c0"/>
+        <ellipse cx="32" cy="54" rx="19" ry="5" fill="#3a3552"/>
+        <ellipse class="well-water" cx="32" cy="55" rx="15" ry="3.6" fill="#5b63d6"/>
+        <ellipse cx="29" cy="54" rx="6" ry="1.2" fill="rgba(255,255,255,0.55)"/>
+        <circle class="well-eye" cx="32" cy="55" r="1.4" fill="#efe6ff"/>
+      </svg>
+    </div>
+
     <div class="scene-ground"></div>
   </div>
 

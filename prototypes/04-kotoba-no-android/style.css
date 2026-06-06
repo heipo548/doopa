@@ -340,9 +340,56 @@ body.dark-2 .avatar-body::before, body.dark-3 .avatar-body::before { background:
 .mm-intro, .mm-outro { font-size: 12.5px; color: #cfc3f0; line-height: 1.7; text-align: left; }
 .prompt-text.unstable { color: #c98bd9; font-style: italic; }
 
+/* ════════════ キャラSVGアート（インラインSVGをコンテナにフィット＋旧CSS絵を無効化） ════════════ */
+.node-ic svg { width: 34px; height: 34px; display: block; }            /* フィールドのノード絵 */
+.avatar-body { display: none; }                                        /* 旧CSSアバターは廃止 */
+.avatar svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.dia-face { background: var(--paper2); overflow: hidden; }             /* 会話の顔（grad背景を中立化） */
+.dia-face svg { width: 100%; height: 100%; display: block; }
+.enemy-sprite { background: transparent !important; box-shadow: none !important; border-radius: 0 !important;
+  display: grid; place-items: center; overflow: visible; }
+.enemy-sprite::before, .enemy-sprite::after, .enemy-sprite.shape-kid::after { content: none !important; } /* 旧の箱/とげを無効化 */
+.enemy-sprite svg { width: 100%; height: 100%; display: block; }
+.player-sprite { background: transparent !important; border-color: transparent !important; box-shadow: none !important;
+  display: grid; place-items: center; }
+.player-sprite::before { content: none !important; }                   /* 旧の目を無効化 */
+.player-sprite svg { width: 100%; height: 100%; display: block; }
+/* 主人公だけ翳る：dark段でルゥの目/胸L が #8a4dff に冷たく光る（既存 dark-N 演出に追従） */
+body.dark-2 .avatar svg .ru-eye, body.dark-3 .avatar svg .ru-eye,
+body.dark-2 .player-sprite svg .ru-eye, body.dark-3 .player-sprite svg .ru-eye { fill: #8a4dff; }
+body.dark-2 .avatar svg .ru-core, body.dark-3 .avatar svg .ru-core,
+body.dark-2 .player-sprite svg .ru-core, body.dark-3 .player-sprite svg .ru-core { stroke: #8a4dff; filter: drop-shadow(0 0 4px #8a4dff); }
+
+/* ════════════ 井戸（いど）：神様「井戸の こえ」の居場所 ════════════ */
+.scene-well { position: absolute; bottom: 15%; right: 7%; width: 74px; height: 100px; z-index: 1;
+  pointer-events: none; filter: drop-shadow(0 4px 6px rgba(70,60,120,0.18)); }
+.well-water { transform-box: fill-box; transform-origin: center; animation: wellShimmer 5.5s ease-in-out infinite; }
+@keyframes wellShimmer { 0%,100% { opacity: 0.85; transform: scaleY(1); } 45% { opacity: 1; transform: scaleY(1.15); } 62% { opacity: 0.5; transform: scaleY(0.7); } }
+.well-eye { transform-box: fill-box; transform-origin: center; opacity: 0.25; animation: wellEye 9s ease-in-out infinite; }
+@keyframes wellEye { 0%,70%,100% { opacity: 0.18; transform: translateY(0); } 80% { opacity: 0.9; transform: translateY(-0.6px); } 88% { opacity: 0.18; transform: translateY(0); } }
+body.dark-2 .well-water, body.dark-3 .well-water { fill: #6b5fae; }
+body.dark-3 .well-eye { fill: #c98bd9; opacity: 0.4; }
+
+/* ════════════ 村の賑やかし（木/茂み/小道/花・CSSのみ・操作透過） ════════════ */
+.scene-path { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 46%; height: 18%;
+  background: linear-gradient(180deg, rgba(232,226,210,0) 0%, rgba(228,220,200,0.55) 35%, rgba(220,210,188,0.8) 100%);
+  clip-path: polygon(42% 0, 58% 0, 88% 100%, 12% 100%); border-radius: 0 0 8px 8px; }
+.scene-tree { position: absolute; bottom: 16%; width: 44px; height: 64px; }
+.scene-tree .trunk { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 7px; height: 22px; background: #b08a6a; border-radius: 3px; }
+.scene-tree .leaves { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #bfe3c4, #8fcf9e 70%); }
+.scene-tree .leaves::after { content: ""; position: absolute; top: 6px; left: -10px; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #c7e8cb, #97d3a4 72%); }
+.scene-tree.t-r { transform: scaleX(-1); }
+.scene-tree.t-small { width: 32px; height: 46px; opacity: 0.9; }
+.scene-bush { position: absolute; bottom: 14%; width: 40px; height: 22px; background: radial-gradient(circle at 50% 20%, #b6dec0, #93cda0 75%); border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%; }
+.scene-bush::before, .scene-bush::after { content: ""; position: absolute; bottom: 0; width: 22px; height: 16px; border-radius: 50%; background: inherit; }
+.scene-bush::before { left: -8px; } .scene-bush::after { right: -8px; }
+.scene-flower { position: absolute; bottom: 13%; width: 9px; height: 9px; border-radius: 50%; background: var(--fl, #f2a9c4); box-shadow: 0 0 0 2px rgba(255,255,255,0.55); }
+.scene-flower::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--gold); }
+
 /* ════════════ アクセシビリティ：動きを減らす ════════════ */
 @media (prefers-reduced-motion: reduce) {
-  .scene-clouds .cloud, .float-num, .shake { animation: none !important; }
+  .scene-clouds .cloud, .float-num, .shake, .well-water, .well-eye { animation: none !important; }
+  .well-eye { opacity: 0.4; }
   .bar-fill, .tend-fill, .meta-logo .rv-l { transition: none !important; }
   #scene { transition: none !important; }
   #toast { transition: opacity 0.1s !important; }

@@ -34,6 +34,7 @@ const PLAYER_INIT = {
   hp: 28,
   maxHp: 28,
   startCards: ["urusai", "kiite"], // harsh:うるさい / kind:きいてるよ
+  sprite: "ruu",             // SPRITES のキー（フィールド/バトルの見た目）
 };
 
 // ──────────────────────────────────────────
@@ -116,7 +117,7 @@ const WORDS = {
 // ──────────────────────────────────────────
 const ENEMIES = {
   kadokko: {
-    id: "kadokko", name: "かどっこ", shape: "kid", color: "#d98aa6",
+    id: "kadokko", name: "かどっこ", shape: "kid", color: "#d98aa6", sprite: "kadokko",
     mindHpMax: 34, omoiyariNeed: 36, atk: 3, gift: "tonari", isBoss: false,
     attackLines: [
       "「どこから 来たの?って きいてるの。なんで 答えないの。」",
@@ -129,7 +130,7 @@ const ENEMIES = {
   // くちなし＝村いちばんの言い負かし上手。村の出口に立つ最後の関門。
   //   とげの裏に「だれにも なまえを 呼ばれたことがない さみしさ」が透ける（ただの悪役にしない）。
   kuchinashi: {
-    id: "kuchinashi", name: "くちなし", shape: "boss", color: "#7c6fb0",
+    id: "kuchinashi", name: "くちなし", shape: "boss", color: "#7c6fb0", sprite: "kuchinashi",
     mindHpMax: 48, omoiyariNeed: 40, atk: 3, gift: "matteru", isBoss: true,
     attackLines: [
       "「ことばも なかった くせに。ひろった ことばで、わたしに 勝つ つもり?」",
@@ -147,7 +148,7 @@ const ENEMIES = {
 // ──────────────────────────────────────────
 const NPCS = {
   npc_kona: {
-    id: "npc_kona", name: "こな", role: "パン屋の子", shape: "girl", color: "#f0b56a",
+    id: "npc_kona", name: "こな", role: "パン屋の子", shape: "girl", color: "#f0b56a", sprite: "kona",
     lines: [
       "あ、起きた! きみ、村はずれで ずっと しゃがんでたよね。",
       "だいじょうぶ? ……って きいても、なんにも 言わないのね。",
@@ -161,7 +162,7 @@ const NPCS = {
     gives: ["kankeinai", "ganbatta", "namae"], // harsh強 / kind(回復) / kind強 のトレードオフ3択
   },
   npc_ido: {
-    id: "npc_ido", name: "いどばた ばあ", role: "井戸ばたの老婆", shape: "oba", color: "#a9b0d0",
+    id: "npc_ido", name: "いどばた ばあ", role: "井戸ばたの老婆", shape: "oba", color: "#a9b0d0", sprite: "baa",
     lines: [
       "ほう。ことばを 持たん子が、また 来たかい。",
       "この村でな、手を あげられんのは のろいでも 罰でもない。守るための 決まりさ。",
@@ -330,9 +331,25 @@ const TITLE = {
   estPlay: "プレイ時間 約8分",
 };
 
+// ──────────────────────────────────────────
+// SPRITES（キャラのインラインSVG＝アート。CSS/SVG のみ・外部素材なし）
+//   art-production-director / art-integration が制作、pixel-art-qa が点検（GO_WITH_FIXES→反映済み）。
+//   共通：viewBox 0 0 100 100・サイズはCSS任せ・統一輪郭線 #6a5fae・頬の淡ピンク・aria-label付き。
+//   ruu のみ .ru-eye/.ru-core を持ち、dark段で目/胸L が #8a4dff に冷たく光る（CSSで切替＝主人公だけ翳る）。
+//   kuchinashi の顔fill は a11y 修正で #b3a8dc→#c9c0ea（輪郭とのコントラスト確保）。
+// ──────────────────────────────────────────
+const SPRITES = {
+  ruu: `<svg viewBox="0 0 100 100" role="img" aria-label="ルゥ：無機質アンドロイドの子。胸にかすれたL" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke="#6a5fae" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="50" y1="10" x2="50" y2="18"/><circle cx="50" cy="8.5" r="2.6" fill="#8b91e8"/><path d="M30 30 Q50 16 70 30 Q73 40 70 50 Q50 60 30 50 Q27 40 30 30 Z" fill="#eef1ff"/><circle class="ru-eye" cx="42" cy="39" r="3.6" fill="#5b63d6" stroke="none"/><circle class="ru-eye" cx="58" cy="39" r="3.6" fill="#5b63d6" stroke="none"/><circle cx="35" cy="45" r="2.6" fill="#f6c6d8" stroke="none"/><circle cx="65" cy="45" r="2.6" fill="#f6c6d8" stroke="none"/><path d="M34 64 Q34 58 40 58 L60 58 Q66 58 66 64 L66 84 Q66 90 60 90 L40 90 Q34 90 34 84 Z" fill="#dfe6ff"/><path class="ru-core" d="M46 68 L46 78 L54 78" stroke="#8b91e8" stroke-width="2.6" opacity="0.85"/><line x1="30" y1="70" x2="24" y2="78"/><line x1="70" y1="70" x2="76" y2="78"/></g></svg>`,
+  kona: `<svg viewBox="0 0 100 100" role="img" aria-label="こな：パン屋の子。やさしい少女" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke="#6a5fae" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M28 30 Q26 16 50 14 Q74 16 72 30 Q70 36 64 35 L36 35 Q30 36 28 30 Z" fill="#f0b56a"/><circle cx="50" cy="42" r="24" fill="#ffe6c8"/><path d="M30 40 Q26 22 50 20 Q74 22 70 40 Q60 33 50 33 Q40 33 30 40 Z" fill="#caa15a"/><circle cx="41" cy="43" r="3.2" fill="#5a4633" stroke="none"/><circle cx="59" cy="43" r="3.2" fill="#5a4633" stroke="none"/><circle cx="34" cy="49" r="3" fill="#f6a6bf" stroke="none"/><circle cx="66" cy="49" r="3" fill="#f6a6bf" stroke="none"/><path d="M44 51 Q50 56 56 51"/><path d="M30 70 Q30 62 40 62 L60 62 Q70 62 70 70 L70 90 L30 90 Z" fill="#fff3e0"/><path d="M40 62 Q50 72 60 62"/></g></svg>`,
+  baa: `<svg viewBox="0 0 100 100" role="img" aria-label="いどばた ばあ：井戸ばたの老婆。あたたかい賢者" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke="#6a5fae" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M28 36 Q26 18 50 16 Q74 18 72 36 Q72 44 64 44 L36 44 Q28 44 28 36 Z" fill="#cfd3ec"/><circle cx="50" cy="46" r="23" fill="#f2ddc7"/><path d="M30 44 Q28 26 50 24 Q72 26 70 44 Q60 38 50 38 Q40 38 30 44 Z" fill="#e7e9f6"/><path d="M37 47 Q41 44 45 47"/><path d="M55 47 Q59 44 63 47"/><circle cx="41" cy="49" r="2.4" fill="#5a4633" stroke="none"/><circle cx="59" cy="49" r="2.4" fill="#5a4633" stroke="none"/><circle cx="33" cy="54" r="3" fill="#f2b8b0" stroke="none"/><circle cx="67" cy="54" r="3" fill="#f2b8b0" stroke="none"/><path d="M44 58 Q50 62 56 58"/><path d="M30 72 Q30 64 42 64 L58 64 Q70 64 70 72 L70 90 L30 90 Z" fill="#bcc2e0"/></g></svg>`,
+  kadokko: `<svg viewBox="0 0 100 100" role="img" aria-label="かどっこ：とげっ子の中ボス。とげと弱さ" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke="#6a5fae" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M50 8 L57 24 L72 18 L66 33 L82 36 L68 45 L78 58 L62 56 L60 72 L50 60 L40 72 L38 56 L22 58 L32 45 L18 36 L34 33 L28 18 L43 24 Z" fill="#d98aa6"/><circle cx="50" cy="44" r="19" fill="#f0b6c8"/><path d="M40 40 L46 43"/><path d="M60 40 L54 43"/><circle cx="43" cy="45" r="3" fill="#5a2f3f" stroke="none"/><circle cx="57" cy="45" r="3" fill="#5a2f3f" stroke="none"/><circle cx="36" cy="50" r="2.6" fill="#e88aa0" stroke="none"/><circle cx="64" cy="50" r="2.6" fill="#e88aa0" stroke="none"/><path d="M44 54 Q50 50 56 54"/><path d="M40 78 Q50 84 60 78" opacity="0.6"/></g></svg>`,
+  kuchinashi: `<svg viewBox="0 0 100 100" role="img" aria-label="くちなし：言い負かし上手のボス。とげの裏のさみしさ。口元は描かない" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke="#6a5fae" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M50 6 L58 22 L74 14 L70 31 L88 32 L73 43 L86 56 L69 55 L70 73 L57 62 L50 78 L43 62 L30 73 L31 55 L14 56 L27 43 L12 32 L30 31 L26 14 L42 22 Z" fill="#7c6fb0"/><circle cx="50" cy="42" r="21" fill="#c9c0ea"/><path d="M38 36 L47 40"/><path d="M62 36 L53 40"/><path d="M40 45 Q43 42 46 45"/><path d="M54 45 Q57 42 60 45"/><circle cx="35" cy="50" r="2.6" fill="#9a8fce" stroke="none"/><circle cx="65" cy="50" r="2.6" fill="#9a8fce" stroke="none"/><path d="M44 56 Q47 58 47 60" opacity="0.5"/></g></svg>`,
+};
+
 // ── window へ明示エクスポート（headless/ui チェッカは文字列 eval で読むので明示する）。
 if (typeof window !== "undefined") {
   window.PLAYER_INIT = PLAYER_INIT;
+  window.SPRITES = SPRITES;
   window.WORDS = WORDS;
   window.ENEMIES = ENEMIES;
   window.NPCS = NPCS;

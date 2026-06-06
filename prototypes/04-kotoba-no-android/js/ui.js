@@ -109,12 +109,12 @@ function renderField() {
     html += '<button class="node node-' + n.type + lockCls + doneCls + '" data-node="' + _esc(n.id) + '"' +
             ' style="left:' + (n.x * 100) + '%; top:' + (n.y * 100) + '%"' +
             ' aria-label="' + _esc(n.label) + '">' +
-            '<span class="node-ic" aria-hidden="true">' + nodeIcon(n.type) + '</span>' +
+            '<span class="node-ic" aria-hidden="true">' + nodeArt(n) + '</span>' +
             '<span class="node-label">' + _esc(n.label) + (n.type === "exit" && n.locked ? "（まだ）" : "") + '</span>' +
             '</button>';
   });
-  // 主人公ルゥ（アバター）
-  html += '<div class="avatar" aria-label="ルゥ"><span class="avatar-body"></span></div>';
+  // 主人公ルゥ（アバター＝SVG）
+  html += '<div class="avatar" aria-label="ルゥ">' + sprite("ruu") + '</div>';
   plaza.innerHTML = html;
 
   // 参照を保持（main の rAF が位置と near 判定で使う）
@@ -138,6 +138,17 @@ function nodeIcon(type) {
     case "exit": return "⇪";
     default: return "・";
   }
+}
+// SPRITES からSVGを引く小ヘルパ（無ければ空文字＝落ちない）。
+function sprite(id) {
+  return (typeof SPRITES !== "undefined" && SPRITES[id]) ? SPRITES[id] : "";
+}
+// フィールドのノード絵：NPC/敵はキャラSVG、その他は記号アイコン。
+function nodeArt(n) {
+  let key = null;
+  if (n.type === "npc" && typeof NPCS !== "undefined" && NPCS[n.ref]) key = NPCS[n.ref].sprite;
+  else if (n.type === "enemy" && typeof ENEMIES !== "undefined" && ENEMIES[n.ref]) key = ENEMIES[n.ref].sprite;
+  return (key && sprite(key)) ? sprite(key) : nodeIcon(n.type);
 }
 
 // main の rAF から呼ぶ：アバター位置の反映と、近接ノードの強調。
@@ -166,7 +177,7 @@ function renderDialogue() {
   const panel = _el("overlay-dialogue").querySelector(".dialogue-panel");
   // 問い（offerPrompt）フェーズかどうかは d.asking で区別（main がセット）。
   panel.innerHTML =
-    '<div class="dia-head"><span class="dia-face face-' + _esc(npc.shape) + '"></span>' +
+    '<div class="dia-head"><span class="dia-face face-' + _esc(npc.shape) + '">' + sprite(npc.sprite) + '</span>' +
       '<span class="dia-name">' + _esc(npc.name) + '</span>' +
       '<span class="dia-role">' + _esc(npc.role || "") + '</span></div>' +
     '<div class="dia-body"></div>' +
@@ -218,7 +229,7 @@ function renderBattle() {
   // enemy-area：相手＋見える精神HPバー（思いやりは出さない）
   const mindPct = Math.max(0, Math.round((b.mindHp / b.mindHpMax) * 100));
   _el("enemy-area").innerHTML =
-    '<div class="enemy-sprite shape-' + _esc(en.shape) + '" style="--col:' + _esc(en.color) + '"></div>' +
+    '<div class="enemy-sprite shape-' + _esc(en.shape) + '" style="--col:' + _esc(en.color) + '">' + sprite(en.sprite) + '</div>' +
     '<div class="enemy-info">' +
       '<div class="enemy-name">' + _esc(en.name) + '</div>' +
       '<div class="bar-row"><span class="bar-label">精神HP</span>' +
@@ -233,7 +244,7 @@ function renderBattle() {
   // player-bar：ルゥと見える hp のみ
   const hpPct = Math.max(0, Math.round((game.player.hp / game.player.maxHp) * 100));
   _el("player-bar").innerHTML =
-    '<div class="player-sprite' + (d >= 1 ? " dimmed" : "") + '"></div>' +
+    '<div class="player-sprite' + (d >= 1 ? " dimmed" : "") + '">' + sprite("ruu") + '</div>' +
     '<div class="player-info">' +
       '<div class="player-name">' + _esc(game.player.displayName) + '</div>' +
       '<div class="bar-row"><span class="bar-label">hp</span>' +
