@@ -445,9 +445,9 @@ body.dark-3 .well-eye { fill: #c98bd9; opacity: 0.4; }
 .kind-ripple { position: absolute; left: 42px; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px;
   border-radius: 50%; border: 2.5px solid var(--kind); pointer-events: none; animation: kindRipple 0.7s ease-out forwards; }
 @keyframes kindRipple { 0% { transform: scale(0.4); opacity: 0.9; } 100% { transform: scale(5); opacity: 0; } }
-/* コマンド：敵ターン待ちは無効化、押下に手応え */
-.cmd[disabled] { opacity: 0.45; cursor: default; filter: saturate(0.6); }
-.cmd:not([disabled]):active { transform: translateY(2px); }
+/* コマンド：敵ターン待ちは“見た目だけ”薄く（クリックは可能＝JSの battleBusy で弾く。固まらない）。押下に手応え */
+#command-bar.busy .cmd { opacity: 0.5; filter: saturate(0.6); }
+.cmd:active { transform: translateY(2px); }
 
 /* 画面が出るときの ふわっ（安っぽさ解消の小技） */
 .overlay:not(.hidden), #game:not(.hidden) { animation: ovFade 0.22s ease both; }

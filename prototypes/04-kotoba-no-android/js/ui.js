@@ -264,22 +264,26 @@ function renderBattle() {
   _el("prompt").innerHTML = '<span class="prompt-text' + (!busy && d >= 1 ? " unstable" : "") + '">' + _esc(dl) + '</span>';
 
   // command-bar：手札を harsh 列 / kind 列で（色＋形＋効果語の三重表現）
+  //   ★敵ターン待ちは disabled 属性を“付けない”。理由：disabled は再描画漏れで固定化すると
+  //     クリックが永久に発火せず詰む。代わりに JS 側 onCard の battleBusy ガードで弾き、見た目だけ
+  //     .busy クラスで薄くする（ボタンは常に物理クリック可能＝二度と固まらない）。
   const cmd = battleCommandList();
-  const busyAttr = app.battleBusy ? " disabled" : "";
   function btns(idList, isHarsh) {
     return idList.map((id) => {
       const lv = cardLevel(id);
       const face = cardFace(id);
       const icon = isHarsh ? "▲" : "●";
       const eff = isHarsh ? "削る" : "寄りそう";
-      return '<button class="cmd ' + (isHarsh ? "cmd-harsh" : "cmd-kind") + '" data-action="card" data-word="' + _esc(id) + '"' + busyAttr + '>' +
+      return '<button class="cmd ' + (isHarsh ? "cmd-harsh" : "cmd-kind") + '" data-action="card" data-word="' + _esc(id) + '">' +
         '<span class="cmd-face">' + icon + " " + _esc(face) + '</span>' +
         '<span class="cmd-eff">' + eff + (lv > 1 ? " ・Lv" + lv : "") + '</span></button>';
     }).join("");
   }
-  _el("command-bar").innerHTML =
+  const cbar = _el("command-bar");
+  cbar.innerHTML =
     '<div class="cmd-col cmd-col-harsh"><div class="cmd-head">きつい ことば</div>' + btns(cmd.harsh, true) + '</div>' +
     '<div class="cmd-col cmd-col-kind"><div class="cmd-head">やさしい ことば</div>' + btns(cmd.kind, false) + '</div>';
+  if (cbar.classList) cbar.classList.toggle("busy", !!app.battleBusy); // 見た目だけ薄く（クリックは可能）
 }
 
 // ── 結果／簡易エンド（勝ち方×傾向＋軽いメタ1行） ──

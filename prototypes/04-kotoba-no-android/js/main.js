@@ -196,9 +196,11 @@ function onCard(wordId) {
 //   そうしないと render() がコマンドを disabled のまま描き、その後フラグを下げても再描画されず、
 //   「次のコマンドが押せない」状態になる（disabled なボタンは click を発火しない）。
 function resolveEnemyTurn() {
-  app.battleBusy = false;                       // ← 先に解除してから描画（コマンドを enabled で再描画）
-  if (game.battle && !isBattleOver()) enemyTurn();
-  render();                                     // 敵の一手＋コマンド再活性（gameover/結果なら その画面）を反映
+  try {
+    if (game.battle && !isBattleOver()) enemyTurn();
+  } catch (e) { /* 万一の例外でも下で必ず解除＆再描画する */ }
+  app.battleBusy = false;                       // 何があっても“待ち”を解除（コマンドが詰まらない）
+  render();                                     // 何があっても再描画（敵の一手＋コマンド再活性 / gameover・結果画面）
   if (app.screen === "field") afterBattleToField();
 }
 
