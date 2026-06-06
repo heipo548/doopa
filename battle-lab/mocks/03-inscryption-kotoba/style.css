@@ -1,0 +1,238 @@
+/*
+ * style.css — 「言葉を捧げる盤面バトル」（Inscryption 参考）の見た目
+ * 方針：村長（相手）はポップなパステル＝かわいい。L（主人公）側は等幅＋淡いノイズ＝無機質。
+ *       供える操作・残響・4レーンの「正面」が直感的に分かることを最優先。派手さより遊びやすさ。
+ */
+
+:root {
+  --sky-top:#ffd9ea; --sky-mid:#e7dbf7; --sky-low:#d2eafb; --meadow:#d9efcf;
+  --cream:#fffaf1; --parch:#fff4dc; --ink:#6f5b48; --ink-dim:#a98f76;
+  --line:#efe0c4; --line-deep:#e7cf9f;
+  --pink:#ef93a8; --gold:#f3cf7a; --mint:#8fd09a; --sky-btn:#8fc3ea;
+  --heart:#ef93a8;     /* 閉じた心バー */
+  --noise:#7fc6c9;     /* ノイズ耐性バー（L＝無機質な青緑） */
+  --android:#5d6b78;   /* L まわりの無機質グレー */
+  --echo:#8d7fb3;      /* 残響（紫がかった気配） */
+}
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+html, body {
+  min-height:100%;
+  color:var(--ink);
+  font-family:-apple-system, BlinkMacSystemFont, "Hiragino Maru Gothic ProN",
+    "Hiragino Sans", "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+  line-height:1.6;
+  background:
+    radial-gradient(120% 60% at 50% -8%, #fff2f8 0%, rgba(255,255,255,0) 42%),
+    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 26%, var(--sky-low) 46%,
+      #e9f3e2 60%, var(--meadow) 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ───────── ヘッダー ───────── */
+.lab-head { max-width:780px; margin:0 auto; padding:18px 16px 4px; }
+.back { display:inline-block; font-size:13px; color:#bb6f86; text-decoration:none;
+  background:#fff7; border:1px solid var(--line-deep); border-radius:999px; padding:3px 12px; margin-bottom:10px; }
+.back:hover { background:#fff; }
+.lab-name { font-size:12px; letter-spacing:.08em; color:var(--ink-dim); }
+.mock-title { font-size:21px; color:#7a5f49; margin:2px 0 6px; line-height:1.35;
+  /* タイトルだけ ほんのり グリッチ＝言葉が欠けた感じ */
+  text-shadow:1.2px 0 #f7c0cf, -1.2px 0 #b9d8e6; }
+.mock-title .en { font-size:12px; color:var(--ink-dim); text-shadow:none; display:inline-block; }
+.disclaimer { font-size:12px; color:var(--ink-dim); background:#fff6; display:inline-block;
+  border:1px dashed var(--line-deep); border-radius:8px; padding:2px 9px; }
+
+/* 開始説明 */
+.intro { max-width:780px; margin:8px auto 0; padding:0 16px; }
+.intro p { font-size:12.5px; color:#7a6a55; background:#fffaf1aa; border:1px solid var(--line);
+  border-radius:10px; padding:8px 12px; margin-top:6px; }
+
+/* ───────── 盤面 ───────── */
+.board { max-width:780px; margin:0 auto; padding:10px 14px 40px; }
+
+/* 相手カード（ポップ） */
+.enemy-zone { margin-bottom:10px; }
+.enemy-card { display:flex; gap:12px; align-items:center;
+  background:var(--cream); border:2px solid var(--line-deep); border-radius:18px;
+  padding:10px 14px; box-shadow:0 6px 16px #e8c98a33; }
+.enemy-face { flex:0 0 auto; }
+.enemy-info { flex:1 1 auto; min-width:0; }
+.enemy-name { font-size:17px; font-weight:800; color:#7a5f49; }
+.enemy-title { font-size:11.5px; color:var(--ink-dim); margin-bottom:6px; }
+
+/* 残響ボックス（言葉を失うほど 増える サブ資源） */
+.echo-box { flex:0 0 auto; text-align:center; background:#f3eefa; border:1px solid #ddd0ee;
+  border-radius:12px; padding:6px 12px; color:var(--echo); }
+.echo-box.mono { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.echo-cap { display:block; font-size:10px; letter-spacing:.1em; }
+.echo-num { display:block; font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
+
+/* バー共通 */
+.bar { position:relative; height:20px; border-radius:999px; background:#0000000d;
+  border:1px solid var(--line); overflow:hidden; }
+.bar-fill { position:absolute; inset:0 auto 0 0; height:100%; border-radius:999px; transition:width .35s ease; }
+.bar-fill.heart { background:linear-gradient(90deg, #f6a6b8, var(--heart)); }
+.bar-fill.noise { background:linear-gradient(90deg, #a7dadc, var(--noise)); }
+.bar-cap { position:absolute; left:10px; top:0; line-height:20px; font-size:11px; color:#5b4a36cc; z-index:1; }
+.bar-num { position:absolute; right:10px; top:0; line-height:20px; font-size:11px; color:#5b4a36cc; z-index:1;
+  font-variant-numeric:tabular-nums; }
+
+/* ───────── 4レーン盤面 ───────── */
+.lanes { margin:6px 0 4px; }
+.lane-label { font-size:11px; color:var(--ink-dim); letter-spacing:.06em; margin:8px 2px 4px; }
+.lane-label.you-label { color:var(--android); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.lane-row { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
+
+/* レーンのセル（言霊／予告／空き） */
+.cell { min-height:76px; border-radius:12px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:3px; padding:6px 4px; text-align:center;
+  border:1.5px solid var(--line); position:relative; }
+.cell.empty { color:#cdbfa6; background:#ffffff55; border-style:dashed; }
+.cell .ph { font-size:18px; opacity:.5; }
+
+/* 予告（村長が次に出す言葉。少し不穏な薄紫） */
+.intent-cell.telegraph { background:linear-gradient(180deg,#fff0f4,#efe7f7); border-color:#e6cdd9; }
+.intent-cell .nm { font-size:13px; font-weight:800; color:#9c5e74; }
+.intent-cell.empty { min-height:54px; }
+.deep-peek { font-size:11px; color:#8175ab; min-height:16px; margin:3px 2px 0; opacity:0; transition:opacity .3s; }
+.deep-peek.show { opacity:1; }
+
+/* 言霊（場に出た言葉） */
+.lemma { width:100%; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.lemma .nm { font-size:14px; font-weight:800; line-height:1.2; }
+.lemma .stat { display:flex; gap:8px; font-size:11px; font-variant-numeric:tabular-nums; }
+.lemma .reach { color:#c0506a; } .lemma .dur { color:#5d8fc0; }
+
+/* 村長の言霊＝ポップ／L の言霊＝無機質 */
+.board-e .lemma { color:#7a5f49; }
+.board-e .cell, .board-cell.board-e:not(.empty) { }
+.board-cell.board-e:not(.empty) { background:var(--cream); border-color:var(--line-deep); box-shadow:0 3px 8px #e8c98a2e; }
+.board-cell.board-p:not(.empty) { background:#f4f6f8; border-color:#cfd8df;
+  background-image:repeating-linear-gradient(0deg, #00000005 0 2px, transparent 2px 4px); }
+.board-p .lemma { color:var(--android); }
+.board-p .lemma .nm { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+/* 正面の軸 */
+.axis { text-align:center; margin:8px 0; }
+.axis span { font-size:10px; letter-spacing:.3em; color:#b79bd0; background:#fff6;
+  border:1px solid #e3d6f0; border-radius:999px; padding:2px 12px; }
+
+/* 供える対象（自分の言霊）と 設置先（空き）のハイライト */
+.board-cell.offerable { cursor:pointer; outline:2px dashed #c79bd6; outline-offset:-3px; }
+.board-cell.offerable:hover { background:#f6eefb; }
+.board-cell.offering-selected { outline:2px solid #a86bd0; background:#efe0f7 !important;
+  box-shadow:0 0 0 3px #d9bdee inset; }
+.board-cell.offering-selected::after { content:'供える'; position:absolute; top:2px; right:4px;
+  font-size:9px; color:#8e4fb8; }
+.board-cell.placeable { cursor:pointer; border-style:solid; border-color:#8fc3a0;
+  background:#eef9f0; animation:placePulse 1.2s ease-in-out infinite; }
+.board-cell.placeable::after { content:'ここに置く'; position:absolute; bottom:3px; font-size:9px; color:#4f9a64; }
+@keyframes placePulse { 0%,100%{ box-shadow:0 0 0 0 #9fd3ad88; } 50%{ box-shadow:0 0 0 4px #9fd3ad44; } }
+
+/* 性質バッジ */
+.nature { font-size:9.5px; border-radius:999px; padding:1px 7px; border:1px solid; line-height:1.4; }
+.nature-mamoru   { background:#e7f6f3; color:#3f8f86; border-color:#bfe6dd; }
+.nature-nozoku   { background:#eaf1fb; color:#5170a8; border-color:#c9d8ef; }
+.nature-kabe     { background:#eeeeef; color:#6b6b73; border-color:#d7d7dd; }
+.nature-massugu  { background:#fbeef0; color:#c2566e; border-color:#f0c6cf; }
+.nature-omoi     { background:#f3eee6; color:#8a6f4e; border-color:#e3d3bb; }
+.nature-hodokeru { background:#f3eefa; color:#7d63a8; border-color:#ddccef; }
+
+/* ───────── プレイヤー（無機質） ───────── */
+.player-zone { background:#f4f6f8;
+  background-image:repeating-linear-gradient(0deg, #00000005 0 2px, transparent 2px 4px);
+  border:1.5px solid #cfd8df; border-radius:16px; padding:10px 14px; margin-top:10px; }
+.player-tag { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size:11px; letter-spacing:.1em; color:var(--android); margin-bottom:8px; }
+.player-stats { display:flex; align-items:center; gap:12px; }
+.player-stats .bar { flex:1 1 auto; }
+.player-stats .echo-box { padding:4px 12px; }
+.player-stats .echo-num { font-size:16px; }
+
+/* ───────── 手元の言葉（手札） ───────── */
+.hand-zone { margin-top:14px; }
+.hand-cap { font-size:12px; color:var(--ink-dim); margin-bottom:4px; }
+.action-banner { font-size:12px; color:#8a7058; background:#fffaf1; border:1px solid var(--line);
+  border-radius:9px; padding:6px 10px; margin-bottom:8px; min-height:30px; }
+.action-banner.warn { background:#f6eefb; border-color:#ddccef; color:#7d4fae; }
+.action-banner.go { background:#eef9f0; border-color:#bfe6c7; color:#3f8f63; }
+
+.hand { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; min-height:150px; align-items:stretch; }
+.hand-empty { color:var(--ink-dim); font-size:13px; align-self:center; }
+
+/* カード（言葉札） */
+.card { width:132px; text-align:left; cursor:pointer;
+  background:var(--cream); border:2px solid var(--line-deep); border-radius:14px;
+  padding:26px 10px 10px; position:relative; color:var(--ink); font:inherit;
+  box-shadow:0 4px 10px #e8c98a2e; transition:transform .12s ease, box-shadow .12s ease; }
+.card:hover:not(.disabled) { transform:translateY(-4px); box-shadow:0 9px 18px #e8c98a4d; }
+.card.disabled { opacity:.5; cursor:not-allowed; filter:grayscale(.25); }
+.card.selected { outline:3px solid #a86bd0; outline-offset:1px; transform:translateY(-4px); }
+.card-cost { position:absolute; top:-9px; left:-9px; min-width:30px; height:24px; padding:0 7px; border-radius:999px;
+  background:#fff4dc; border:2px solid #dcb964; color:#7a5f49; font-weight:800; font-size:11px;
+  display:flex; align-items:center; justify-content:center; white-space:nowrap; }
+.card-cost.cost-raised { background:#f3e6d0; border-color:#c79a5e; color:#8a5a2e; }
+.card-cost.cost-echo { background:#efe0f7; border-color:#b99bd6; color:#7d4fae; }
+.card .nm { font-size:15px; font-weight:800; color:#7a5f49; margin-bottom:4px; }
+.card-stat { display:flex; flex-direction:column; gap:1px; font-size:10.5px; color:#9c7d5e; margin-bottom:4px; }
+.card-stat .reach { color:#c0506a; } .card-stat .dur { color:#5d8fc0; }
+.card .nature { display:inline-block; margin-bottom:4px; }
+.card-note { font-size:10px; color:var(--ink-dim); margin-top:2px; line-height:1.4; }
+.card-echo { border-color:#cabbe6; background:linear-gradient(180deg,#fffaf1,#f5effb); }
+.card-echo .nm { color:#7d4fae; }
+
+/* 操作ボタン */
+.controls { display:flex; justify-content:center; align-items:center; gap:12px; margin-top:14px; }
+.end-turn { cursor:pointer; font:inherit; background:linear-gradient(180deg, #fff, #ffeef3); color:#b0556d;
+  border:2px solid #f0bcc7; border-radius:999px; padding:9px 26px; font-weight:800; box-shadow:0 4px 10px #efb6c733; }
+.end-turn:hover:not(:disabled) { background:#fff; }
+.end-turn:disabled { opacity:.55; cursor:default; color:var(--android); background:#eef1f4; border-color:#cfd8df; }
+.cancel { display:none; cursor:pointer; font:inherit; background:#fff; color:#8175ab;
+  border:1.5px solid #ddccef; border-radius:999px; padding:7px 16px; font-size:13px; }
+.cancel:hover { background:#f6eefb; }
+
+/* 場（山札/ターン/捨て札） */
+.field { display:flex; justify-content:center; align-items:center; gap:14px; margin:16px 0 0; }
+.field .pile, .field .turn { font-size:12px; color:var(--ink-dim);
+  background:#fff8; border:1px solid var(--line); border-radius:10px; padding:5px 12px; }
+.field .pile span { font-weight:800; color:#7a5f49; margin-left:6px; font-variant-numeric:tabular-nums; }
+.field .turn span { font-weight:800; color:#7a5f49; }
+
+/* ログ */
+.log-zone { margin-top:16px; }
+.log-cap { font-size:11px; color:var(--ink-dim); margin-bottom:4px; }
+.log { height:120px; overflow-y:auto; background:#fbf7ef; border:1px solid var(--line); border-radius:10px;
+  padding:8px 10px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size:11.5px; color:#7a6a55; }
+.log-line { padding:1px 0; }
+
+/* 不穏ギミック③：ノイズ耐性が低いと 名前に淡いグリッチ（視覚のみ・可読性は保つ） */
+.board.low-noise .lemma .nm, .board.low-noise .card .nm, .board.low-noise .intent-cell .nm {
+  text-shadow:1px 0 #f3a6c0, -1px 0 #9ec9e6; animation:flick 2.4s steps(1) infinite; }
+@keyframes flick { 0%,92%,100%{ opacity:1; } 94%{ opacity:.65; } 96%{ opacity:1; } }
+
+/* 勝敗オーバーレイ */
+.overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+  background:#2a2330cc; backdrop-filter:blur(3px); z-index:50; padding:20px; }
+.overlay.show { display:flex; }
+.overlay-box { background:var(--cream); border-radius:20px; padding:26px 24px; max-width:440px;
+  text-align:center; border:2px solid var(--line-deep); box-shadow:0 16px 40px #0006; }
+.overlay-title { font-size:22px; margin-bottom:14px; }
+.overlay-title.win { color:#5aa86f; }
+.overlay-title.lose { color:#9c5e74; text-shadow:1px 0 #f7c0cf, -1px 0 #b9d8e6; }
+.overlay-text p { font-size:13.5px; color:#6f5b48; margin:6px 0; line-height:1.7; }
+.restart { margin-top:18px; cursor:pointer; font:inherit; font-weight:800;
+  background:linear-gradient(180deg, #fff, #eef6ff); color:#4f7fae;
+  border:2px solid #bcd6ec; border-radius:999px; padding:9px 26px; }
+.restart:hover { background:#fff; }
+
+/* 狭い画面 */
+@media (max-width:560px) {
+  .card { width:46%; }
+  .mock-title { font-size:18px; }
+  .cell { min-height:66px; }
+  .lemma .nm { font-size:12.5px; }
+  .player-stats { flex-wrap:wrap; }
+}
