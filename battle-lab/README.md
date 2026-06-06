@@ -23,6 +23,7 @@
 | 04 | [04-dicey-dungeons-kotoba](./mocks/04-dicey-dungeons-kotoba/) | Dicey Dungeons | 🟢 PLAYABLE |
 | 05 | [05-pokemon-kotoba](./mocks/05-pokemon-kotoba/) | Pokémon | 🟢 PLAYABLE |
 | 06 | [06-persona-kotoba](./mocks/06-persona-kotoba/) | ペルソナ（心象弱点・総鳴り） | 🟢 PLAYABLE |
+| 07 | [07-gyakuten-saiban-kotoba](./mocks/07-gyakuten-saiban-kotoba/) | 逆転裁判 | 🟢 PLAYABLE |
 
 ## 新しいバトルモックを足すには
 

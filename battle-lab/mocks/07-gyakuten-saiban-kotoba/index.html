@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>逆転裁判参考：言葉の矛盾を突く尋問バトル — Battle Lab / DOOPA</title>
+  <meta name="description" content="DOOPA バトルシステム試作場：逆転裁判 参考の尋問アドベンチャー『言葉の矛盾を突く尋問バトル』。発話ログを読み、矛盾に記憶のかけらをつきつけて、村長の閉じた心をほどく。" />
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <!--
+    逆転裁判 参考「言葉の矛盾を突く尋問バトル」モック（Contradiction Dialogue Trial）
+    ・主人公 L ＝言葉を覚えていない無機質なアンドロイド（等幅＋わずかなノイズ表現）
+    ・相手＝村長。悪者ではなく、Lを疑い・怖がり・心配している。倒さない。
+    ・遊び：発話ログを読む → 矛盾する発言を選ぶ → たずねる/つきつける →
+            正しい発言に正しい「記憶のかけら」を突きつけて「閉じた心」をほどく。
+    ・依存ゼロ：HTML/CSS/JS のみ。証言・正解・反応は js/data.js に集約。
+  -->
+
+  <header class="lab-head">
+    <a class="back" href="../../">← Battle Lab</a>
+    <div class="head-titles">
+      <p class="lab-name">バトルシステム試作場 / Battle Lab</p>
+      <h1 class="mock-title">逆転裁判参考：言葉の矛盾を突く尋問バトル</h1>
+      <p class="mock-en">Contradiction Dialogue Trial</p>
+    </div>
+    <!-- 開始時の説明（data.js の INTRO_TEXT を main.js が流し込む） -->
+    <div class="intro" id="mock-intro"></div>
+  </header>
+
+  <main class="trial">
+
+    <!-- ===== 相手と状態（村長 / 閉じた心 / Lのノイズ耐性）===== -->
+    <section class="status">
+      <div class="enemy">
+        <div class="enemy-face" aria-hidden="true">
+          <!-- ポップでかわいいが、どこか秘密を抱えた村長（インラインSVG・画像依存なし） -->
+          <svg viewBox="0 0 120 120" width="74" height="74">
+            <ellipse cx="60" cy="108" rx="28" ry="6" fill="#0000000f"/>
+            <circle cx="60" cy="60" r="40" fill="#ffe4b5" stroke="#e7b870" stroke-width="2"/>
+            <path d="M28 44 q32 -22 64 0" fill="none" stroke="#c9a15e" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="46" cy="58" r="4.5" fill="#5b4a36"/>
+            <circle cx="74" cy="58" r="4.5" fill="#5b4a36"/>
+            <path d="M40 51 q6 -4 12 0 M68 51 q6 -4 12 0" fill="none" stroke="#b48a4e" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M52 78 q8 5 16 0" fill="none" stroke="#a86b4a" stroke-width="3" stroke-linecap="round"/>
+            <ellipse cx="40" cy="70" rx="5" ry="3" fill="#f6a8a8" opacity=".55"/>
+            <ellipse cx="80" cy="70" rx="5" ry="3" fill="#f6a8a8" opacity=".55"/>
+          </svg>
+        </div>
+        <div class="enemy-meta">
+          <div class="enemy-name">相手：<span id="enemy-name">村長</span></div>
+          <div class="heart-row">
+            <span class="cap">閉じた心</span>
+            <span class="heart" id="heart-bar">■■■</span>
+            <span class="heart-num" id="heart-num">3 / 3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="player">
+        <div class="player-tag">YOU — L / kotoba-android</div>
+        <div class="bar noise-bar">
+          <div class="bar-fill noise" id="noise-fill"></div>
+          <span class="bar-cap">ノイズ耐性</span>
+          <span class="bar-num" id="noise-num">5 / 5</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 証言（発話ログ）＋発言の選択 ===== -->
+    <section class="panel testimony">
+      <h2 class="testimony-title" id="testimony-title">証言：「—」</h2>
+      <div class="statements" id="statements"><!-- ui.js が1行ずつ生成 --></div>
+      <div class="selected-line empty" id="selected-line">発言を1つ選んでください。</div>
+    </section>
+
+    <!-- ===== コマンド（たずねる / つきつける / 考える）===== -->
+    <section class="panel cmd-panel">
+      <div class="cmd-area" id="cmd-area"><!-- ui.js が状況に応じて生成 --></div>
+    </section>
+
+    <!-- ===== 突きつける候補（記憶のかけら / 言葉）===== -->
+    <section class="panel inv">
+      <h3 class="inv-cap">記憶のかけら</h3>
+      <div class="item-grid" id="memories"><!-- ui.js が生成 --></div>
+      <h3 class="inv-cap">言葉</h3>
+      <div class="item-grid" id="words"><!-- ui.js が生成 --></div>
+    </section>
+
+    <!-- ===== ログ ===== -->
+    <section class="panel log-panel">
+      <h3 class="inv-cap">ログ</h3>
+      <div class="log" id="log"><!-- ui.js が生成 --></div>
+    </section>
+
+  </main>
+
+  <!-- ===== 勝敗オーバーレイ（本音のページ / ノイズ過多）===== -->
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+    <div class="overlay-box" id="overlay-box">
+      <h2 class="overlay-title" id="overlay-title"></h2>
+      <div class="overlay-text" id="overlay-text"></div>
+      <div class="overlay-actions">
+        <button class="restart" id="restart-btn">もう一度 遊ぶ</button>
+        <a class="to-lab" href="../../">Battle Lab に戻る</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 読み込み順：データ → 進行ルール → 描画 → 配線 -->
+  <script src="js/data.js?v=1"></script>
+  <script src="js/engine.js?v=1"></script>
+  <script src="js/ui.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+</body>
+</html>
