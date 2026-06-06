@@ -45,8 +45,34 @@ function chooseCard(wordId) {
   return r;
 }
 
+// ──────────────────────────────────────────
+// 学校＝ことばショップ（SHOP.stock から1枚“受け取る”）
+//   買う＝最後の“色の選択”＝人格を少し傾ける（3択と同じ重み）。買わずに出てもよい（任意の寄り道）。
+// ──────────────────────────────────────────
+function offerShop() {
+  if (typeof SHOP === "undefined" || !SHOP || !Array.isArray(SHOP.stock)) return false;
+  game.pendingShop = SHOP.stock.filter((id) => !!WORDS[id]);
+  game.state = STATES.SHOP;
+  app.screen = "shop";
+  return true;
+}
+function buyWord(wordId) {
+  if (!game.pendingShop || game.pendingShop.indexOf(wordId) < 0) return null; // 棚に無いものは選べない
+  const w = WORDS[wordId];
+  if (!w) return null;
+  const r = addCard(wordId);
+  if (w.kind === "harsh") addKyoubou(BALANCE.pickHarsh);
+  else addYasashisa(BALANCE.pickKind);
+  game.pendingShop = null;
+  setFlag("shopped");
+  log("「" + w.levels[0] + "」を 預かった。");
+  return r;
+}
+
 // ── window へ明示エクスポート ──
 if (typeof window !== "undefined") {
   window.offerCards = offerCards;
   window.chooseCard = chooseCard;
+  window.offerShop = offerShop;
+  window.buyWord = buyWord;
 }

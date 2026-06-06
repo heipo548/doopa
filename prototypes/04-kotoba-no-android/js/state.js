@@ -24,8 +24,10 @@ const STATES = {
   FIELD: "FIELD",        // 村フィールド（ルゥをクリック移動）
   DIALOGUE: "DIALOGUE",  // NPC会話（typewriter）
   CARDS: "CARDS",        // ことばカード3択入手
+  SHOP: "SHOP",          // 学校＝ことばショップ（1枚 受け取る）
   BATTLE: "BATTLE",      // 口喧嘩＝ことばのカードバトル
-  RESULT: "RESULT",      // 結果／簡易エンド（軽いメタ1行）
+  RESULT: "RESULT",      // 結果／簡易エンド
+  META: "META",          // 神様（井戸の こえ）の見透かし＋word→world 回収
   GAMEOVER: "GAMEOVER",  // player.hp0（非パーマデス。セーブから再開）
   PAUSE: "PAUSE",        // 中断メニュー
 };

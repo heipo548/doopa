@@ -159,7 +159,7 @@ function winBattle(kind) {
   if (kind) {
     addYasashisa(BALANCE.winKind);
     game.counters.kindWins++;
-    log("かどっこ の とげが、ほどけた。");
+    log(en.name + " の とげが、ほどけた。");
     if (en.gift && WORDS[en.gift]) {
       const r = addCard(en.gift); // 寄り添うと語彙を授かる
       if (r === "learned") log("ことばを ひとつ おぼえた：「" + WORDS[en.gift].levels[0] + "」");
@@ -168,15 +168,28 @@ function winBattle(kind) {
   } else {
     addKyoubou(BALANCE.winHarsh);
     game.counters.harshWins++;
-    log("かどっこ は、もう なにも 言えなくなった。");
+    log(en.name + " は、もう なにも 言えなくなった。");
     se("winHarsh");
   }
 
   setFlag("battle_done");
-  setFlag("area_mura_clear");
-  determineEnding();        // 傾向比で簡易エンドを確定（result 画面が参照）
-  game.state = STATES.RESULT;
-  app.screen = "result";
+  setFlag("defeated_" + en.id);
+  game.battle = null; // 揮発状態を畳む（playerCard の多重操作ガードにも効く）
+
+  if (en.isBoss) {
+    // 最後の関門を越えた → 結末（簡易エンド）→ 神様メタ へ。
+    setFlag("boss_done");
+    setFlag("area_mura_clear");
+    determineEnding();      // 傾向比で簡易エンドを確定（result 画面が参照）
+    game.state = STATES.RESULT;
+    app.screen = "result";
+  } else {
+    // 中ボス撃破 → 村へ戻る。戦間はセーブ（ことばの泉）で全回復し、奥に次の相手が現れる。
+    setFlag("kado_done");
+    game.player.hp = game.player.maxHp;
+    game.state = STATES.FIELD;
+    app.screen = "field";
+  }
 }
 
 // ──────────────────────────────────────────

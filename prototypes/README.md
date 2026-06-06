@@ -10,7 +10,7 @@ DOOPA はドパガキ向けゲームの**実験場**。
 | 01 | [dopamine-feed](./01-dopamine-feed/) | ドーパミン直接摂取マシーン | "気持ちいい瞬間" の断片を TikTok 的にスワイプ消費 | 🟢 active | @heipo548 |
 | 02 | [saigo-no-tomodachi](./02-saigo-no-tomodachi/) | さいごのともだち | ことばで戦う口喧嘩RPG。ぶつけるか手をのばすか、語彙が増え夜明けが変わる | 🟢 active | @heipo548 |
 | 03 | [word-to-world](./03-word-to-world/) | WO_RD → WORLD | 探索×言葉カードバトル。精神HPを削るか見えない思いやりを満たすか、勝ち方が人格を染める。終盤、神様が操作の癖を見透かす | 🟢 active | @heipo548 |
-| 04 | [kotoba-no-android](./04-kotoba-no-android/) | なぐれない むら の ルゥ（仮） | 手を出せない村で、ひろった ことばで けんかする探索×カードバトル。言い負かすか寄り添うか、勝ち方が人格を染める（MVP） | 🌱 seed | @heipo548 |
+| 04 | [kotoba-no-android](./04-kotoba-no-android/) | ルゥと せかいの あいだ | 手を出せない村のことばカードバトル探索。言い負かすか寄り添うか、勝ち方が人格を染め、終盤『井戸の こえ』が操作の癖を見透かす。ことばに きみを 足すと せかいに なる | 🟢 active | @heipo548 |
 
 新しいプロトが増えたらここに行追加してください。
 

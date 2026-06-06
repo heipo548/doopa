@@ -114,6 +114,7 @@ function fieldInteract(node) {
   switch (act.type) {
     case "dialogue": startDialogue(act.npcId); break;
     case "battle": enterBattle(act.enemyId); break;
+    case "shop": openShop(); break;
     case "save": doSave(); break;
     case "sign": toast(act.text); break;
     case "locked": toast(act.msg); break;
@@ -178,8 +179,102 @@ function enterBattle(enemyId) {
 }
 function onCard(wordId) {
   if (!game.battle || isBattleOver()) return;
-  playerCard(wordId);     // 勝てば winBattle が screen=result、死ねば onGameOver が screen=gameover
+  playerCard(wordId);     // 勝てば winBattle が screen=result/field、死ねば onGameOver が screen=gameover
   render();
+  if (app.screen === "field") {
+    // 中ボス(かどっこ)撃破で村へ戻った：戦間 全回復・奥に くちなし が現れている。
+    toast("ことばの泉で 息を ととのえた。……村の おくに、だれか いる。");
+    app.player.tx = app.player.x; app.player.ty = app.player.y; app.player.pendingNode = null;
+    positionAvatar(app.player.x, app.player.y);
+    startFieldLoop();
+  }
+}
+
+// ── 学校＝ことばショップ ──
+function openShop() {
+  if (app._raf) { cancelAnimationFrame(app._raf); app._raf = null; }
+  offerShop();            // state=SHOP / screen=shop / pendingShop セット
+  render();
+}
+function onBuy(wordId) {
+  const r = buyWord(wordId);
+  if (!r) return;
+  if (typeof playSe === "function") playSe("pick");
+  const w = WORDS[wordId];
+  toast(r === "leveled" ? ("「" + w.levels[0] + "」が そだった！") : ("「" + w.levels[0] + "」を 預かった！"));
+  backToField();
+}
+
+// ── 神様メタ（井戸の こえ）：計測の見透かし → word→world / L 回収 ──
+function toMeta() {
+  if (app._raf) { cancelAnimationFrame(app._raf); app._raf = null; }
+  app.meta = buildMetaSeq();
+  app.meta.idx = 0;
+  app.meta._mirror = false;
+  game.state = STATES.META;
+  app.screen = "meta";
+  setFlag("saw_meta");
+  if (typeof playSe === "function") playSe("kind");
+  render();          // メタのスケルトンを作る
+  showMetaStep();    // 1ステップ目を流し込む
+}
+// metricsSummary のしきい値で skip/click セリフを出し分け、鏡→reveal→close→encore を1列に組む。
+function buildMetaSeq() {
+  const M = META;
+  const s = (typeof metricsSummary === "function") ? metricsSummary() : { skipRatio: 0, clicks: 0 };
+  const seq = [];
+  (M.openLines || []).forEach((t) => seq.push({ type: "say", text: t }));
+  const skipSet = s.skipRatio >= M.skipHigh ? M.skipLines.high : (s.skipRatio <= M.skipLow ? M.skipLines.low : M.skipLines.mid);
+  (skipSet || []).forEach((t) => seq.push({ type: "say", text: t }));
+  const clickSet = s.clicks >= M.clickHigh ? M.clickLines.high : (s.clicks <= M.clickLow ? M.clickLines.low : M.clickLines.mid);
+  (clickSet || []).forEach((t) => seq.push({ type: "say", text: t }));
+  seq.push({ type: "mirror" });
+  (M.reveal || []).forEach((t, i, arr) => seq.push({ type: "reveal", text: t, last: i === arr.length - 1 }));
+  (M.closeLines || []).forEach((t) => seq.push({ type: "say", text: t }));
+  seq.push({ type: "end", text: M.encore });
+  return { seq: seq };
+}
+function _metaBody() { return document.querySelector("#overlay-meta .meta-body"); }
+function _metaFoot() { return document.querySelector("#overlay-meta .meta-foot"); }
+function _metaLogo() { return document.querySelector("#overlay-meta .meta-logo"); }
+function showMetaStep() {
+  const m = app.meta; if (!m) return;
+  const e = m.seq[m.idx];
+  const body = _metaBody(), foot = _metaFoot();
+  if (!e || !body) return;
+  if (e.type === "mirror") {
+    body.innerHTML = metaMirrorHtml();
+    m._mirror = true;
+    if (foot) foot.innerHTML = '<div class="meta-hint">▶ クリックで つづける</div>';
+    return;
+  }
+  m._mirror = false;
+  typewriter(body, e.text);
+  if (e.type === "reveal") {
+    const lg = _metaLogo();
+    if (lg) lg.innerHTML = metaLogoHtml(!!e.last); // 最後の reveal で WORLD 完成
+    if (e.last && typeof playSe === "function") playSe("winKind");
+  }
+  if (foot) {
+    foot.innerHTML = (e.type === "end")
+      ? '<button class="r-btn" data-action="again">もういちど ひろいに いく</button>' +
+        '<button class="r-btn ghost" data-action="title">タイトルへ</button>'
+      : '<div class="meta-hint">▶ クリックで つづける</div>';
+  }
+}
+function advanceMeta() {
+  const m = app.meta; if (!m) return;
+  const e = m.seq[m.idx];
+  if (!m._mirror && e && twActive()) {                 // タイプ途中＝スキップ（計測される）
+    twFinish();
+    if (typeof textAdvanced === "function") textAdvanced({ skipped: true });
+    return;
+  }
+  if (!m._mirror && typeof textAdvanced === "function") textAdvanced({ skipped: false });
+  if (e && e.type === "end") return;                   // 最後はボタンで（本文クリックでは進めない）
+  m.idx++;
+  if (m.idx >= m.seq.length) return;
+  showMetaStep();
 }
 
 // ── セーブ ──
@@ -224,7 +319,10 @@ function handleAction(action, elm) {
       render();
       break;
     case "pick": onPick(elm.getAttribute("data-word")); break;
+    case "buy": onBuy(elm.getAttribute("data-word")); break;
+    case "leaveShop": backToField(); break;
     case "card": onCard(elm.getAttribute("data-word")); break;
+    case "meta": toMeta(); break;
     case "again": startGame(); break;
     case "title": toTitle(); break;
     case "load": continueGame(); break;
@@ -252,6 +350,12 @@ function wireEvents() {
 
     if (app.screen === "dialogue" && e.target.closest("#overlay-dialogue")) {
       advanceDialogue();
+      return;
+    }
+
+    if (app.screen === "meta" && e.target.closest("#overlay-meta")) {
+      // foot のボタン(data-action)は上で処理済み。本文/ヒント領域のクリックで送る。
+      advanceMeta();
       return;
     }
   });
@@ -307,6 +411,12 @@ function wireEvents() {
     }
     if (app.screen === "dialogue" && (e.key === "Enter" || e.key === " ")) {
       e.preventDefault(); advanceDialogue(); return;
+    }
+    if (app.screen === "meta" && (e.key === "Enter" || e.key === " ")) {
+      // end ステップ(ボタン)にフォーカスが当たっていればボタンに任せる
+      const af = document.activeElement;
+      if (af && af.closest && af.closest("[data-action]")) return;
+      e.preventDefault(); advanceMeta(); return;
     }
     if (e.key === "Escape") {
       if (app.screen === "field" || app.screen === "battle") openPause();

@@ -26,7 +26,9 @@ const SCREEN_OVERLAY = {
   field: "overlay-field",
   dialogue: "overlay-dialogue",
   cards: "overlay-cards",
+  shop: "overlay-shop",
   result: "overlay-result",
+  meta: "overlay-meta",
   gameover: "overlay-gameover",
   pause: "overlay-pause",
 };
@@ -63,8 +65,10 @@ function render() {
     case "field": renderField(); break;
     case "dialogue": renderDialogue(); break;
     case "cards": renderCards(); break;
+    case "shop": renderShop(); break;
     case "battle": renderBattle(); break;
     case "result": renderResult(); break;
+    case "meta": renderMeta(); break;
     case "gameover": renderGameover(); break;
     case "pause": renderPause(); break;
   }
@@ -237,8 +241,9 @@ function renderBattle() {
         '<span class="bar-num">' + Math.max(0, game.player.hp) + '/' + game.player.maxHp + '</span></div>' +
     '</div>';
 
-  _el("prompt").innerHTML =
-    '<span class="prompt-text">' + (d >= 2 ? "……はやく、だまらせて しまおうか。" : "ことばを えらぶ。どう 勝つかが、きみに なる。") + '</span>';
+  // 翳り段に応じてルゥの内心が不穏化（DARK_LINES。世界は可愛いまま、主人公だけ翳る）。
+  const dl = (typeof DARK_LINES !== "undefined" && DARK_LINES[Math.min(d, DARK_LINES.length - 1)]) || "ことばを えらぶ。";
+  _el("prompt").innerHTML = '<span class="prompt-text' + (d >= 1 ? " unstable" : "") + '">' + _esc(dl) + '</span>';
 
   // command-bar：手札を harsh 列 / kind 列で（色＋形＋効果語の三重表現）
   const cmd = battleCommandList();
@@ -282,7 +287,9 @@ function renderResult() {
     '</div>' +
     '<div class="result-meta">' + _esc(meta) + '</div>' +
     '<div class="result-btns">' +
-      '<button class="r-btn" data-action="again">もう いちど</button>' +
+      (hasFlag("boss_done")
+        ? '<button class="r-btn" data-action="meta">井戸の こえ を、きく……</button>'
+        : '<button class="r-btn" data-action="again">もう いちど</button>') +
       '<button class="r-btn ghost" data-action="title">タイトルへ</button>' +
     '</div>';
 }
@@ -310,6 +317,67 @@ function renderPause() {
       '<button class="r-btn" data-action="mute">' + (muted ? "音を つける" : "音を けす") + '</button>' +
       '<button class="r-btn ghost" data-action="title">タイトルへ</button>' +
     '</div>';
+}
+
+// ── 学校＝ことばショップ（cards のスタイルを流用して1枚 受け取る） ──
+function renderShop() {
+  const panel = _el("overlay-shop").querySelector(".shop-panel");
+  const stock = (game.pendingShop || ((typeof SHOP !== "undefined") ? SHOP.stock : []) || []).filter((id) => WORDS[id]);
+  let items = "";
+  stock.forEach((id) => {
+    const w = WORDS[id];
+    const isHarsh = w.kind === "harsh";
+    const icon = isHarsh ? "▲" : "●";
+    const tag = isHarsh ? "とげの ことば" : "やわらかい ことば";
+    const eff = isHarsh ? "削る（早い・凶暴へ）" : "寄りそう（おそい・優しさへ）";
+    items +=
+      '<button class="card-pick ' + (isHarsh ? "pick-harsh" : "pick-kind") + '" data-action="buy" data-word="' + _esc(id) + '">' +
+        '<span class="pick-tag">' + icon + " " + tag + '</span>' +
+        '<span class="pick-name">' + _esc(w.levels[0]) + '</span>' +
+        '<span class="pick-flavor">' + _esc(w.flavor) + '</span>' +
+        '<span class="pick-eff">' + eff + '</span>' +
+      '</button>';
+  });
+  panel.innerHTML =
+    '<h2 class="cards-title">' + _esc(SHOP.name) + '</h2>' +
+    '<p class="cards-sub">' + _esc(SHOP.intro) + '</p>' +
+    '<div class="cards-grid">' + items + '</div>' +
+    '<button class="r-btn ghost" data-action="leaveShop">かわずに 出る</button>';
+}
+
+// ── 神様メタ（井戸の こえ）：スケルトンだけ作る。中身は main が段階的に流し込む（dialogue と同じ流儀）──
+function renderMeta() {
+  const panel = _el("overlay-meta").querySelector(".meta-panel");
+  const god = (typeof META !== "undefined") ? META.godName : "こえ";
+  const tone = (game.ending ? game.ending.tone : "chukan");
+  panel.innerHTML =
+    '<div class="meta-god">' + _esc(god) + '</div>' +
+    '<div class="meta-logo tone-' + _esc(tone) + '" aria-hidden="true">' + metaLogoHtml(false) + '</div>' +
+    '<div class="meta-body"></div>' +
+    '<div class="meta-foot"></div>';
+}
+// WOR[L]D の綴り：reveal 前は L の位置が欠け（·）、reveal 後は L が差し込まれ WORLD になる。
+function metaLogoHtml(revealed) {
+  const slot = revealed
+    ? '<span class="rv rv-l on">L</span>'
+    : '<span class="rv rv-l">·</span>';
+  const jp = revealed ? "ことば に、きみ（L）。 → せかい" : "ことば に、ひとつ たりない……";
+  return '<span class="rv">W</span><span class="rv">O</span><span class="rv">R</span>' + slot + '<span class="rv">D</span>' +
+    '<div class="rv-jp">' + jp + '</div>';
+}
+// 計測の“鏡”（実値を採点でなく ただ うつして 見せる）。
+function metaMirrorHtml() {
+  const s = (typeof metricsSummary === "function") ? metricsSummary() : { skipRatio: 0, clicks: 0, avgDwellMs: 0, cursorDist: 0 };
+  const M = (typeof META !== "undefined") ? META : { mirrorIntro: "", mirrorOutro: "" };
+  function row(k, v) { return '<div class="mm-row"><dt>' + _esc(k) + '</dt><dd>' + _esc(v) + '</dd></div>'; }
+  return '<p class="mm-intro">' + _esc(M.mirrorIntro || "") + '</p>' +
+    '<dl class="meta-mirror">' +
+      row("とばした わりあい", Math.round(s.skipRatio * 100) + " %") +
+      row("おした かいすう", s.clicks + " 回") +
+      row("1ブロック 滞在", (Math.round(s.avgDwellMs / 100) / 10) + " 秒") +
+      row("カーソル いどう", Math.round(s.cursorDist) + " px") +
+    '</dl>' +
+    '<p class="mm-outro">' + _esc(M.mirrorOutro || "") + '</p>';
 }
 
 // ──────────────────────────────────────────
@@ -404,6 +472,10 @@ if (typeof window !== "undefined") {
   window.render = render;
   window.applyScreen = applyScreen;
   window.renderField = renderField;
+  window.renderShop = renderShop;
+  window.renderMeta = renderMeta;
+  window.metaLogoHtml = metaLogoHtml;
+  window.metaMirrorHtml = metaMirrorHtml;
   window.positionAvatar = positionAvatar;
   window.highlightNear = highlightNear;
   window.typewriter = typewriter;

@@ -315,10 +315,35 @@ body.dark-2 .avatar-body::before, body.dark-3 .avatar-body::before { background:
 @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 .glow { box-shadow: 0 0 0 3px rgba(63,185,166,0.5), 0 4px 10px rgba(63,185,166,0.3) !important; transition: box-shadow 0.2s; }
 
+/* ════════════ 学校ショップ（cards のスタイルを流用・2枚並び） ════════════ */
+.shop-panel { text-align: center; }
+.shop-panel .cards-grid { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 540px) { .shop-panel .cards-grid { grid-template-columns: 1fr; } }
+
+/* ════════════ 神様メタ（井戸の こえ）：暗い水底のトーン ════════════ */
+.meta-panel { text-align: center; background: linear-gradient(180deg, #1b1530, #120c20); border-color: #3a2f5e; color: var(--meta-ink); }
+.meta-god { font-size: 12px; letter-spacing: 3px; color: #b9a8e8; margin-bottom: 10px; }
+.meta-logo { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: clamp(34px, 9vw, 60px); font-weight: 900; letter-spacing: 6px; margin: 6px 0 4px; color: #cfc3f0; }
+.meta-logo .rv { display: inline-block; }
+.meta-logo .rv-l { color: #5a4f7a; transition: color 0.45s, transform 0.45s, text-shadow 0.45s; transform: translateY(-4px); }
+.meta-logo .rv-l.on { color: var(--gold); text-shadow: 0 0 18px rgba(242, 169, 60, 0.85); transform: translateY(0); }
+.meta-logo.tone-yasashii .rv-l.on { color: #7fe0c8; text-shadow: 0 0 18px rgba(127, 224, 200, 0.85); }
+.meta-logo.tone-kyoubou .rv-l.on { color: #c98bd9; text-shadow: 0 0 18px rgba(201, 139, 217, 0.75); }
+.rv-jp { font-size: 12px; letter-spacing: 1px; color: #a99fce; margin-top: 6px; }
+.meta-body { min-height: 84px; background: rgba(255, 255, 255, 0.05); border: 1px solid #3a2f5e; border-radius: 14px; padding: 14px 16px; font-size: 15px; line-height: 1.9; color: #efe6ff; text-align: left; }
+.meta-foot { margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.meta-hint { color: #b9a8e8; font-size: 12px; }
+.meta-mirror { display: grid; gap: 6px; margin: 8px 0; }
+.meta-mirror .mm-row { display: flex; justify-content: space-between; background: rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 7px 12px; }
+.meta-mirror dt { color: #b9a8e8; font-size: 12.5px; }
+.meta-mirror dd { font-weight: 800; font-variant-numeric: tabular-nums; }
+.mm-intro, .mm-outro { font-size: 12.5px; color: #cfc3f0; line-height: 1.7; text-align: left; }
+.prompt-text.unstable { color: #c98bd9; font-style: italic; }
+
 /* ════════════ アクセシビリティ：動きを減らす ════════════ */
 @media (prefers-reduced-motion: reduce) {
   .scene-clouds .cloud, .float-num, .shake { animation: none !important; }
-  .bar-fill, .tend-fill { transition: none !important; }
+  .bar-fill, .tend-fill, .meta-logo .rv-l { transition: none !important; }
   #scene { transition: none !important; }
   #toast { transition: opacity 0.1s !important; }
 }

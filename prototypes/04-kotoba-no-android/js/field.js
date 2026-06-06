@@ -23,15 +23,18 @@ function enterArea(id) {
 //   done  ：会話済みNPCか（再訪で同じ会話を起こさないための目印）。
 function areaNodes() {
   if (!AREA || !AREA.nodes) return [];
-  return AREA.nodes.map((n) => {
-    const out = {
-      id: n.id, type: n.type, ref: n.ref || null,
-      x: n.x, y: n.y, label: n.label || "", text: n.text || "",
-    };
-    if (n.type === "exit") out.locked = n.requires ? !hasFlag(n.requires) : false;
-    if (n.type === "npc") out.done = hasFlag("talked_" + n.ref);
-    return out;
-  });
+  return AREA.nodes
+    // appearWhen フラグが立っていないノードはまだ村に出ていない（学校/かどっこ/くちなしの段階出現）。
+    .filter((n) => !n.appearWhen || hasFlag(n.appearWhen))
+    .map((n) => {
+      const out = {
+        id: n.id, type: n.type, ref: n.ref || null,
+        x: n.x, y: n.y, label: n.label || "", text: n.text || "",
+      };
+      if (n.type === "exit") out.locked = n.requires ? !hasFlag(n.requires) : false;
+      if (n.type === "npc") out.done = hasFlag("talked_" + n.ref);
+      return out;
+    });
 }
 
 // 正規化座標(px,py: 0..1)から、半径 r 以内で最も近い“触れられる”ノードを返す（無ければ null）。
@@ -55,6 +58,8 @@ function interact(node) {
       return { type: "dialogue", npcId: node.ref };
     case "enemy":
       return { type: "battle", enemyId: node.ref };
+    case "shop":
+      return { type: "shop", shopId: node.ref };
     case "save":
       return { type: "save" };
     case "sign":
