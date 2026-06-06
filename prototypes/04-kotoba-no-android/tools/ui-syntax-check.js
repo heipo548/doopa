@@ -50,6 +50,15 @@ var test = [
   "startMetrics(); textShown(10); textAdvanced({skipped:true}); textShown(10); textAdvanced({skipped:false});", // 計測の鏡に値を入れる
   "toMeta(); __o.push('toMeta OK screen='+app.screen+' seq='+app.meta.seq.length);",
   "var __steps=0; for(var i=0;i<app.meta.seq.length+3;i++){ advanceMeta(); __steps++; } __o.push('advanceMeta 全フェーズ歩行 OK steps='+__steps+' idx='+app.meta.idx);",
+  // ── 回帰：戦闘コマンドが“次も”選べるか（busy→render→busy解除の順序バグ検出）──
+  "newGame(); startBattle('kadokko'); app.battleBusy=false;",
+  "onCard('urusai');", // 一手目：busy=true で render（コマンドは敵ターン待ちで無効化されるのが正）
+  "var __cb1=document.getElementById('command-bar').innerHTML;",
+  "__o.push('一手目後: busy='+app.battleBusy+' / コマンド無効(敵待ち)='+(__cb1.indexOf('disabled')>=0)+'（true期待）');",
+  "resolveEnemyTurn();", // 敵ターン解決：ここで busy を解除してから再描画＝コマンドが有効に戻るべき
+  "var __cb2=document.getElementById('command-bar').innerHTML;",
+  "__o.push('敵ターン後: busy='+app.battleBusy+' / コマンド有効='+(__cb2.indexOf('disabled')<0)+'（true期待＝次が押せる）');",
+  "var __busyBefore2=app.battleBusy; onCard('urusai'); __o.push('二手目 受理='+(app.battleBusy===true && __busyBefore2===false)+'（true期待＝連続選択OK）');",
   // 残り画面
   "R('gameover'); R('pause'); R('title');",
   "__o.push('全画面 render OK（shop/meta 含む）');",

@@ -188,14 +188,18 @@ function onCard(wordId) {
   if (app.screen !== "battle") { app.battleBusy = false; return; }                       // ボス撃破→結果 等
   // “間”をおいて相手が言い返す（テンポ・読みやすさ）。reduced-motion は即時。
   const wait = _prefersReduce() ? 0 : 480;
-  setTimeout(function () {
-    if (game.battle && !isBattleOver()) {
-      enemyTurn();
-      render();
-      if (app.screen === "field") afterBattleToField();
-    }
-    app.battleBusy = false;
-  }, wait);
+  setTimeout(resolveEnemyTurn, wait);
+}
+
+// 敵ターンを解決して描画する。
+//   ★重要：render() の前に battleBusy を false へ戻す。
+//   そうしないと render() がコマンドを disabled のまま描き、その後フラグを下げても再描画されず、
+//   「次のコマンドが押せない」状態になる（disabled なボタンは click を発火しない）。
+function resolveEnemyTurn() {
+  app.battleBusy = false;                       // ← 先に解除してから描画（コマンドを enabled で再描画）
+  if (game.battle && !isBattleOver()) enemyTurn();
+  render();                                     // 敵の一手＋コマンド再活性（gameover/結果なら その画面）を反映
+  if (app.screen === "field") afterBattleToField();
 }
 
 // 中ボス撃破で村へ戻ったときの後処理（戦間 全回復・奥に次の相手）。
