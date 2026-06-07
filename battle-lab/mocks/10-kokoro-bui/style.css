@@ -1,104 +1,125 @@
 /*
  * style.css — Battle 10「こころの部位バトル」
- * パステル水彩を踏襲。主役は「部位カード」。状態で色が変わる。
+ * テーマ：モンハン参考。敵の「部位一覧」が主役の狩りの画面…を、
+ *   ぬいぐるみ用にやさしく翻訳。糸・綿・タグ・ほつれの質感。
+ *   かわいいけれど壊れている、くすんだベージュ／茶／ダスティな配色。
+ *   暴力的にせず、少し重い・しっとりした空気。選択中の部位にフォーカス。
  */
 :root{
-  --sky-top:#ffd9ea; --sky-mid:#e7dbf7; --sky-low:#d2eafb; --meadow:#d9efcf; --meadow-deep:#bfe4b0;
-  --cream:#fffaf1; --paper:#fffdf8; --ink:#6f5b48; --ink-dim:#a98f76; --ink-strong:#5b4a36;
-  --line:#efe0c4; --line-deep:#e7cf9f; --gold:#f3cf7a; --zawa:#b48ad6; --kokoro:#ef93a8; --danger:#e07b8b; --mint:#8fd09a;
+  /* くすんだベージュ／茶／ダスティ。ぬいぐるみの布と糸の色。 */
+  --felt-top:#e8ddc9; --felt-mid:#ddcfb6; --felt-low:#cdbb9c; --felt-deep:#bca684;
+  --cream:#f4ecdc; --paper:#f7f1e4; --ink:#5b4a38; --ink-dim:#8a7a63; --ink-strong:#43362a;
+  --line:#d8c7a8; --line-deep:#bda47e; --gold:#c79a52;       /* 名前タグ＝選択の金色 */
+  --zawa:#9c7f9e;            /* ざわめき＝くすんだ藤 */
+  --kokoro:#c98a6a;          /* こころ＝あたたかい綿の赤茶 */
+  --danger:#b0563f; --mint:#7fa07a;
+  --thread:#a98b63;          /* 糸の色（縫い目アクセント） */
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
 html,body{ min-height:100%; color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Helvetica Neue",Arial,sans-serif;
   line-height:1.7;
-  background:radial-gradient(120% 60% at 50% -8%,#fff2f8 0%,rgba(255,255,255,0) 42%),
-    linear-gradient(180deg,var(--sky-top) 0%,var(--sky-mid) 26%,var(--sky-low) 46%,#e9f3e2 60%,var(--meadow) 72%,var(--meadow-deep) 100%);
+  /* フェルト布のような、くすんだ起毛のグラデ。上に淡いランプの光。 */
+  background:radial-gradient(120% 55% at 50% -8%,#f3ead6 0%,rgba(255,255,255,0) 44%),
+    radial-gradient(90% 50% at 82% 108%,#c9b690 0%,rgba(255,255,255,0) 58%),
+    linear-gradient(180deg,var(--felt-top) 0%,var(--felt-mid) 30%,var(--felt-low) 62%,var(--felt-deep) 100%);
   background-attachment:fixed; -webkit-font-smoothing:antialiased; }
-a{ color:#d77f95; text-decoration:none; } a:hover{ text-decoration:underline; }
+a{ color:#9a6f4a; text-decoration:none; } a:hover{ text-decoration:underline; }
 
 .lab-head{ max-width:760px; margin:0 auto; padding:18px 16px 4px; text-align:center; }
-.back{ display:inline-block; font-size:13px; color:#bb6f86; background:#fff7; border:1px solid var(--line-deep); border-radius:999px; padding:3px 12px; margin-bottom:12px; }
-.back:hover{ background:#fff; text-decoration:none; }
+.back{ display:inline-block; font-size:13px; color:#7a5536; background:rgba(247,241,228,.7); border:1px solid var(--line-deep); border-radius:999px; padding:3px 12px; margin-bottom:12px; }
+.back:hover{ background:#f7f1e4; text-decoration:none; }
 .lab-name{ font-size:12px; letter-spacing:.12em; color:var(--ink-dim); }
-.mock-title{ font-size:23px; color:#7a5f49; line-height:1.4; text-shadow:1.2px 0 #f7c0cf,-1.2px 0 #b9d8e6; }
+.mock-title{ font-size:23px; color:#4a3a2b; line-height:1.4; text-shadow:1.2px 0 #d8bf94,-1.2px 0 #b09a78; }
 .mock-en{ font-size:12px; letter-spacing:.16em; color:var(--ink-dim); margin-top:2px; }
-.intro{ max-width:640px; margin:14px auto 0; background:#fff8; border:1px dashed var(--line-deep); border-radius:12px; padding:12px 16px; font-size:13px; color:#7a6a55; text-align:left; }
+/* 開幕説明：糸でかがった布の切れ端のような破線枠 */
+.intro{ max-width:640px; margin:14px auto 0; background:rgba(247,241,228,.6); border:1px dashed var(--line-deep); border-radius:12px; padding:12px 16px; font-size:13px; color:#6a5740; text-align:left; }
 .intro p.blank{ line-height:.6; }
 
 .stage{ max-width:760px; margin:0 auto; padding:10px 16px 64px; }
-.panel{ background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:14px 16px; margin-top:14px; box-shadow:0 6px 16px #e8c98a22; }
-.sec-cap{ font-size:12px; letter-spacing:.1em; color:#b08f6a; margin-bottom:10px; }
+.panel{ background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:14px; box-shadow:0 6px 16px rgba(120,95,55,.16); }
+.sec-cap{ font-size:12px; letter-spacing:.1em; color:#8a6f49; margin-bottom:10px; }
 
 .status{ display:flex; gap:12px; flex-wrap:wrap; }
-.enemy,.player{ background:var(--cream); border:1px solid var(--line-deep); border-radius:14px; padding:12px 14px; box-shadow:0 4px 10px #e8c98a2e; }
+.enemy,.player{ background:var(--cream); border:1px solid var(--line-deep); border-radius:13px; padding:12px 14px; box-shadow:0 4px 10px rgba(120,95,55,.18); }
 .enemy{ flex:1 1 320px; display:flex; align-items:center; gap:12px; }
 .enemy-face{ flex:0 0 auto; line-height:0; } .enemy-meta{ flex:1; }
-.enemy-name{ font-size:15px; font-weight:800; color:#7a5f49; margin-bottom:4px; }
+.enemy-name{ font-size:15px; font-weight:800; color:#4a3a2b; margin-bottom:4px; }
 .player{ flex:1 1 240px; display:flex; flex-direction:column; justify-content:center; }
 .player-tag{ font-family:"SFMono-Regular",Menlo,Consolas,monospace; font-size:11px; color:#8b79a6; margin-bottom:8px; }
 .bar-row{ display:flex; align-items:center; gap:8px; margin:4px 0; }
 .cap{ font-size:11px; color:var(--ink-dim); flex:0 0 50px; }
-.bar{ position:relative; flex:1; height:16px; background:#f2ead9; border:1px solid var(--line-deep); border-radius:999px; overflow:hidden; }
+.bar{ position:relative; flex:1; height:16px; background:#e3d6bb; border:1px solid var(--line-deep); border-radius:999px; overflow:hidden; }
 .bar-fill{ position:absolute; inset:0 auto 0 0; height:100%; border-radius:999px; transition:width .25s ease; }
-.bar-fill.zawameki{ background:linear-gradient(90deg,#cdb3e8,var(--zawa)); }
-.bar-fill.kokoro{ background:linear-gradient(90deg,#f6c2cf,var(--kokoro)); }
-.bar-fill.kokoro.danger{ background:linear-gradient(90deg,#f0a6b3,var(--danger)); }
-.bar-num{ font-size:11px; color:#5f5170; min-width:44px; text-align:right; }
+.bar-fill.zawameki{ background:linear-gradient(90deg,#b6a0b6,var(--zawa)); }
+.bar-fill.kokoro{ background:linear-gradient(90deg,#dcab8a,var(--kokoro)); }
+.bar-fill.kokoro.danger{ background:linear-gradient(90deg,#c97a5d,var(--danger)); }
+.bar-num{ font-size:11px; color:#6a5740; min-width:44px; text-align:right; }
 
-/* 部位カード */
-.parts{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
-.part{ text-align:left; width:100%; font:inherit; color:var(--ink); cursor:pointer;
-  background:var(--cream); border:2px solid var(--line-deep); border-radius:14px; padding:10px 12px;
+/* 部位カード＝この画面の主役（モンハンの「部位一覧」を、ぬいぐるみで翻訳）。
+   破線の縫い目（縁の dashed 影）と、布のような起毛感を出す。 */
+.parts{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+.part{ position:relative; text-align:left; width:100%; font:inherit; color:var(--ink); cursor:pointer;
+  background:linear-gradient(180deg,#f3ead6,#e7d8bd); border:2px solid var(--line-deep); border-radius:14px; padding:11px 13px;
+  box-shadow:0 3px 9px rgba(120,95,55,.16), inset 0 0 0 1px rgba(255,250,238,.45);
   transition:transform .06s,box-shadow .12s,border-color .12s,background .12s; }
-.part:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 6px 14px #e8b96a44; }
+/* 内側の破線＝糸でかがった縫い目（部位っぽさ） */
+.part::before{ content:''; position:absolute; inset:5px; border:1px dashed rgba(169,139,99,.45); border-radius:10px; pointer-events:none; }
+.part:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 7px 16px rgba(150,110,55,.32); }
 .part:disabled{ cursor:default; }
-.part.sel{ box-shadow:0 0 0 3px #f3cf7a66; border-color:var(--gold); }
-.part-name{ font-size:15px; font-weight:800; color:#7a5f49; }
+/* 選択中＝狩りのターゲット。金色のフォーカスで強く前に出す。 */
+.part.sel{ box-shadow:0 0 0 3px rgba(199,154,82,.55), 0 8px 18px rgba(150,110,55,.34); border-color:var(--gold); background:linear-gradient(180deg,#f6eed9,#ecdcbb); transform:translateY(-1px); }
+.part.sel::before{ border-color:rgba(199,154,82,.65); }
+.part-name{ font-size:15px; font-weight:800; color:#4a3a2b; }
 .part-state{ font-size:12px; font-weight:700; margin:2px 0; }
-.part-desc{ font-size:12px; color:#8a7058; }
-/* 状態ごとの色 */
-.part.closed{ } .part.closed .part-state{ color:#9a8369; }
-.part.shaking{ background:#fff6e6; } .part.shaking .part-state{ color:#c9923f; }
-.part.loosening{ background:#fbf3e2; } .part.loosening .part-state{ color:#c97a3f; }
-.part.undone{ background:#eef7ee; border-color:#bfe6c7; } .part.undone .part-state{ color:#4f9a64; }
-.part.hurt{ background:#f3eef2; border-color:#cbb8c8; opacity:.85; } .part.hurt .part-state{ color:#8a6f86; }
+.part-desc{ font-size:12px; color:#7a6444; }
+/* 状態ごとの色（閉→震→ほどけかけ→ほどけた／傷ついた） */
+.part.closed .part-state{ color:#8a7355; }
+.part.shaking{ background:linear-gradient(180deg,#f3e6c8,#ecdab2); } .part.shaking .part-state{ color:#b07d35; }
+.part.loosening{ background:linear-gradient(180deg,#efdbbd,#e4c79f); } .part.loosening .part-state{ color:#b16433; }
+.part.undone{ background:linear-gradient(180deg,#e6efd9,#d7e6c4); border-color:#a9c79a; } .part.undone .part-state{ color:#4e7d44; }
+.part.undone::before{ border-color:rgba(122,160,122,.5); }
+.part.hurt{ background:linear-gradient(180deg,#e6dcd6,#d6c8c0); border-color:#b6a298; opacity:.9; } .part.hurt .part-state{ color:#8a5e4c; }
+.part.hurt::before{ border-style:dotted; border-color:rgba(150,110,90,.5); }
 
-/* コマンド */
-.cmd-hdr{ font-size:13px; font-weight:700; color:#7a5f49; margin-bottom:10px;
-  background:#fff7e8; border:1px solid var(--line-deep); border-radius:10px; padding:6px 12px; }
+/* コマンド：選択中の部位に効くことば */
+.cmd-hdr{ font-size:13px; font-weight:700; color:#5e4a30; margin-bottom:10px;
+  background:#efe3c9; border:1px solid var(--line-deep); border-radius:10px; padding:6px 12px; }
 .cmd-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; }
-.cmd{ text-align:left; width:100%; font:inherit; color:var(--ink); cursor:pointer; background:linear-gradient(180deg,#fff,#fff0f4); border:2px solid #f0bcc7; border-radius:14px; padding:10px 12px; transition:transform .06s,background .12s,opacity .12s; }
-.cmd:hover:not(:disabled){ background:#fff; } .cmd:active:not(:disabled){ transform:translateY(1px); } .cmd:disabled{ opacity:.4; cursor:default; }
-.cmd.seal{ border-color:#cbb8c8; background:linear-gradient(180deg,#fff,#f4eef2); }
-.cmd-name{ font-size:15px; font-weight:800; color:#7a4f60; }
-.cmd-hint{ font-size:11.5px; color:#8a7058; margin-top:3px; }
+.cmd{ text-align:left; width:100%; font:inherit; color:var(--ink); cursor:pointer; background:linear-gradient(180deg,#f5eedd,#ebddc2); border:2px solid var(--line-deep); border-radius:12px; padding:10px 12px; transition:transform .06s,background .12s,opacity .12s; }
+.cmd:hover:not(:disabled){ background:linear-gradient(180deg,#faf4e6,#f0e3ca); } .cmd:active:not(:disabled){ transform:translateY(1px); } .cmd:disabled{ opacity:.4; cursor:default; }
+/* 「封じる」＝強引な手。くすんだ赤茶で、少し重い・危ない雰囲気に。 */
+.cmd.seal{ border-color:#b07a5e; background:linear-gradient(180deg,#ecd9c8,#dcbfa6); }
+.cmd.seal .cmd-name{ color:#9a4f33; }
+.cmd-name{ font-size:15px; font-weight:800; color:#5e4030; }
+.cmd-hint{ font-size:11.5px; color:#7a6444; margin-top:3px; }
 
 .log{ max-height:260px; overflow-y:auto; padding:4px 2px; }
-.log-block{ border-radius:10px; padding:8px 12px; margin:8px 0; background:#fffdf8; border:1px solid #f0e6d2; }
+.log-block{ border-radius:10px; padding:8px 12px; margin:8px 0; background:#f4ecda; border:1px solid #ddccac; }
 .log-block .ln{ font-size:13.5px; } .log-block .ln.blank{ line-height:.5; }
-.ln.l{ font-family:"SFMono-Regular",Menlo,Consolas,monospace; letter-spacing:.02em; color:#5a4a6e; text-shadow:.6px 0 #e7c0cf66,-.6px 0 #b9d8e666; }
-.log-block.open{ background:#f6f3fb; border-color:#e3dcf0; color:#6b5d80; }
-.log-block.system{ background:#fbf6ea; border-color:var(--line-deep); color:#8a6f49; font-size:12.5px; }
-.log-block.player{ background:#fffdf8; }
-.log-block.enemy{ background:#f9f5fc; border-color:#e6d8f0; }
-.log-block.hint{ background:#eef6ee; border-color:#cfe6cf; color:#4f7a55; }
-.log-block.fail{ background:#fdeef0; border-color:#f0c8cf; }
-.log-block.success{ background:linear-gradient(180deg,#fff8e6,#fff0f4); border:2px solid #f0cf86; box-shadow:0 4px 16px #f0cf8655; }
-.log-block.success .ln{ font-weight:800; color:#a85070; }
-.log-block.result{ background:#f6f3fb; border-color:#e3dcf0; }
+.ln.l{ font-family:"SFMono-Regular",Menlo,Consolas,monospace; letter-spacing:.02em; color:#5a4730; text-shadow:.6px 0 #d8bf9466,-.6px 0 #b09a7866; }
+.log-block.open{ background:#ede4f0; border-color:#d7c7df; color:#6a5973; }
+.log-block.system{ background:#efe5cf; border-color:var(--line-deep); color:#7a6240; font-size:12.5px; }
+.log-block.player{ background:#f4ecda; }
+.log-block.enemy{ background:#ece2ed; border-color:#d8c7da; }
+.log-block.hint{ background:#e8efd9; border-color:#c8d8af; color:#52703f; }
+.log-block.fail{ background:#ecd9cd; border-color:#cba88f; color:#8a4f37; }
+.log-block.success{ background:linear-gradient(180deg,#efe6c9,#e6d4b0); border:2px solid var(--gold); box-shadow:0 4px 16px rgba(199,154,82,.4); }
+.log-block.success .ln{ font-weight:800; color:#8a5a2f; }
+.log-block.result{ background:#ede4f0; border-color:#d7c7df; }
 
-.overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:20px; background:#3a2f4a66; backdrop-filter:blur(2px); z-index:50; }
+.overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(48,38,26,.5); backdrop-filter:blur(2px); z-index:50; }
 .overlay.show{ display:flex; }
-.overlay-box{ max-width:520px; width:100%; max-height:86vh; overflow-y:auto; background:var(--paper); border-radius:18px; padding:24px 22px; box-shadow:0 18px 50px #00000033; }
-.overlay-box.win{ border:2px solid #f0cf86; } .overlay-box.lose{ border:2px solid #c9b6d6; }
-.overlay-title{ font-size:20px; text-align:center; margin-bottom:14px; color:#7a5f49; }
-.overlay-box.win .overlay-title{ color:#a8723f; }
-.overlay-box.lose .overlay-title{ color:#6f5a86; text-shadow:1.2px 0 #e7c0cf,-1.2px 0 #b9d8e6; }
+.overlay-box{ max-width:520px; width:100%; max-height:86vh; overflow-y:auto; background:var(--paper); border-radius:16px; padding:24px 22px; box-shadow:0 18px 50px rgba(40,28,14,.32); }
+.overlay-box.win{ border:2px solid var(--gold); } .overlay-box.lose{ border:2px solid #b6a298; }
+.overlay-title{ font-size:20px; text-align:center; margin-bottom:14px; color:#4a3a2b; }
+.overlay-box.win .overlay-title{ color:#8a5a2f; }
+.overlay-box.lose .overlay-title{ color:#6a564a; text-shadow:1.2px 0 #d8bf94,-1.2px 0 #b6a298; }
 .overlay-text .ln{ font-size:14px; } .overlay-text .ln.blank{ line-height:.5; }
 .overlay-actions{ display:flex; gap:10px; justify-content:center; align-items:center; margin-top:18px; flex-wrap:wrap; }
-.restart{ font-size:15px; font-weight:800; cursor:pointer; color:#7a4f60; background:linear-gradient(180deg,#fff,#fff0f4); border:2px solid #f0bcc7; border-radius:999px; padding:10px 22px; }
-.restart:hover{ background:#fff; }
-.to-lab{ font-size:13px; color:#bb6f86; border:1px solid var(--line-deep); border-radius:999px; padding:9px 16px; background:#fff8; }
-.to-lab:hover{ background:#fff; text-decoration:none; }
+.restart{ font-size:15px; font-weight:800; cursor:pointer; color:#5e4030; background:linear-gradient(180deg,#f5eedd,#ebddc2); border:2px solid var(--line-deep); border-radius:999px; padding:10px 22px; }
+.restart:hover{ background:linear-gradient(180deg,#faf4e6,#f0e3ca); }
+.to-lab{ font-size:13px; color:#7a5536; border:1px solid var(--line-deep); border-radius:999px; padding:9px 16px; background:rgba(247,241,228,.7); }
+.to-lab:hover{ background:#f7f1e4; text-decoration:none; }
 
 @media (max-width:520px){ .mock-title{ font-size:20px; } .parts,.cmd-grid{ grid-template-columns:1fr 1fr; } .cap{ flex-basis:44px; } }

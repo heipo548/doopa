@@ -70,13 +70,13 @@ var UI = (function () {
     var area=$('cmd-area'); clear(area);
     for(var i=0;i<COMMANDS.length;i++){
       (function(c){
-        var b=document.createElement('button'); b.className='cmd';
+        var b=document.createElement('button'); b.className='cmd'; b.id='cmd-'+c.id;
         var enabled = !state.result && state.player.kotoba>=c.cost;
         b.disabled=!enabled;
         var top=document.createElement('div'); top.className='cmd-top';
         var nm=document.createElement('span'); nm.className='cmd-name'; nm.textContent=c.name;
         var meta=document.createElement('span'); meta.className='cmd-meta';
-        meta.textContent=(c.cast>1?('遅 cast'+c.cast):'早 cast'+c.cast)+' / ことば'+c.cost;
+        meta.textContent=(c.cast>1?('おそい・待ち'+c.cast):'はやい・待ち'+c.cast)+' ／ ことば'+c.cost;
         top.appendChild(nm); top.appendChild(meta);
         var hint=document.createElement('div'); hint.className='cmd-hint'; hint.textContent=c.hint;
         b.appendChild(top); b.appendChild(hint);
@@ -109,6 +109,13 @@ var UI = (function () {
     var body=$('overlay-text'); clear(body);
     var text = (state.result==='lose') ? LOSE_TEXT[state.endKind] : WIN_TEXT[state.endKind];
     for(var i=0;i<text.length;i++) body.appendChild(lineEl(text[i]));
+    // やさしい解説（勝因/敗因）＋リトライ助言
+    if(typeof ADVICE!=='undefined' && ADVICE[state.endKind]){
+      var ad=document.createElement('p'); ad.className='overlay-advice'; ad.textContent=ADVICE[state.endKind]; body.appendChild(ad);
+    }
+    if(state.result==='lose' && typeof RETRY_HINT!=='undefined'){
+      var h=document.createElement('p'); h.className='overlay-hint'; h.textContent=RETRY_HINT; body.appendChild(h);
+    }
     ov.classList.add('show');
   }
 

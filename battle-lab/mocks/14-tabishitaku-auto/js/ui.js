@@ -44,6 +44,7 @@ var UI = (function(){
     for(var i=0;i<av.length;i++){
       (function(it){
         var b=document.createElement('button'); b.className='trayitem '+it.kind+(view.selectedItem===it.id?' sel':'');
+        b.id='tray-'+it.id;   // おすすめハイライト用（例：#tray-letter）
         var g=document.createElement('span'); g.className='ti-glyph'; g.textContent=it.glyph;
         var nm=document.createElement('span'); nm.className='ti-name'; nm.textContent=it.name;
         var ds=document.createElement('span'); ds.className='ti-desc'; ds.textContent=it.desc;
@@ -99,6 +100,13 @@ var UI = (function(){
     var body=$('overlay-text'); clear(body);
     var text=WIN_TEXT[state.endKind]||[];
     for(var i=0;i<text.length;i++) body.appendChild(lineEl(text[i]));
+    // やさしい解説（どんな詰め方が この結末を呼んだか）＋ 負け時はリトライ助言
+    if(typeof ADVICE!=='undefined' && ADVICE[state.endKind]){
+      var ad=document.createElement('p'); ad.className='overlay-advice'; ad.textContent=ADVICE[state.endKind]; body.appendChild(ad);
+    }
+    if(state.result==='lose' && typeof RETRY_HINT!=='undefined'){
+      var h=document.createElement('p'); h.className='overlay-hint'; h.textContent=RETRY_HINT; body.appendChild(h);
+    }
     ov.classList.add('show');
   }
 

@@ -1,103 +1,122 @@
 /*
  * style.css — Battle 14「旅支度オートバトル」
  * 主役は カバン(3×3) の配置。準備が、すでに戦い。
+ *
+ * テーマ（Loop Hero 参考・直接の模倣はしない）：
+ *   旅・洞窟・焚き火・カバン整理。暖かい羊皮紙／なめした革に、
+ *   残り火のオレンジを アクセントに。情報が多くても カバン整理が
+ *   しづらくならないよう、主役の カバンと持ち物だけ 強めに照らす。
  */
 :root{
-  --sky-top:#ffd9ea; --sky-mid:#e7dbf7; --sky-low:#d2eafb; --meadow:#d9efcf; --meadow-deep:#bfe4b0;
-  --cream:#fffaf1; --paper:#fffdf8; --ink:#6f5b48; --ink-dim:#a98f76; --ink-strong:#5b4a36;
-  --line:#efe0c4; --line-deep:#e7cf9f; --gold:#f3cf7a; --zawa:#b48ad6; --kokoro:#ef93a8; --danger:#e07b8b;
-  --word:#b0556d; --thing:#7a8a55; --blank:#9a8fb0;
+  /* 羊皮紙・革・残り火（暖色）に置き換え。レイアウトや変数名は変えない。 */
+  --cream:#f6e7c8; --paper:#f3e3bf;        /* 羊皮紙のクリーム／パネル地 */
+  --ink:#4a3526; --ink-dim:#9a7c58; --ink-strong:#3a2718;  /* 焦げ茶のインク（高コントラスト） */
+  --line:#d8b886; --line-deep:#b8915a;     /* 革の縁取り */
+  --gold:#e8923c;                          /* 残り火オレンジ（おすすめ／次の発動） */
+  --ember:#e8923c; --ember-deep:#c5621c;   /* 焚き火の炎 */
+  --zawa:#a874c8; --kokoro:#e08a6a; --danger:#cf5a3a;
+  --word:#b85a2a; --thing:#7a7a3e; --blank:#8a7a9a;   /* 言葉=炎寄り／道具=苔の革／空白=灰紫 */
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
 html,body{ min-height:100%; color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Helvetica Neue",Arial,sans-serif;
   line-height:1.7;
-  background:radial-gradient(120% 60% at 50% -8%,#fff2f8 0%,rgba(255,255,255,0) 42%),
-    linear-gradient(180deg,#f3e3d4 0%,#ecdcc8 28%,#e6e0d2 55%,#dfe7d2 80%,#cfe0c2 100%);
+  /* 上：洞窟の暗がり → 下：焚き火に照らされた革。中央上に残り火のにじみ。 */
+  background:radial-gradient(120% 55% at 50% 8%,rgba(232,146,60,.22) 0%,rgba(232,146,60,0) 46%),
+    radial-gradient(90% 60% at 50% 108%,rgba(197,98,28,.30) 0%,rgba(197,98,28,0) 60%),
+    linear-gradient(180deg,#2c2018 0%,#3d2b1d 26%,#5a4029 56%,#6b4b2c 80%,#7a5530 100%);
   background-attachment:fixed; -webkit-font-smoothing:antialiased; }
-a{ color:#c08398; text-decoration:none; } a:hover{ text-decoration:underline; }
+a{ color:#f0b46a; text-decoration:none; } a:hover{ text-decoration:underline; }
 
 .lab-head{ max-width:680px; margin:0 auto; padding:18px 16px 4px; text-align:center; }
-.back{ display:inline-block; font-size:13px; color:#a87f8e; background:#fff7; border:1px solid var(--line-deep); border-radius:999px; padding:3px 12px; margin-bottom:12px; }
-.back:hover{ background:#fff; text-decoration:none; }
-.lab-name{ font-size:12px; letter-spacing:.12em; color:var(--ink-dim); }
-.mock-title{ font-size:23px; color:#7a5f49; line-height:1.4; text-shadow:1.2px 0 #f7c0cf,-1.2px 0 #b9d8e6; }
-.mock-en{ font-size:12px; letter-spacing:.16em; color:var(--ink-dim); margin-top:2px; }
-.intro{ max-width:600px; margin:14px auto 0; background:#fff8; border:1px dashed var(--line-deep); border-radius:12px; padding:12px 16px; font-size:13px; color:#7a6a55; text-align:left; }
+/* 暗い背景に乗るので、文字は明るい羊皮紙色で読みやすく */
+.back{ display:inline-block; font-size:13px; color:#f3e3bf; background:rgba(58,39,24,.55); border:1px solid var(--line-deep); border-radius:999px; padding:3px 12px; margin-bottom:12px; }
+.back:hover{ background:rgba(74,53,38,.8); text-decoration:none; }
+.lab-name{ font-size:12px; letter-spacing:.12em; color:#cdb189; }
+.mock-title{ font-size:23px; color:#f5e3c2; line-height:1.4; text-shadow:0 1px 0 #2c1c10, 0 0 12px rgba(232,146,60,.45); }
+.mock-en{ font-size:12px; letter-spacing:.16em; color:#d8a86a; margin-top:2px; }
+.intro{ max-width:600px; margin:14px auto 0; background:rgba(243,227,191,.92); border:1px dashed var(--line-deep); border-radius:12px; padding:12px 16px; font-size:13px; color:#5a4128; text-align:left; box-shadow:0 6px 18px rgba(0,0,0,.3); }
 .intro p.blank{ line-height:.6; }
 
 .stage{ max-width:680px; margin:0 auto; padding:10px 16px 64px; }
-.panel{ background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:14px 16px; margin-top:14px; box-shadow:0 6px 16px #e8c98a22; }
-.sec-cap{ font-size:12px; letter-spacing:.1em; color:#b08f6a; margin-bottom:10px; }
+/* パネルは なめした革の質感。暗背景から少し浮かせる。 */
+.panel{ background:linear-gradient(180deg,#5e4329,#4e3722); border:1px solid #6e4f2e; border-radius:16px; padding:14px 16px; margin-top:14px; box-shadow:0 8px 20px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,220,170,.08); }
+.sec-cap{ font-size:12px; letter-spacing:.1em; color:#e0b878; margin-bottom:10px; }
 
-/* カバン */
-.bag{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:340px; margin:0 auto; }
-.cell{ aspect-ratio:1/1; font:inherit; cursor:pointer; background:#fbf6ec; border:2px solid #e7cf9f; border-radius:14px;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; transition:transform .06s,box-shadow .12s,background .12s; padding:4px; }
-.cell.center{ border-style:dashed; background:#fdf4f6; }
-.cell:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 6px 14px #e8b96a44; }
+/* カバン（このバトルの主役）— 革のカバンを焚き火が照らすイメージで一番強調 */
+.bag{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; max-width:340px; margin:0 auto;
+  padding:10px; border-radius:18px; background:radial-gradient(80% 70% at 50% 30%,rgba(232,146,60,.16),rgba(0,0,0,0) 70%); }
+.cell{ aspect-ratio:1/1; font:inherit; cursor:pointer; background:linear-gradient(180deg,#f6e7c8,#ecd6ad); border:2px solid var(--line-deep); border-radius:14px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; transition:transform .06s,box-shadow .12s,background .12s; padding:4px;
+  box-shadow:0 3px 8px rgba(0,0,0,.25); }
+.cell.center{ border-style:dashed; background:linear-gradient(180deg,#f7ead0,#f0dcb8); border-color:var(--ember); }
+.cell:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 8px 18px rgba(232,146,60,.4); }
 .cell:disabled{ cursor:default; }
-.cell.fired{ opacity:.4; }
-.cell.next{ box-shadow:0 0 0 3px #f3cf7a88; border-color:var(--gold); }
-.cell.usable{ box-shadow:0 0 0 3px #8fd09a88; border-color:#8fd09a; cursor:pointer; }
+.cell.fired{ opacity:.38; }
+.cell.next{ box-shadow:0 0 0 3px rgba(232,146,60,.65), 0 0 16px rgba(232,146,60,.55); border-color:var(--ember); }
+.cell.usable{ box-shadow:0 0 0 3px rgba(166,116,200,.6); border-color:var(--zawa); cursor:pointer; }
 .cell .glyph{ font-size:22px; font-weight:800; }
 .cell .glyph.word{ color:var(--word); } .cell .glyph.thing{ color:var(--thing); } .cell .glyph.blank{ color:var(--blank); }
-.cell .cellname{ font-size:10px; color:#8a7058; }
-.cell .empty{ font-size:13px; color:#cbb88e; }
+.cell .cellname{ font-size:10px; color:#6b4f30; }
+.cell .empty{ font-size:13px; color:#b89a6a; }
 
-/* 持ち物トレイ */
+/* 持ち物トレイ（カバンに詰めるカード。羊皮紙のカード） */
 .tray{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
-.trayitem{ text-align:left; font:inherit; cursor:pointer; color:var(--ink); background:var(--cream); border:2px solid var(--line-deep); border-radius:12px; padding:8px 10px; display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:8px; }
-.trayitem:hover{ background:#fff; }
-.trayitem.sel{ box-shadow:0 0 0 3px #f3cf7a66; border-color:var(--gold); }
+.trayitem{ text-align:left; font:inherit; cursor:pointer; color:var(--ink); background:linear-gradient(180deg,#f6e7c8,#eedab4); border:2px solid var(--line-deep); border-radius:12px; padding:8px 10px; display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:8px; box-shadow:0 2px 6px rgba(0,0,0,.22); }
+.trayitem:hover{ background:#f9eed3; border-color:var(--ember); }
+.trayitem.sel{ box-shadow:0 0 0 3px rgba(232,146,60,.6); border-color:var(--ember); }
 .trayitem.word{ } .trayitem.thing{ } .trayitem.blank{ border-style:dashed; }
 .ti-glyph{ grid-row:1/3; align-self:center; font-size:22px; font-weight:800; }
 .trayitem.word .ti-glyph{ color:var(--word); } .trayitem.thing .ti-glyph{ color:var(--thing); } .trayitem.blank .ti-glyph{ color:var(--blank); }
-.ti-name{ font-size:14px; font-weight:800; color:#7a5f49; }
-.ti-desc{ font-size:11px; color:#8a7058; }
+.ti-name{ font-size:14px; font-weight:800; color:#5a4128; }
+.ti-desc{ font-size:11px; color:#7a5f3a; }
 .syn-preview{ margin:12px 0; }
-.syn-on{ font-size:12.5px; color:#4f7a55; background:#eef6ee; border:1px solid #cfe6cf; border-radius:10px; padding:8px 12px; }
-.syn-off{ font-size:12px; color:var(--ink-dim); }
-.start{ display:block; width:100%; margin-top:6px; font-size:16px; font-weight:800; cursor:pointer; color:#7a4f60;
-  background:linear-gradient(180deg,#fff,#fff0f4); border:2px solid #f0bcc7; border-radius:14px; padding:12px; }
-.start:hover{ background:#fff; }
+/* シナジー成立は 残り火のオレンジで分かりやすく光らせる */
+.syn-on{ font-size:12.5px; color:#fce6c4; background:linear-gradient(180deg,rgba(232,146,60,.32),rgba(197,98,28,.26)); border:1px solid var(--ember); border-radius:10px; padding:8px 12px; }
+.syn-off{ font-size:12px; color:#c9ac80; }
+.start{ display:block; width:100%; margin-top:6px; font-size:16px; font-weight:800; cursor:pointer; color:#fff;
+  background:linear-gradient(180deg,var(--ember),var(--ember-deep)); border:2px solid #d9772b; border-radius:14px; padding:12px; box-shadow:0 4px 12px rgba(197,98,28,.45); }
+.start:hover{ filter:brightness(1.06); }
+.start:disabled{ filter:grayscale(.5) brightness(.9); cursor:default; color:#f3e3bf; background:linear-gradient(180deg,#8a6a44,#6e4f2e); border-color:#6e4f2e; box-shadow:none; }
 
 /* 戦闘 */
 .bar-row{ display:flex; align-items:center; gap:8px; margin:6px 0; }
-.cap{ font-size:11px; color:var(--ink-dim); flex:0 0 50px; }
-.bar{ position:relative; flex:1; height:18px; background:#f2ead9; border:1px solid var(--line-deep); border-radius:999px; overflow:hidden; }
+.cap{ font-size:11px; color:#e0b878; flex:0 0 50px; }
+.bar{ position:relative; flex:1; height:18px; background:#3a2718; border:1px solid #6e4f2e; border-radius:999px; overflow:hidden; }
 .bar-fill{ position:absolute; inset:0 auto 0 0; height:100%; border-radius:999px; transition:width .3s ease; }
-.bar-fill.zawameki{ background:linear-gradient(90deg,#cdb3e8,var(--zawa)); }
-.bar-fill.kokoro{ background:linear-gradient(90deg,#f6c2cf,var(--kokoro)); }
-.bar-fill.kokoro.danger{ background:linear-gradient(90deg,#f0a6b3,var(--danger)); }
-.bar-num{ font-size:11px; color:#5f5170; min-width:40px; text-align:right; }
+.bar-fill.zawameki{ background:linear-gradient(90deg,#9a6cc0,var(--zawa)); }
+.bar-fill.kokoro{ background:linear-gradient(90deg,#e8a87e,var(--kokoro)); }
+.bar-fill.kokoro.danger{ background:linear-gradient(90deg,#e08a6a,var(--danger)); }
+.bar-num{ font-size:11px; color:#e8d4b0; min-width:40px; text-align:right; }
 .battle-controls{ display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
-.act{ flex:1 1 160px; min-height:46px; font:inherit; font-size:15px; font-weight:800; cursor:pointer; color:#7a4f60; background:linear-gradient(180deg,#fff,#fff0f4); border:2px solid #f0bcc7; border-radius:12px; padding:8px 12px; }
-.act:hover{ background:#fff; } .act.active{ background:#eafbef; border-color:#8fd09a; color:#4f8a64; }
-.battle-hint{ font-size:11px; color:var(--ink-dim); margin-top:8px; }
+.act{ flex:1 1 160px; min-height:46px; font:inherit; font-size:15px; font-weight:800; cursor:pointer; color:#fff; background:linear-gradient(180deg,var(--ember),var(--ember-deep)); border:2px solid #d9772b; border-radius:12px; padding:8px 12px; box-shadow:0 3px 10px rgba(197,98,28,.4); }
+.act:hover{ filter:brightness(1.06); } .act.active{ background:linear-gradient(180deg,#a874c8,#8a52b0); border-color:#9a64ba; color:#fff; }
+.act:disabled{ filter:grayscale(.5) brightness(.85); cursor:default; }
+.battle-hint{ font-size:11px; color:#c9ac80; margin-top:8px; }
 
+/* ログ（戦闘ログ）— 革のパネル上で各トーンが見分けやすいよう、明るいカードに */
 .log{ max-height:240px; overflow-y:auto; padding:4px 2px; }
-.log-block{ border-radius:10px; padding:8px 12px; margin:8px 0; background:#fffdf8; border:1px solid #f0e6d2; }
+.log-block{ border-radius:10px; padding:8px 12px; margin:8px 0; background:#f3e3bf; border:1px solid var(--line-deep); color:#4a3526; }
 .log-block .ln{ font-size:13.5px; } .log-block .ln.blank{ line-height:.5; }
-.ln.l{ font-family:"SFMono-Regular",Menlo,Consolas,monospace; color:#5a4a6e; }
-.log-block.open{ background:#f6f3fb; border-color:#e3dcf0; color:#6b5d80; }
-.log-block.system{ background:#fbf6ea; border-color:var(--line-deep); color:#8a6f49; font-size:12.5px; }
-.log-block.word{ background:#fdeef3; border-color:#f0c8d4; }
-.log-block.thing{ background:#eef4e6; border-color:#d6e6c2; }
-.log-block.blank{ background:#f3f0fa; border-color:#ddd2ec; color:#6f5a86; }
-.log-block.enemy{ background:#f9f5fc; border-color:#e6d8f0; }
-.log-block.hint{ background:#eef6ee; border-color:#cfe6cf; color:#4f7a55; }
-.log-block.result{ background:linear-gradient(180deg,#fff8e6,#fff0f4); border:2px solid #f0cf86; }
+.ln.l{ font-family:"SFMono-Regular",Menlo,Consolas,monospace; color:#7a3f24; }
+.log-block.open{ background:#ede0c2; border-color:#cbac7a; color:#5a4128; }
+.log-block.system{ background:#efe2c0; border-color:var(--line-deep); color:#6e4f2e; font-size:12.5px; }
+.log-block.word{ background:#f6ddc6; border-color:#e0a878; color:#7a3f24; }
+.log-block.thing{ background:#e9ecc8; border-color:#cdcd8a; color:#52531e; }
+.log-block.blank{ background:#e7e0ec; border-color:#cbbcd6; color:#5a4a6e; }
+.log-block.enemy{ background:#e8ddec; border-color:#cbbcd6; color:#5a4a6e; }
+.log-block.hint{ background:linear-gradient(180deg,#f6ddc6,#f0cfa8); border-color:var(--ember); color:#9a4f1c; }
+.log-block.result{ background:linear-gradient(180deg,#fbe9c6,#f6d8a8); border:2px solid var(--ember); }
 
-.overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:20px; background:#3a2f4a66; backdrop-filter:blur(2px); z-index:50; }
+.overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(26,16,9,.62); backdrop-filter:blur(2px); z-index:50; }
 .overlay.show{ display:flex; }
-.overlay-box{ max-width:520px; width:100%; max-height:86vh; overflow-y:auto; background:var(--paper); border-radius:18px; padding:24px 22px; box-shadow:0 18px 50px #00000033; border:2px solid #f0cf86; }
-.overlay-title{ font-size:20px; text-align:center; margin-bottom:14px; color:#a8723f; }
-.overlay-text .ln{ font-size:14px; } .overlay-text .ln.blank{ line-height:.5; }
+.overlay-box{ max-width:520px; width:100%; max-height:86vh; overflow-y:auto; background:linear-gradient(180deg,#f6e7c8,#eedab4); border-radius:18px; padding:24px 22px; box-shadow:0 18px 50px rgba(0,0,0,.5); border:2px solid var(--ember); color:#4a3526; }
+.overlay-title{ font-size:20px; text-align:center; margin-bottom:14px; color:#9a4f1c; }
+.overlay-text .ln{ font-size:14px; color:#4a3526; } .overlay-text .ln.blank{ line-height:.5; }
 .overlay-actions{ display:flex; gap:10px; justify-content:center; align-items:center; margin-top:18px; flex-wrap:wrap; }
-.restart{ font-size:15px; font-weight:800; cursor:pointer; color:#7a4f60; background:linear-gradient(180deg,#fff,#fff0f4); border:2px solid #f0bcc7; border-radius:999px; padding:10px 22px; }
-.restart:hover{ background:#fff; }
-.to-lab{ font-size:13px; color:#a87f8e; border:1px solid var(--line-deep); border-radius:999px; padding:9px 16px; background:#fff8; }
+.restart{ font-size:15px; font-weight:800; cursor:pointer; color:#fff; background:linear-gradient(180deg,var(--ember),var(--ember-deep)); border:2px solid #d9772b; border-radius:999px; padding:10px 22px; box-shadow:0 4px 12px rgba(197,98,28,.4); }
+.restart:hover{ filter:brightness(1.06); }
+.to-lab{ font-size:13px; color:#7a5530; border:1px solid var(--line-deep); border-radius:999px; padding:9px 16px; background:rgba(255,255,255,.4); }
 .to-lab:hover{ background:#fff; text-decoration:none; }
 
 @media (max-width:520px){ .mock-title{ font-size:20px; } .tray{ grid-template-columns:1fr; } .cap{ flex-basis:44px; } }

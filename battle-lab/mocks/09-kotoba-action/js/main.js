@@ -8,11 +8,14 @@
 // UIの局面（ui.js から参照される）
 var view = { phase:'select', cmd:null, meter:50, dir:1, silence:0 };
 var rafId = 0, silenceTimer = 0;
+var acted = false;   // 最初の1手を打ったか（おすすめハイライト消し用）
 
 var Game = (function(){
 
   function selectCommand(id){
     if(state.result) return;
+    // 最初のコマンド選択でおすすめハイライトを消す
+    if(!acted){ acted=true; if(typeof Tutor!=='undefined') Tutor.clearHighlight(); }
     var cmd = cmdById(id);
     if(cmd.type==='backfire'){ resolveCommand(id, 50); UI.render(); return; }   // Lv3 はタイミング無関係
     if(cmd.type==='silence'){ startSilence(); return; }
@@ -74,13 +77,17 @@ var Game = (function(){
   }
   function clearSilence(){ if(silenceTimer){ clearInterval(silenceTimer); silenceTimer=0; } }
 
-  function restart(){ stopMeter(); clearSilence(); view.phase='select'; view.cmd=null; view.meter=50; view.silence=0; restart_(); UI.render(); }
+  function restart(){ acted=false; stopMeter(); clearSilence(); view.phase='select'; view.cmd=null; view.meter=50; view.silence=0; restart_(); UI.render(); recommend(); }
 
   return { selectCommand:selectCommand, lockTiming:lockTiming, cancelAction:cancelAction,
            startSilence:startSilence, breakSilence:breakSilence, restart:restart };
 })();
 
+// engine の restart と名前が衝突しないよう別名で束ねる
 function restart_(){ return restart(); }
+
+// 1ターン目だけ「はなす」をおすすめハイライト（最初の1手を打つまで）
+function recommend(){ if(typeof Tutor!=='undefined' && !acted) Tutor.highlight('#cmd-hanasu'); }
 
 function fillIntro(){
   var box=document.getElementById('mock-intro'); if(!box) return;
@@ -90,5 +97,30 @@ function fillIntro(){
     box.appendChild(p);
   }
 }
-function boot(){ fillIntro(); newBattle(); document.getElementById('restart-btn').onclick=function(){ Game.restart(); }; UI.render(); }
+function boot(){
+  fillIntro();
+  newBattle();
+  document.getElementById('restart-btn').onclick=function(){ Game.restart(); };
+  UI.render();
+  // 簡易BGM（マリオRPG参考：ポップで明るい授業。最初はOFF、右下ボタンで再生）
+  if(typeof BGM!=='undefined') BGM.setup('mario');
+  // 初見向けチュートリアル（目標バー・あそびかた・ことばヘルプ）
+  if(typeof Tutor!=='undefined') Tutor.init({
+    objective:'目標：タイミングよく言葉を届けて、先生のざわめきを静めよう（3回つづけて届けてもOK）',
+    terms:[
+      {term:'こころ', desc:'Lの元気です。0になると失敗です。'},
+      {term:'先生のざわめき', desc:'先生の落ち着かなさ。0にできると成功です。'},
+      {term:'警戒', desc:'先生の身がまえ。急かすと上がります。「きく」「だまる」で下げられます。'},
+      {term:'タイミング', desc:'動く印がまんなか（50）に来たときに押すと、いちばんよく届きます。'},
+      {term:'れんぞく', desc:'まんなかで言葉を“届ける”のが続いた回数。3回つづけば成功です。'}
+    ],
+    steps:[
+      {title:'このバトルは?', body:'学校の先生は言葉を教えてくれる。でも選ぶだけでは届かない。ちょうどいいタイミングで渡すゲームです。'},
+      {title:'まず「はなす」', body:'まず『はなす』を選び、動く印が真ん中に来たら押しましょう。', highlight:'#cmd-hanasu'},
+      {title:'まんなかがいちばん', body:'真ん中ほどきれいに届く。早すぎると急かす、遅すぎると届きません。'},
+      {title:'だまるのも正解', body:'『だまる』は何も押さないのが正解の時もあります。先生が落ち着くのを、待ってみましょう。'}
+    ]
+  });
+  recommend();
+}
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();

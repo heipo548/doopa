@@ -90,6 +90,13 @@ placeMark(2,2);  // しるしを置いて誘導先を作る
 ok(listen()===true, 'きく: 実行できる');
 ok(state.log.some(function(bl){ return bl.tone==='hint'; }), 'きく: ヒントが出る');
 
+/* 9b) こころが尽きると失敗（涙のマスを踏み続ける）*/
+newBattle();
+state.player.kokoro=1;                 // あと1
+state.danger['3,4']=true;              // L(3,3) の隣に涙マスを置く
+ok(moveL(3,4)===false, 'こころ: 涙マスでこころ0なら moveL は false を返す');
+ok(state.result==='lose' && state.endKind==='kokoro', 'こころ: 涙マスを踏んでこころ0 → kokoro 敗北');
+
 /* 10) 決着後は受け付けない */
 newBattle(); endTurn(); endTurn(); endTurn();  // escape
 ok(moveL(3,4)===false && placeMark(2,2)===false, '決着後: 操作は無効');

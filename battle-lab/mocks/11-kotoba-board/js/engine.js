@@ -63,7 +63,10 @@ function moveL(x,y){
   if(state.shadow.x===x && state.shadow.y===y) return false;
   state.player.x=x; state.player.y=y;
   if(state.danger[key(x,y)]){ delete state.danger[key(x,y)]; state.player.kokoro=Math.max(0,state.player.kokoro-1);
-    logBlock('fail',['Lは 涙のマスを 踏んだ。こころ −1']); }
+    logBlock('fail',['Lは 涙のマスを 踏んだ。こころ −1']);
+    // こころが尽きたら失敗（盤面の説明と一致させる）
+    if(state.player.kokoro<=0){ state.result='lose'; state.endKind='kokoro'; logBlock('result',LOSE_TEXT.kokoro.slice()); return false; }
+  }
   else logBlock('player',['Lは ('+x+','+y+') へ 動いた。']);
   spend(); return true;
 }

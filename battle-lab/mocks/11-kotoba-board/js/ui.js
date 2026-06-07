@@ -93,16 +93,16 @@ var UI = (function(){
       cancel.onclick=function(){ Game.cancel(); }; area.appendChild(cancel);
       return;
     }
-    // 通常：行動メニュー
+    // 通常：行動メニュー（各ボタンに id を付与＝おすすめ手のハイライト用）
     var row=document.createElement('div'); row.className='act-row';
-    row.appendChild(actBtn('移動', function(){ Game.beginMove(); }));
-    row.appendChild(actBtn('ことばを置く', function(){ Game.beginWord(); }));
-    row.appendChild(actBtn('しるしを置く', function(){ Game.beginMark(); }));
-    row.appendChild(actBtn('きく', function(){ Game.listen(); }));
-    row.appendChild(actBtn('まつ（ターン終了）', function(){ Game.endTurn(); }));
+    row.appendChild(actBtn('移動', function(){ Game.beginMove(); }, 'act-move'));
+    row.appendChild(actBtn('ことばを置く', function(){ Game.beginWord(); }, 'act-word'));
+    row.appendChild(actBtn('しるしを置く', function(){ Game.beginMark(); }, 'act-mark'));
+    row.appendChild(actBtn('きく', function(){ Game.listen(); }, 'act-listen'));
+    row.appendChild(actBtn('まつ（ターン終了）', function(){ Game.endTurn(); }, 'act-wait'));
     area.appendChild(row);
   }
-  function actBtn(label,fn){ var b=document.createElement('button'); b.className='act'; b.textContent=label; b.disabled=!!state.result; if(!state.result) b.onclick=fn; return b; }
+  function actBtn(label,fn,id){ var b=document.createElement('button'); b.className='act'; if(id) b.id=id; b.textContent=label; b.disabled=!!state.result; if(!state.result) b.onclick=fn; return b; }
   function wordName(id){ for(var i=0;i<WORDS.length;i++) if(WORDS[i].id===id) return WORDS[i].name; return ''; }
 
   function renderLog(){
@@ -119,6 +119,13 @@ var UI = (function(){
     var body=$('overlay-text'); clear(body);
     var text=(state.result==='lose')?LOSE_TEXT[state.endKind]:WIN_TEXT[state.endKind];
     for(var i=0;i<text.length;i++) body.appendChild(lineEl(text[i]));
+    // やさしい解説（勝因/敗因）＋リトライ助言
+    if(typeof ADVICE!=='undefined' && ADVICE[state.endKind]){
+      var ad=document.createElement('p'); ad.className='overlay-advice'; ad.textContent=ADVICE[state.endKind]; body.appendChild(ad);
+    }
+    if(state.result==='lose' && typeof RETRY_HINT!=='undefined'){
+      var h=document.createElement('p'); h.className='overlay-hint'; h.textContent=RETRY_HINT; body.appendChild(h);
+    }
     ov.classList.add('show');
   }
 

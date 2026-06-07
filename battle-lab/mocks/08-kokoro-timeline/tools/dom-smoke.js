@@ -22,6 +22,7 @@ function makeEl(tag){
     disabled:false, title:'', onclick:null, scrollTop:0, scrollHeight:0, value:'' };
   el.appendChild=function(c){ this.children.push(c); c.parent=this; return c; };
   el.removeChild=function(c){ var i=this.children.indexOf(c); if(i>=0) this.children.splice(i,1); return c; };
+  el.insertBefore=function(n,ref){ var i=ref?this.children.indexOf(ref):-1; if(i>=0) this.children.splice(i,0,n); else this.children.push(n); n.parent=this; return n; };
   el.setAttribute=function(){}; el.getAttribute=function(){ return null; };
   el.addEventListener=function(ev,fn){ if(ev==='click') this.onclick=fn; };
   Object.defineProperty(el,'firstChild',{ get:function(){ return this.children[0]||null; } });
@@ -55,6 +56,8 @@ function ok(c,l){ if(c){passed++; lines.push('  ✅ '+l);} else {failed++; lines
 try{
   eval(read(jsdir+'data.js'));
   eval(read(jsdir+'engine.js'));
+  eval(read(jsdir+'audio.js'));
+  eval(read(jsdir+'tutor.js'));
   eval(read(jsdir+'ui.js'));
   eval(read(jsdir+'main.js'));   // boot() がここで走る
   ok(true,'起動: 例外なく boot() まで通った');
