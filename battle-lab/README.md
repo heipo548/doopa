@@ -31,8 +31,10 @@
 | 12 | [12-kodou-rhythm](./mocks/12-kodou-rhythm/) | 鼓動リズム（呼吸を合わせる） | 🟢 PLAYABLE |
 | 13 | [13-maai-yomiai](./mocks/13-maai-yomiai/) | 間合いと読み合い（距離の同時選択） | 🟢 PLAYABLE |
 | 14 | [14-tabishitaku-auto](./mocks/14-tabishitaku-auto/) | 旅支度オート（準備が戦い） | 🟢 PLAYABLE |
+| 15 | [15-kotoba-rikai](./mocks/15-kotoba-rikai/) | ことば選択型・理解バトル（本命候補：Pokémon × Slay the Spire × UNDERTALE） | 🟢 PLAYABLE |
 
 > 01〜07 は既存のゲーム構造を参考にした検証群、08〜14 は「言葉を使う世界観」に寄せたオリジナル発想の検証群。
+> 15 は本命候補。倒さず、ことばを選んで相手を理解し、警戒させすぎずに心の距離を縮める「理解バトル」。
 > 自動点検は JXA（`osascript -l JavaScript`）で行う。進行ルールは各モックの `tools/headless-check.js`、
 > UI配線は `tools/dom-smoke.js`（08〜14 と 04・07 に同梱）。
 

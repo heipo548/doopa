@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>バトルシステム試作場 / Battle Lab — DOOPA</title>
-  <meta name="description" content="DOOPA バトルシステム試作場。既存型の参考モック(01〜07)に加え、言葉を使う世界観に寄せたオリジナル発想のバトル(08〜14：時間差・タイミング・部位・盤面・鼓動・間合い・旅支度)を並べて、触って試す場所。" />
+  <meta name="description" content="DOOPA バトルシステム試作場。既存型の参考モック(01〜07)、言葉を使う世界観に寄せたオリジナル発想のバトル(08〜14)、そして本命候補のことば選択型・理解バトル(15)を並べて、触って試す場所。" />
   <link rel="stylesheet" href="style.css?v=1" />
 </head>
 <body>
@@ -217,6 +217,20 @@
           <a class="play" href="./mocks/14-tabishitaku-auto/">▶ あそぶ</a>
         </article>
 
+        <!-- ===== 本命候補：ことばを選ぶこと自体がバトルになる（理解バトル） ===== -->
+
+        <article class="mock">
+          <span class="num">15</span>
+          <h3 class="m-title">ことば選択型・理解バトル</h3>
+          <p class="m-ref">Pokémon × Slay the Spire × UNDERTALE 参考</p>
+          <p class="m-desc">
+            倒さない。毎ターン3つの「ことば」から選び、相手を理解し、警戒させすぎずに 心の距離を縮める。
+            タイプ相性・状態（安心／沈黙／強がり／動揺）・余裕の読み合い。チュートリアルと門番戦つき。
+          </p>
+          <div class="m-meta"><span class="badge active">🟢 PLAYABLE</span></div>
+          <a class="play" href="./mocks/15-kotoba-rikai/">▶ あそぶ</a>
+        </article>
+
       </div>
     </section>
 
@@ -224,7 +238,7 @@
       <h2 class="sec">この試作場について</h2>
       <ul>
         <li>目的は<b>完成版を作ること</b>ではなく、<b>バトルの面白さを触って判断すること</b>。</li>
-        <li><b>01〜07</b>＝既存のバトル型（Slay the Spire / UNDERTALE / Inscryption / Dicey Dungeons / Pokémon / ペルソナ / 逆転裁判）を参考にした検証群。<b>08〜14</b>＝「言葉を使う世界観」に寄せた<b>オリジナル発想</b>の検証群（時間差・タイミング・部位・盤面・鼓動・間合い・旅支度）。</li>
+        <li><b>01〜07</b>＝既存のバトル型（Slay the Spire / UNDERTALE / Inscryption / Dicey Dungeons / Pokémon / ペルソナ / 逆転裁判）を参考にした検証群。<b>08〜14</b>＝「言葉を使う世界観」に寄せた<b>オリジナル発想</b>の検証群（時間差・タイミング・部位・盤面・鼓動・間合い・旅支度）。<b>15</b>＝<b>本命候補</b>。倒さず、ことばを選んで相手を理解し、心の距離を縮める<b>理解バトル</b>（タイプ相性・状態変化・余裕の読み合い）。</li>
         <li>各モックは <code>mocks/XX-スラッグ/</code> で独立。カード・敵・状態異常は <code>js/data.js</code> に集約してあり、増やしやすい。進行ルールは <code>tools/</code> の JXA で自動点検できる。</li>
         <li>将来：言葉のレベルアップ（ありがとう → 本当にありがとう → ありがとう、いてくれて）、記憶のかけら（レリック）、学校（ショップ）、エリア別ルール（裁判所・無人島）などを足していく想定。</li>
       </ul>

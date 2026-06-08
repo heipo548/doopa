@@ -1,0 +1,58 @@
+/*
+ * tutor.css — 共通チュートリアル/用語ヘルプ/BGMボタン の見た目（依存ゼロ）
+ * style.css のあとに読み込む。色は各テーマになじむ中間色。
+ */
+
+/* 目標バー */
+.tutor-bar{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+  background:rgba(255,255,255,.72); border:1px solid rgba(0,0,0,.08); border-radius:14px;
+  padding:9px 14px; margin:6px 0 2px; box-shadow:0 4px 12px rgba(80,70,60,.10); }
+.tutor-objective{ font-size:13.5px; font-weight:800; color:#5b4a4f; letter-spacing:.01em; }
+.tutor-bar-btns{ display:flex; gap:6px; flex:0 0 auto; }
+.tutor-mini{ font-size:12px; font-weight:700; cursor:pointer; color:#6a5b6e;
+  background:rgba(255,255,255,.85); border:1px solid rgba(0,0,0,.12); border-radius:999px; padding:4px 11px; }
+.tutor-mini:hover{ background:#fff; }
+
+/* ステップ/用語 オーバーレイ */
+.tutor-overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+  padding:20px; background:rgba(40,34,44,.42); backdrop-filter:blur(2px); z-index:80; }
+.tutor-overlay.show{ display:flex; }
+.tutor-card{ max-width:460px; width:100%; background:#fffdfa; border-radius:18px; padding:22px 22px 18px;
+  box-shadow:0 18px 50px rgba(0,0,0,.28); border:2px solid rgba(0,0,0,.06); }
+.tutor-step-n{ font-size:11px; letter-spacing:.12em; color:#a99; margin-bottom:6px; }
+.tutor-step-title{ font-size:18px; color:#574a55; margin-bottom:10px; }
+.tutor-step-body{ font-size:14px; line-height:1.85; color:#6a5d62; white-space:pre-wrap; }
+.tutor-step-row{ display:flex; gap:10px; justify-content:flex-end; align-items:center; margin-top:18px; }
+.tutor-skip{ font-size:13px; cursor:pointer; color:#8a7c82; background:#fff; border:1px solid rgba(0,0,0,.14); border-radius:999px; padding:8px 16px; }
+.tutor-skip:hover{ background:#faf6f8; }
+.tutor-next{ font-size:14px; font-weight:800; cursor:pointer; color:#fff; background:#c77f95;
+  border:none; border-radius:999px; padding:9px 22px; box-shadow:0 4px 10px rgba(199,127,149,.4); }
+.tutor-next:hover{ filter:brightness(1.05); }
+
+/* 用語一覧 */
+.tutor-terms-list{ display:flex; flex-direction:column; gap:8px; margin-top:6px; max-height:50vh; overflow-y:auto; }
+.tutor-term{ display:flex; gap:10px; align-items:baseline; background:#faf6f3; border:1px solid rgba(0,0,0,.06); border-radius:10px; padding:8px 12px; }
+.tutor-term-name{ flex:0 0 84px; font-size:13px; font-weight:800; color:#7a5f64; }
+.tutor-term-desc{ flex:1; font-size:12.5px; color:#776; line-height:1.6; }
+
+/* おすすめ行動ハイライト（脈打つ枠） */
+.tutor-hi{ position:relative; animation:tutorPulse 1.1s ease-in-out infinite; z-index:2; }
+@keyframes tutorPulse{
+  0%,100%{ box-shadow:0 0 0 0 rgba(243,160,90,.0), 0 0 0 2px rgba(243,160,90,.9); }
+  50%{ box-shadow:0 0 0 8px rgba(243,160,90,.0), 0 0 0 3px rgba(243,160,90,1); }
+}
+.tutor-hi::after{ content:'ここ！'; position:absolute; top:-10px; right:-6px; font-size:10px; font-weight:800;
+  color:#fff; background:#f0954f; border-radius:999px; padding:1px 7px; box-shadow:0 2px 6px rgba(240,149,79,.5); pointer-events:none; }
+
+/* BGM ボタン（右下固定） */
+.bgm-btn{ position:fixed; right:14px; bottom:14px; z-index:70; font-size:12px; font-weight:800; cursor:pointer;
+  color:#6a5b6e; background:rgba(255,255,255,.9); border:1.5px solid rgba(0,0,0,.14); border-radius:999px;
+  padding:8px 14px; box-shadow:0 4px 12px rgba(80,70,60,.18); }
+.bgm-btn:hover{ background:#fff; }
+.bgm-btn.on{ color:#fff; background:#7aa6c7; border-color:#7aa6c7; }
+
+@media (max-width:520px){
+  .tutor-bar{ flex-direction:column; align-items:stretch; gap:6px; }
+  .tutor-bar-btns{ justify-content:flex-end; }
+  .bgm-btn{ right:10px; bottom:10px; padding:7px 12px; }
+}

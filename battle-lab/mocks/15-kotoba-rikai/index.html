@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Battle 15：ことば選択型・理解バトル — Battle Lab / DOOPA</title>
+  <meta name="description" content="DOOPA バトルシステム試作場：毎ターン3つの『ことば』から1つを選び、相手を倒すのではなく理解し、警戒させすぎずに心の距離を縮める。理解度・警戒度・余裕の読み合い。" />
+  <link rel="stylesheet" href="style.css?v=1" />
+  <link rel="stylesheet" href="tutor.css?v=1" />
+</head>
+<body>
+  <!--
+    Battle 15「ことば選択型・理解バトル」モック
+    ・毎ターン 3択（沈黙中は2択）から1つ選ぶ。倒さない。理解し、警戒させすぎず、距離を縮める。
+    ・理解度／警戒度／余裕 は内部数値で持ち、画面には“ことば”で見せる（数値は前面に出さない）。
+    ・相手のタイプ（さびしがり・おこりっぽい・こわがり・つよがり）と状態（安心・沈黙・強がり・動揺）で
+      同じ言葉でも効き方が変わる。観察→核心→差し出す の読み合い。
+    ・依存ゼロ：HTML/CSS/JS。コア(engine)はDOM非依存で、tools/headless-check.js で自動点検できる。
+  -->
+  <header class="lab-head">
+    <a class="back" href="../../">← Battle Lab</a>
+    <p class="lab-name">バトルシステム試作場 / Battle Lab</p>
+    <h1 class="mock-title">Battle 15：ことば選択型・理解バトル <span class="en">/ The Words We Choose</span></h1>
+    <p class="disclaimer">これは完成版ではなく、バトルシステム検証用のモックです。</p>
+    <div class="intro" id="mock-intro"></div>
+
+    <!-- 相手の切り替え（チュートリアル → 本番） -->
+    <div class="enc-select" id="enc-select">
+      <span class="enc-cap">あいて：</span>
+      <button class="enc-btn" data-enc="naku_ko">① 泣いている子（チュートリアル）</button>
+      <button class="enc-btn" data-enc="gatekeeper">② つよがりな門番</button>
+    </div>
+  </header>
+
+  <main class="stage">
+
+    <!-- ===== 相手 ===== -->
+    <section class="panel enemy-zone">
+      <div class="enemy-card">
+        <div class="enemy-face" id="enemy-face" aria-hidden="true"></div>
+        <div class="enemy-info">
+          <div class="enemy-name" id="enemy-name">—</div>
+          <div class="enemy-title" id="enemy-title"></div>
+          <div class="chip-row" id="enemy-types"></div>
+          <div class="chip-row" id="enemy-states"></div>
+        </div>
+      </div>
+
+      <!-- 相手の様子（ターン開始時の観察文：いちばん見せたい所） -->
+      <div class="look" id="enemy-look">—</div>
+      <!-- 相手の反応（直前の手への返事） -->
+      <div class="speech" id="enemy-speech"></div>
+    </section>
+
+    <!-- ===== ゲージ（数値は出さず“ことば”で）＋ターン ===== -->
+    <section class="panel gauges">
+      <div class="gauge">
+        <span class="g-cap">理解</span>
+        <div class="bar"><div class="bar-fill und" id="und-fill"></div></div>
+        <span class="g-word" id="und-word">—</span>
+      </div>
+      <div class="gauge">
+        <span class="g-cap">警戒</span>
+        <div class="bar"><div class="bar-fill alert" id="alert-fill"></div></div>
+        <span class="g-word" id="alert-word">—</span>
+      </div>
+      <div class="gauge mono">
+        <span class="g-cap">余裕</span>
+        <div class="bar"><div class="bar-fill comp" id="comp-fill"></div></div>
+        <span class="g-word" id="comp-word">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="goal" id="goal-word"></span>
+        <span class="turn">ターン <b id="turn-num">1</b> / <span id="turn-limit">—</span></span>
+      </div>
+    </section>
+
+    <!-- ===== 3つの選択肢 ===== -->
+    <section class="panel choices-zone">
+      <h2 class="sec-cap">どの ことばを 選ぶ？ <span class="sub">— 正解を当てるより、相手の反応を見るゲーム</span></h2>
+      <div class="choices" id="choices"></div>
+    </section>
+
+    <!-- ===== ログ ===== -->
+    <section class="panel log-zone">
+      <h2 class="sec-cap">やりとりの記録</h2>
+      <div class="log" id="log"></div>
+    </section>
+
+  </main>
+
+  <!-- ===== 勝敗オーバーレイ ===== -->
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+    <div class="overlay-box" id="overlay-box">
+      <h2 class="overlay-title" id="overlay-title"></h2>
+      <div class="overlay-text" id="overlay-text"></div>
+      <div class="reward" id="reward"></div>
+      <div class="overlay-actions">
+        <button class="restart" id="restart-btn">もう一度</button>
+        <button class="next-enc" id="next-enc-btn" style="display:none">次の相手へ →</button>
+        <a class="to-lab" href="../../">Battle Lab に戻る</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 読み込み順：データ → 進行ルール → 音 → チュートリアル → 描画 → 配線 -->
+  <script src="js/data.js?v=1"></script>
+  <script src="js/engine.js?v=1"></script>
+  <script src="js/audio.js?v=1"></script>
+  <script src="js/tutor.js?v=1"></script>
+  <script src="js/ui.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+</body>
+</html>
