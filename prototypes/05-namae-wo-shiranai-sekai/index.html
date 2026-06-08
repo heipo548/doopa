@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>名前を知らない世界 — ことばを 覚えるたびに、せかいに 意味が 増えていく</title>
   <meta name="description" content="DOOPA プロト#05（体験版）。言葉を知らない主人公が、観察・耳をすます・対話で言葉を覚え、？？？だった世界が少しずつ読めるようになる。戦わない探索RPG。橋の遭遇＝戦わないけど、ちゃんとゲームになる。" />
 
@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Yusei+Magic&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="style.css?v=1" />
+  <link rel="stylesheet" href="style.css?v=2" />
 </head>
 <!-- data-theme は ui.render() が現在エリア(forest/bridge/village)/title をセット＝背景の色温度が変わる -->
 <body data-theme="title">
@@ -33,7 +33,7 @@
     <!-- 下部：一言ログ＋操作ヒント -->
     <div id="field-msg" class="field-msg" aria-live="polite"></div>
     <div class="field-controls">
-      <span class="ctrl-hint">移動：クリック / 矢印キー　　しらべる・はなす：近づいて クリック / Space</span>
+      <span class="ctrl-hint">移動：タップ / 矢印キー　　しらべる・はなす：近づいて タップ / Space</span>
     </div>
 
     <!-- 覚えた言葉カウンタ（クリックで一覧へ） -->
@@ -106,14 +106,14 @@
 
   <!-- ════════ スクリプト読み込み順（contract）：
        data → audio → words → state → save → field → encounter → ui → main ════════ -->
-  <script src="js/data.js?v=1"></script>
-  <script src="js/audio.js?v=1"></script>
-  <script src="js/words.js?v=1"></script>
-  <script src="js/state.js?v=1"></script>
-  <script src="js/save.js?v=1"></script>
-  <script src="js/field.js?v=1"></script>
-  <script src="js/encounter.js?v=1"></script>
-  <script src="js/ui.js?v=1"></script>
-  <script src="js/main.js?v=1"></script>
+  <script src="js/data.js?v=2"></script>
+  <script src="js/audio.js?v=2"></script>
+  <script src="js/words.js?v=2"></script>
+  <script src="js/state.js?v=2"></script>
+  <script src="js/save.js?v=2"></script>
+  <script src="js/field.js?v=2"></script>
+  <script src="js/encounter.js?v=2"></script>
+  <script src="js/ui.js?v=2"></script>
+  <script src="js/main.js?v=2"></script>
 </body>
 </html>

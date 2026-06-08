@@ -54,8 +54,8 @@ body[data-theme="village"] { background: linear-gradient(180deg, #f3ecd6 0%, #eb
 
 /* ══════════ フィールド ══════════ */
 .view {
-  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
-  padding: 10px 10px 16px; position: relative;
+  min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
+  padding: calc(10px + env(safe-area-inset-top)) 10px calc(64px + env(safe-area-inset-bottom)); position: relative;
 }
 .field-hud {
   width: 100%; max-width: 680px; display: flex; justify-content: space-between;
@@ -84,7 +84,7 @@ body[data-theme="village"] { background: linear-gradient(180deg, #f3ecd6 0%, #eb
 .ctrl-hint { font-size: 11.5px; color: var(--ink-dim); }
 
 .vocab-badge {
-  position: fixed; left: 14px; bottom: 14px; z-index: 30;
+  position: fixed; left: calc(12px + env(safe-area-inset-left)); bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 30;
   font-family: inherit; font-size: 14px; color: var(--ink);
   background: var(--cream); border: 2px solid var(--line-deep);
   border-radius: 999px; padding: 6px 14px; cursor: pointer;
@@ -94,7 +94,7 @@ body[data-theme="village"] { background: linear-gradient(180deg, #f3ecd6 0%, #eb
 .vocab-badge:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(231,207,159,0.5); }
 
 .menu-btn {
-  position: fixed; right: 14px; top: 14px; z-index: 30;
+  position: fixed; right: calc(12px + env(safe-area-inset-right)); top: calc(12px + env(safe-area-inset-top)); z-index: 30;
   width: 44px; height: 44px; border-radius: 50%;
   background: var(--cream); border: 2px solid var(--line-deep);
   font-size: 20px; color: var(--ink); cursor: pointer;
@@ -126,16 +126,23 @@ body[data-theme="village"] { background: linear-gradient(180deg, #f3ecd6 0%, #eb
 }
 
 /* ══════════ オーバーレイ共通 ══════════ */
+/* ★スマホ対応の肝：カードが画面より高くてもスクロールで“必ずボタンに届く”ようにする。
+   align-items:center だと はみ出した上下が見切れて触れなくなる（＝橋で詰む原因）。
+   そこで flex-start＋子に margin:auto＝「収まる時は中央／はみ出す時は上から並べてスクロール」。 */
 .overlay {
   position: fixed; inset: 0; z-index: 40;
-  display: flex; align-items: center; justify-content: center;
-  padding: 18px;
+  display: flex; align-items: flex-start; justify-content: center;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
 }
+.overlay > * { margin-top: auto; margin-bottom: auto; }   /* 収まる時は縦中央／はみ出す時は上詰め＋スクロール */
+
 /* フィールドの上にかぶせる系（遭遇/会話/調べる）は うっすら暗転 */
 #ov-encounter, #ov-dialogue, #ov-look, #ov-finale {
   background: rgba(48, 42, 64, 0.42); backdrop-filter: blur(2px);
 }
-#ov-dialogue, #ov-look { align-items: flex-end; }
+/* 会話・調べる は下寄せ（手元で読みやすい）。はみ出す時はやはりスクロールできる。 */
+#ov-dialogue > *, #ov-look > * { margin-top: auto; margin-bottom: 10px; }
 
 /* ── ボタン ── */
 .btn {
@@ -326,15 +333,37 @@ body[data-theme="village"] { background: linear-gradient(180deg, #f3ecd6 0%, #eb
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ══════════ レスポンシブ ══════════ */
+/* スマホでは遭遇カードをコンパクト化（橋は選択肢が最大6個＝最も背が高い。スクロール無しでも収めたい）。*/
 @media (max-width: 480px) {
-  .enc-actions { grid-template-columns: 1fr 1fr; }
+  .enc-card { padding: 13px 13px 12px; border-radius: 20px; }
+  .enc-head { gap: 10px; }
+  .enc-portrait { width: 72px; height: 72px; border-radius: 14px; }
+  .enc-bubble { padding: 8px 11px; min-height: 52px; }
+  .enc-speaker { font-size: 11px; }
   .enc-speech { font-size: 16px; }
-  .ctrl-hint { font-size: 10.5px; }
+  .enc-mood { font-size: 13px; padding: 7px 10px; margin: 9px 2px 5px; }
+  .enc-saywrap { min-height: 38px; margin: 4px 2px 9px; }
+  .enc-say { font-size: 14px; }
+  .enc-actions { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .enc-btn { padding: 9px 11px; gap: 6px; }
+  .enc-btn .ic { font-size: 16px; }
+  .enc-btn .lb { font-size: 15px; }
+  .enc-btn small { font-size: 11px; }
+  .dia-card, .look-card { padding: 14px 16px 12px; }
+  .dia-body, .look-body { font-size: 16px; min-height: 52px; }
+  .fin-card { padding: 18px 16px 14px; }
+  .fin-portrait { width: 92px; height: 92px; }
+  .fin-body { font-size: 16px; }
+  .ctrl-hint { font-size: 10px; }
   .field-area { font-size: 16px; }
+  .title-btns .btn { min-width: 200px; }
+  .title-prologue { font-size: 13px; padding: 12px 14px; }
 }
-@media (max-width: 360px) {
+/* ごく狭い端末は選択肢を1列に（タップしやすさ優先）。*/
+@media (max-width: 340px) {
   .enc-actions { grid-template-columns: 1fr; }
 }
+/* 縦が低い端末（横持ち等）でも、遭遇カードはスクロールで全ボタンに届く（overlay の overflow で担保済み）。*/
 
 /* アニメ酔い対策 */
 @media (prefers-reduced-motion: reduce) {
