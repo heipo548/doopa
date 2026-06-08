@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ことばを獲得する映画 7選 — DOOPA 物語リファレンス</title>
+  <meta name="description" content="「言葉を覚える＝世界が広がる」を主題に、奇跡の人・ブラック・ネル・潜水服は蝶の夢を見る・メッセージ・シェイプ オブ ウォーター・愛は静けさの中に の7本を、ストーリー／差別化・革命的ポイント／DOOPA創作への応用つきで視覚的にまとめた物語リファレンス。" />
+  <!--
+    DOOPA 物語リファレンス：ことばを獲得する映画 7選
+    狙い：proto #04『ルゥと せかいの あいだ』/ #05 の創作軸「言葉の獲得＝世界が広がる」を、
+    映画7本のストーリー＋差別化＋革命的ポイントで補強する一枚もの。
+    なぜインラインSVG＋CSSだけか：DOOPAの「index.html 1枚で完結／外部画像に依存しない」思想に合わせ、
+    GitHub Pages でもローカルでも open するだけで開ける。キービジュアルは各作品の配色・象徴モチーフから
+    起こした自作イラスト（実ポスターではない＝著作権/リンク切れの心配なし）。
+  -->
+  <style>
+    :root{
+      --sky-top:#ffd9ea; --sky-mid:#e7dbf7; --sky-low:#d2eafb; --meadow:#d9efcf; --meadow-deep:#bfe4b0;
+      --cream:#fffaf1; --parch:#fff4dc; --ink:#6f5b48; --ink-dim:#a98f76;
+      --line:#efe0c4; --line-deep:#e7cf9f; --pink:#ef93a8; --gold:#f3cf7a; --mint:#8fd09a; --sky-btn:#8fc3ea;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{
+      min-height:100%; color:var(--ink);
+      font-family:-apple-system,BlinkMacSystemFont,"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Helvetica Neue",Arial,sans-serif;
+      line-height:1.75;
+      background:
+        radial-gradient(120% 60% at 50% -8%, #fff2f8 0%, rgba(255,255,255,0) 42%),
+        linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 22%, var(--sky-low) 42%, #e9f3e2 58%, var(--meadow) 74%, var(--meadow-deep) 100%);
+      background-attachment:fixed; -webkit-font-smoothing:antialiased;
+    }
+    a{color:#d77f95;text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1020px;margin:0 auto;padding:20px 16px 64px;position:relative}
+
+    /* ===== ヘッダー ===== */
+    .crumb{font-size:12px;color:#bb8a6a}
+    .crumb a{color:#bb6f86}
+    header.hero{text-align:center;padding:30px 8px 8px}
+    .kicker{font-size:12px;letter-spacing:.18em;color:#b08f6a;font-weight:700}
+    h1{font-size:clamp(26px,5.4vw,40px);color:#6a5240;line-height:1.28;margin:10px 0 6px;
+       text-shadow:1.4px 0 #f7c0cf,-1.4px 0 #b9d8e6}
+    .sub{max-width:680px;margin:8px auto 0;font-size:14px;color:#7a6a55}
+    .note{display:inline-block;margin:14px auto 0;font-size:11.5px;color:var(--ink-dim);
+      background:#fff7;border:1px dashed var(--line-deep);border-radius:8px;padding:3px 12px}
+    .reflink{margin-top:10px;font-size:12.5px;color:#9c5e74}
+
+    /* ===== イントロ3軸 ===== */
+    .frame{background:#fffaf1cc;border:1px solid var(--line);border-radius:20px;
+      padding:22px 22px 24px;margin-top:22px;box-shadow:0 6px 18px #e8c98a22}
+    .frame h2{font-size:18px;color:#7a5f49;text-align:center}
+    .frame .lead{max-width:760px;margin:10px auto 0;font-size:13.5px;color:#6d5a47;text-align:center}
+    .axes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+    .axis{border-radius:16px;padding:16px 15px;color:#fff;box-shadow:0 6px 14px #0002}
+    .axis .ax-no{font-size:11px;opacity:.85;letter-spacing:.1em}
+    .axis .ax-label{font-size:16px;font-weight:800;margin-top:2px;line-height:1.35}
+    .axis .ax-film{display:inline-block;font-size:11px;font-weight:700;background:#ffffff33;
+      border:1px solid #ffffff55;border-radius:999px;padding:1px 9px;margin:8px 0 8px}
+    .axis .ax-desc{font-size:12px;line-height:1.6;color:#fffffff0}
+    .axis.a1{background:linear-gradient(155deg,#e98aa3,#c45a78)}
+    .axis.a2{background:linear-gradient(155deg,#5f9fd0,#356f9e)}
+    .axis.a3{background:linear-gradient(155deg,#8f86c4,#5d4f93)}
+    @media(max-width:680px){.axes{grid-template-columns:1fr}}
+
+    /* ===== グループ見出し ===== */
+    .group{margin:40px 4px 4px;text-align:center}
+    .group .g-jp{font-size:19px;color:#7a5f49;font-weight:800}
+    .group .g-en{display:block;font-size:11px;color:var(--ink-dim);letter-spacing:.12em;margin-top:2px}
+    .group .g-sub{font-size:12.5px;color:#9a8369;margin-top:4px}
+
+    /* ===== 映画カード ===== */
+    .film{display:grid;grid-template-columns:286px 1fr;background:var(--cream);
+      border:1px solid var(--line);border-top:5px solid var(--accent);border-radius:18px;
+      overflow:hidden;margin-top:20px;box-shadow:0 8px 22px #e8c98a26}
+    .poster{background:#0d1016;display:flex;align-items:center;justify-content:center}
+    .poster svg{width:100%;height:100%;display:block}
+    .content{padding:20px 22px 22px;min-width:0}
+    @media(max-width:768px){
+      .film{grid-template-columns:1fr}
+      .poster{aspect-ratio:16/10}
+    }
+
+    .dist{display:inline-block;font-size:11px;font-weight:800;border-radius:999px;padding:2px 11px;border:1px solid}
+    .dist.core{background:#ffeef3;color:#c45a78;border-color:#f3bcca}
+    .dist.near{background:#fff3df;color:#b9863a;border-color:#ecd29a}
+    .dist.angle{background:#eef4fb;color:#5b86b0;border-color:#cfe0f1}
+    .dist.silent{background:#f1eef8;color:#8175ab;border-color:#d8cfeb}
+
+    .film h3.jp{font-size:23px;color:#5e4a38;font-weight:800;margin-top:9px;line-height:1.3}
+    .film h3.jp .en{display:block;font-size:13px;color:var(--ink-dim);font-weight:600;letter-spacing:.03em;margin-top:2px}
+    .meta{font-size:12.5px;color:#9a8369;margin-top:7px}
+    .logline{font-size:15px;color:#a65c74;font-weight:700;margin-top:11px;
+      border-left:3px solid var(--accent);padding-left:10px}
+    .cast{font-size:11.5px;color:#9a8369;margin-top:8px;list-style:none;line-height:1.7}
+    .cast b{color:#7a6450;font-weight:700}
+
+    .lbl{font-size:11px;letter-spacing:.16em;color:#b08f6a;font-weight:800;
+      margin:18px 0 8px;border-bottom:1px dashed var(--line-deep);padding-bottom:4px}
+    .story ol{margin-left:18px}
+    .story li{font-size:13px;margin:7px 0;color:#6d5a47}
+    .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}
+    .tag{font-size:11px;background:#fff0f4;color:#a06f86;border:1px solid #f0d6df;border-radius:999px;padding:2px 9px}
+
+    .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:6px}
+    @media(max-width:560px){.cols{grid-template-columns:1fr;gap:4px}}
+    .diff p{font-size:12.5px;color:#6d5a47}
+    .revo ul{margin-left:16px}
+    .revo li{font-size:12.5px;margin:5px 0;color:#6d5a47}
+
+    .lang{background:#f4faf2;border:1px solid #d9ebd2;border-radius:12px;padding:12px 14px;margin-top:16px}
+    .lang .lbl{margin-top:0;border-color:#cfe6c6;color:#6f9a5e}
+    .lang p{font-size:12.5px;color:#586e4f}
+    .doopa{background:#fff4f7;border:1px solid #f3d5df;border-radius:12px;padding:12px 14px;margin-top:10px}
+    .doopa .lbl{margin-top:0;border-color:#f0cdd9;color:#bb6f86}
+    .doopa p{font-size:12.5px;color:#9c5e74}
+
+    details{margin-top:10px}
+    summary{cursor:pointer;color:#a98f76;font-size:12px;list-style:none}
+    summary::-webkit-details-marker{display:none}
+    summary::before{content:"▸ ";color:var(--line-deep)}
+    details[open] summary::before{content:"▾ "}
+    details .body{font-size:11.5px;color:#8a7058;margin-top:6px;background:#fffdf8;
+      border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+
+    /* ===== ポジショニング表 ===== */
+    .matrix{background:#fffaf1cc;border:1px solid var(--line);border-radius:20px;
+      padding:20px;margin-top:40px;box-shadow:0 6px 18px #e8c98a22;overflow-x:auto}
+    .matrix h2{font-size:18px;color:#7a5f49;text-align:center;margin-bottom:4px}
+    .matrix .cap{font-size:12px;color:#9a8369;text-align:center;margin-bottom:14px}
+    table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:560px}
+    th,td{padding:10px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+    thead th{color:#b08f6a;font-size:10.5px;letter-spacing:.08em;border-bottom:2px solid var(--line-deep)}
+    td.film-cell b{color:#6a5240}
+    td.film-cell small{color:#a98f76}
+    .pill{display:inline-block;font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 9px;border:1px solid;white-space:nowrap}
+    .pill.core{background:#ffeef3;color:#c45a78;border-color:#f3bcca}
+    .pill.near{background:#fff3df;color:#b9863a;border-color:#ecd29a}
+    .pill.angle{background:#eef4fb;color:#5b86b0;border-color:#cfe0f1}
+    .pill.silent{background:#f1eef8;color:#8175ab;border-color:#d8cfeb}
+
+    /* ===== まとめ ===== */
+    .closing{background:linear-gradient(180deg,#fffdf8,#fff5ef);border:1px solid var(--line);
+      border-radius:20px;padding:24px;margin-top:24px;box-shadow:0 6px 18px #e8c98a22}
+    .closing h2{font-size:18px;color:#7a5f49;text-align:center;margin-bottom:12px}
+    .closing p{font-size:13.5px;color:#6d5a47;max-width:820px;margin:0 auto}
+    .recipe{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px}
+    .chip{font-size:12px;background:#fff;border:1px solid var(--line-deep);border-radius:12px;padding:8px 12px;color:#7a6450}
+    .chip b{color:#bb6f86}
+
+    .foot{text-align:center;font-size:12px;color:var(--ink-dim);margin-top:34px;line-height:1.9}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="crumb"><a href="../../../">DOOPA</a> ／ docs ／ references ／ <b>films</b></p>
+
+  <header class="hero">
+    <p class="kicker">DOOPA — STORY REFERENCE</p>
+    <h1>最初の一語が、世界に輪郭を与える<br>──ことばを獲得する映画 7選</h1>
+    <p class="sub">「言葉を覚える＝世界が広がる」を主題に7本を貫いて読む物語リファレンス。各作品を <b>ストーリー</b>／<b>差別化・革命的ポイント</b>／<b>DOOPA創作への応用</b> でまとめました。</p>
+    <p class="reflink">proto <a href="../../../prototypes/04-kotoba-no-android/">#04『ルゥと せかいの あいだ』</a> ／ #05 の創作軸を支えるための下敷きです。</p>
+    <p class="note">キービジュアルは各作品の配色・象徴モチーフから起こした自作SVGイラスト（実ポスターではありません）。</p>
+  </header>
+
+  <!-- ===== イントロ：3つの軸 ===== -->
+  <section class="frame" aria-label="3つの軸">
+    <h2>言葉を覚えると、何が広がるのか</h2>
+    <p class="lead">言葉を一つ覚えることは、情報が増えることではなく、世界そのものが広がること。名前のなかった感触に名前が宿り、閉ざされていた選択肢が開き、ときには時間の流れ方さえ書き換わる。その「広がりの向き」で7本を3つの軸に整理します。</p>
+    <div class="axes">
+      <div class="axis a1">
+        <div class="ax-no">AXIS 1</div>
+        <div class="ax-label">世界の解像度が上がる</div>
+        <span class="ax-film">代表 ▶ 奇跡の人</span>
+        <div class="ax-desc">区別不能な感触の塊が、一語によって分節され、万物に名前が宿る。世界に初めて輪郭が生まれる瞬間。</div>
+      </div>
+      <div class="axis a2">
+        <div class="ax-no">AXIS 2</div>
+        <div class="ax-label">人生の選択肢が増える</div>
+        <span class="ax-film">代表 ▶ ブラック</span>
+        <div class="ax-desc">言葉を一つ得るごとに、点字・発話・大学・卒業と、生きられる道が階段状に開いていく。</div>
+      </div>
+      <div class="axis a3">
+        <div class="ax-no">AXIS 3</div>
+        <div class="ax-label">世界のルール自体が変わる</div>
+        <span class="ax-film">代表 ▶ メッセージ</span>
+        <div class="ax-desc">新しい文法を身につけると、時間を直線でなく円環として知覚する。住む次元そのものが変わる。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- グループ A：いちばん近い -->
+  <div class="group">
+    <span class="g-jp">A. いちばん近い ― 言葉が世界を立ち上げる</span>
+    <span class="g-en">CLOSEST TO THE CONCEPT</span>
+    <p class="g-sub">名前のない闇に、最初の一語が秩序を与える「ど真ん中」の2本。</p>
+  </div>
+
+  <!-- ① 奇跡の人 -->
+  <article class="film" id="miracle-worker" style="--accent:#7FB3C9">
+    <div class="poster">
+      <svg viewBox="0 0 300 390" role="img" aria-label="奇跡の人 キービジュアル：井戸のポンプと、掌に綴られるWATER">
+        <defs>
+          <linearGradient id="mw-bg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3a342d"/><stop offset="1" stop-color="#211d19"/>
+          </linearGradient>
+          <linearGradient id="mw-water" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#cfe8f4"/><stop offset="1" stop-color="#7FB3C9"/>
+          </linearGradient>
+        </defs>
+        <rect width="300" height="390" fill="url(#mw-bg)"/>
+        <polygon points="58,0 150,0 118,390 28,390" fill="#E8E2D4" opacity="0.07"/>
+        <!-- ポンプ -->
+        <g fill="#6E7B5B">
+          <rect x="206" y="118" width="20" height="150" rx="4"/>
+          <path d="M206 132 q-42 -6 -58 18 l9 13 q24 -21 49 -16 z"/>
+          <rect x="196" y="94" width="40" height="16" rx="6"/>
+          <rect x="152" y="100" width="74" height="9" rx="4" transform="rotate(-13 189 104)"/>
+        </g>
+        <!-- 水 -->
+        <path d="M150 148 q-7 42 -11 72 q-3 22 5 42" stroke="url(#mw-water)" stroke-width="9" fill="none" stroke-linecap="round" opacity="0.95"/>
+        <circle cx="141" cy="272" r="3.4" fill="#cfe8f4"/><circle cx="150" cy="288" r="2.4" fill="#cfe8f4"/>
+        <!-- 開いた掌 -->
+        <g fill="#C9B79C">
+          <ellipse cx="140" cy="308" rx="35" ry="22"/>
+          <rect x="111" y="278" width="11" height="35" rx="5"/>
+          <rect x="126" y="271" width="11" height="42" rx="5"/>
+          <rect x="141" y="273" width="11" height="40" rx="5"/>
+          <rect x="156" y="280" width="11" height="33" rx="5"/>
+          <path d="M107 302 q-17 -5 -21 8 q-2 11 13 13 z"/>
+        </g>
+        <text x="150" y="352" text-anchor="middle" fill="#E8E2D4" font-size="15" letter-spacing="5" font-weight="700">W·A·T·E·R</text>
+        <text x="150" y="376" text-anchor="middle" fill="#C9B79C" font-size="9.5" letter-spacing="2" opacity="0.85">THE MIRACLE WORKER</text>
+      </svg>
+    </div>
+    <div class="content">
+      <span class="dist core">DOOPAへの距離 ▶ 核心</span>
+      <h3 class="jp">奇跡の人 <span class="en">The Miracle Worker</span></h3>
+      <p class="meta">1962 ・ アメリカ合衆国 ・ 監督 アーサー・ペン（Arthur Penn）</p>
+      <p class="logline">手のひらに綴られた最初の一語が、闇と沈黙の世界をこじ開ける。</p>
+      <ul class="cast">
+        <li><b>アニー・サリヴァン</b> アン・バンクロフト ／ <b>ヘレン・ケラー</b> パティ・デューク</li>
+        <li>ケラー大尉 ヴィクター・ジョリー ／ 母ケイト インガ・スウェンソン</li>
+      </ul>
+
+      <p class="lbl">STORY</p>
+      <div class="story"><ol>
+        <li>熱病で視力・聴力・言葉を失った少女ヘレンが、屋敷の中を獣のように這い回り、食卓の皿を素手でつかみ、家族の口に指を突っ込んで触覚だけで世界を確かめる。両親は手に負えず甘やかし続けている。</li>
+        <li>若き家庭教師アニー・サリヴァンが到着し、ヘレンの掌に指文字を綴り始める。だが少女はそれを「指の遊び」としか感じず、意味とモノが結びつかない。言葉が空回りする苛立ちが画面に満ちる。</li>
+        <li>食堂での攻防——席に座らせ、スプーンで食べさせ、ナプキンを畳ませようとする壮絶な格闘。皿が飛び、椅子が倒れ、二人は床を転げ回る。三台のカメラで五日かけて撮られた、台詞のない肉弾戦。</li>
+        <li>甘やかしを断つため、アニーは庭の離れにヘレンと二人だけで籠もる。叩かれ噛みつかれながらも、規律と触覚の反復で少女を少しずつ手なずけていく。それでも「言葉が意味を持つ」決定的な一線は越えられない。</li>
+        <li>ラスト、井戸のポンプ。冷たい水がヘレンの片手を流れ落ち、もう一方の掌にアニーが W-A-T-E-R と綴る。その瞬間、少女の顔に雷光のような気づきが走る——名前と存在が初めて一つに結ばれる。</li>
+      </ol></div>
+
+      <div class="tags"><span class="tag">言葉の獲得</span><span class="tag">三重苦</span><span class="tag">教育と意志</span><span class="tag">触覚の世界</span><span class="tag">実話</span></div>
+
+      <div class="cols">
+        <section class="diff">
+          <p class="lbl">差別化ポイント</p>
+          <p>「言葉を教える」物語をメロドラマでなく<b>肉体の格闘</b>として描き切った点が固有。指文字という触覚言語そのものを劇のメインアクションに据え、台詞より身体の闘いで「意味が宿る前夜」を可視化した。舞台版・TV版を経てアーサー・ペン自身が映画化した演出の極北。</p>
+        </section>
+        <section class="revo">
+          <p class="lbl">革命的ポイント</p>
+          <ul>
+            <li>アン・バンクロフトが主演女優賞、当時16歳のパティ・デュークが史上最年少（当時）でアカデミー助演女優賞を受賞。</li>
+            <li>障害を持つ実在人物の言語獲得を、感傷でなく身体的リアリズムで描いた先駆作。</li>
+            <li>食堂の格闘を三台のカメラ・五日間で撮影し、台詞なしの長尺アクションとして「言語以前の闘い」を映像化。</li>
+            <li>2024年、米国国立フィルム登録簿に永久保存指定。</li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="lang">
+        <p class="lbl">言葉の獲得＝世界の広げ方｜<b>世界の解像度</b></p>
+        <p>ヘレンにとって水も人も犬も、名前のない区別不能な感触の塊だった。W-A-T-E-R という最初の一語が「これには名前がある＝世界は分節できる」という根源的ルールを開示し、そこから万物に名前を求める怒涛の連鎖が始まる。言葉を覚えることが、闇の中で初めて「世界に輪郭が生まれる」瞬間そのものとして描かれる。</p>
+      </section>
+      <section class="doopa">
+        <p class="lbl">▶ DOOPA創作への応用</p>
+        <p>「カードに綴った一語が、意味不明だった対象を初めて分節し名づける」という解像度の一段ジャンプを、ことばカード獲得時の演出に応用できる。最初の語だけ意味が宿らず、ある閾値で世界の名前が一斉に解放される“ポンプの瞬間”をゲーム的ブレイクスルーとして設計したい。</p>
+      </section>
+
+      <details><summary>ネタバレ注意</summary><div class="body">ラストの井戸ポンプでの「W-A-T-E-R」開眼は本作最大の山場であり、結末そのもの。</div></details>
+      <details><summary>事実メモ</summary><div class="body">監督アーサー・ペン／1962年／米MGM配給。アカデミー賞は全5部門ノミネートで主演女優賞・助演女優賞の2勝（ほか監督・脚色・衣装デザインにノミネート）。脚本はウィリアム・ギブソンの戯曲（1959年Broadway）に基づき、源流は1957年のTVドラマ。Wikipedia/TCM/Library of Congress で裏取り済み。</div></details>
+    </div>
+  </article>
+
+  <!-- ② ブラック -->
+  <article class="film" id="black" style="--accent:#A8B4C4">
+    <div class="poster">
+      <svg viewBox="0 0 300 390" role="img" aria-label="ブラック キービジュアル：闇に差す光へ伸びる手と、舞う雪、卒業帽">
+        <defs>
+          <linearGradient id="bk-bg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#1C2230"/><stop offset="1" stop-color="#08080d"/>
+          </linearGradient>
+        </defs>
+        <rect width="300" height="390" fill="url(#bk-bg)"/>
+        <polygon points="124,0 176,0 190,390 110,390" fill="#E8EDF2" opacity="0.08"/>
+        <!-- 舞う雪 -->
+        <g fill="#E8EDF2" opacity="0.75">
+          <circle cx="44" cy="60" r="2.2"/><circle cx="80" cy="120" r="1.6"/><circle cx="58" cy="200" r="2"/>
+          <circle cx="230" cy="80" r="1.8"/><circle cx="256" cy="150" r="2.3"/><circle cx="210" cy="220" r="1.5"/>
+          <circle cx="120" cy="90" r="1.5"/><circle cx="180" cy="60" r="1.7"/><circle cx="40" cy="300" r="2"/>
+          <circle cx="262" cy="280" r="1.8"/><circle cx="95" cy="250" r="1.4"/><circle cx="205" cy="320" r="1.6"/>
+        </g>
+        <!-- 卒業帽 -->
+        <g>
+          <polygon points="150,40 198,60 150,80 102,60" fill="#A8B4C4"/>
+          <path d="M128 70 q22 14 44 0 l0 14 q-22 12 -44 0 z" fill="#7d8a9c"/>
+          <circle cx="150" cy="60" r="3.5" fill="#5f6b7d"/>
+          <path d="M150 60 q34 6 36 22" stroke="#C9B27C" stroke-width="1.6" fill="none"/>
+          <circle cx="187" cy="84" r="3" fill="#C9B27C"/>
+        </g>
+        <!-- 光へ伸びる手 -->
+        <g fill="#27324a">
+          <rect x="137" y="296" width="28" height="94" rx="11"/>
+          <ellipse cx="151" cy="298" rx="23" ry="16"/>
+          <rect x="129" y="232" width="9" height="70" rx="4"/>
+          <rect x="143" y="222" width="9" height="80" rx="4"/>
+          <rect x="157" y="228" width="9" height="74" rx="4"/>
+          <rect x="170" y="244" width="9" height="60" rx="4"/>
+          <path d="M127 270 q-15 -10 -19 4 q-3 13 14 16 z"/>
+        </g>
+        <g fill="#9fb0c6" opacity="0.9">
+          <circle cx="133" cy="232" r="3"/><circle cx="147" cy="222" r="3"/><circle cx="161" cy="228" r="3"/><circle cx="174" cy="244" r="2.6"/>
+        </g>
+        <text x="150" y="374" text-anchor="middle" fill="#A8B4C4" font-size="13" letter-spacing="7" font-weight="800">BLACK</text>
+      </svg>
+    </div>
+    <div class="content">
+      <span class="dist near">DOOPAへの距離 ▶ 近い</span>
+      <h3 class="jp">ブラック <span class="en">Black</span></h3>
+      <p class="meta">2005 ・ インド ・ 監督 サンジャイ・リーラ・バンサーリー（Sanjay Leela Bhansali）</p>
+      <p class="logline">闇と沈黙に閉ざされた少女に、一つの言葉が世界の扉をこじ開ける。</p>
+      <ul class="cast">
+        <li><b>教師デブラージ</b> アミターブ・バッチャン ／ <b>ミシェル（成人）</b> ラーニー・ムカルジー</li>
+        <li>ミシェル（少女期）アイシャ・カプール ／ 母キャサリン シェルナーズ・パテル</li>
+      </ul>
+
+      <p class="lbl">STORY</p>
+      <div class="story"><ol>
+        <li>生まれつき目が見えず耳も聞こえないミシェルは、言葉を持たないまま獣のように暴れ、食卓をひっくり返し、家族を引っ掻く。両親は彼女を精神病院に送ろうとする。</li>
+        <li>白いスーツに杖の風変わりな老教師デブラージが現れ、暗闇の中の少女に手のひらで文字を刻みつける。抵抗する彼女を噴水に突き落とし、流れる水に手を浸させながら掌へ W-A-T-E-R と綴る——指先で水の冷たさと「言葉」が初めて結びつく瞬間。</li>
+        <li>氷の彫刻のような白い屋敷、雪の降る画面、ほぼモノクロームに沈んだ色彩の中で、ミシェルは点字と手話を覚え、やがて口を動かして声を出すことを学んでいく。</li>
+        <li>成人したミシェルは大学初の盲ろう学生となり、12年かけ何度も落第しながら学士号を取得。卒業式のガウンをまとい、闇の中で掴み取った「光」をスピーチで語る。</li>
+        <li>立場は反転する。アルツハイマー病で記憶と言葉を失っていくデブラージの病室を、ミシェルは卒業ガウン姿で訪れ、かつて教わった通り彼の掌に文字を綴る——『これがあなたの学校の初日よ』。</li>
+      </ol></div>
+
+      <div class="tags"><span class="tag">言葉が世界を開く</span><span class="tag">盲ろうと光</span><span class="tag">師弟の反転</span><span class="tag">記憶の喪失</span><span class="tag">闇の中の希望</span></div>
+
+      <div class="cols">
+        <section class="diff">
+          <p class="lbl">差別化ポイント</p>
+          <p>ヘレン・ケラーの実話を翻案しつつ、舞台をインドのアングロ＝インディアン家庭へ移し、<b>歌舞のないボリウッド作品</b>として徹底的に色を抑えたほぼモノクロ世界で描いた。終盤、教師がアルツハイマーで「言葉を失う側」へ転落し師弟が完全反転。「水＝WATER」の名場面を人生の始まりと終わりで二度反復する円環構造が際立つ。</p>
+        </section>
+        <section class="revo">
+          <p class="lbl">革命的ポイント</p>
+          <ul>
+            <li>歌と踊りを排し、ほぼモノクロームの色設計で押し通した商業ヒンディー映画として、ボリウッドの様式そのものを更新。</li>
+            <li>第51回フィルムフェア賞でノミネート全11部門を独占受賞し、当時の同賞史上最多受賞作に。</li>
+            <li>第53回ナショナル・フィルム・アワードでヒンディー語最優秀作品賞、アミターブ・バッチャンが主演男優賞。</li>
+            <li>米TIME誌が2005年ベスト映画第5位に選出し、インド映画を国際批評の文脈へ押し上げた。</li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="lang">
+        <p class="lbl">言葉の獲得＝世界の広げ方｜<b>解像度 → 人生の選択肢</b></p>
+        <p>最初の一語 W-A-T-E-R は、混沌と暴力だった感覚の洪水に「名前」という秩序を与え、世界の解像度を一気に上げる。そこから点字・手話・発話・大学・卒業と人生の選択肢が階段状に開き、最後は記憶を失う師に言葉を返すことで、ことばが世界を開く力そのものが次世代へ受け渡される。</p>
+      </section>
+      <section class="doopa">
+        <p class="lbl">▶ DOOPA創作への応用</p>
+        <p>ことばカードを1枚獲得するたび、「黒く塗りつぶされ触れられなかった」マップ領域が解放されていく演出に直結。最初の1語で混沌が秩序化する快感、そして覚えた言葉を他者へ手渡して世界を共有するメカニクスのモチーフになる。</p>
+      </section>
+
+      <details><summary>ネタバレ注意</summary><div class="body">終盤の師弟反転（師のアルツハイマー発症と、ミシェルが教える側へ回る展開）、および「water」場面の再演による幕切れに触れています。</div></details>
+      <details><summary>事実メモ</summary><div class="body">監督サンジャイ・リーラ・バンサーリー／2005年／インド。第51回フィルムフェア賞11冠（当時最多）、第53回ナショナル・フィルム・アワードはヒンディー語最優秀作品賞・主演男優賞・最優秀衣装デザイン賞の計3部門。<b>アカデミー賞の受賞・ノミネートはなし</b>。英語版Wikipedia・受賞一覧で裏取り済み。</div></details>
+    </div>
+  </article>
+
+  <!-- ============================================================ -->
+  <!-- グループ B：近いけど少し角度違い -->
+  <div class="group">
+    <span class="g-jp">B. 近いけど少し角度違い</span>
+    <span class="g-en">CLOSE, BUT A DIFFERENT ANGLE</span>
+    <p class="g-sub">私的言語の翻訳・極限の制約・世界のルールの書き換え。「獲得」の意味をずらす3本。</p>
+  </div>
+
+  <!-- ③ ネル -->
+  <article class="film" id="nell" style="--accent:#7FA8A0">
+    <div class="poster">
+      <svg viewBox="0 0 300 390" role="img" aria-label="ネル キービジュアル：森の湖に映る月と、向かい合う双子の影、丸太小屋">
+        <defs>
+          <linearGradient id="nl-bg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2E5E4E"/><stop offset="0.6" stop-color="#1B3A2F"/><stop offset="1" stop-color="#13281f"/>
+          </linearGradient>
+        </defs>
+        <rect width="300" height="390" fill="url(#nl-bg)"/>
+        <!-- 月 -->
+        <circle cx="208" cy="78" r="30" fill="#E8E2D0" opacity="0.18"/>
+        <circle cx="208" cy="78" r="22" fill="#E8E2D0"/>
+        <!-- 木立 -->
+        <g fill="#13281f">
+          <polygon points="22,250 40,250 31,150"/><polygon points="14,250 34,250 24,185"/>
+          <polygon points="278,250 296,250 287,160"/><polygon points="266,250 286,250 276,195"/>
+        </g>
+        <!-- 丸太小屋 -->
+        <g>
+          <rect x="48" y="200" width="56" height="40" fill="#15241d"/>
+          <polygon points="44,200 108,200 76,176" fill="#13201a"/>
+          <rect x="68" y="214" width="14" height="14" fill="#C9B27C"/>
+        </g>
+        <!-- 水面 -->
+        <rect x="0" y="248" width="300" height="142" fill="#15302a"/>
+        <g stroke="#7FA8A0" fill="none" opacity="0.5">
+          <path d="M30 270 q40 -7 80 0 t80 0 t80 0" stroke-width="1.2"/>
+          <path d="M20 300 q45 7 90 0 t90 0 t90 0" stroke-width="1.1" opacity="0.7"/>
+          <path d="M40 332 q40 -6 80 0 t80 0 t60 0" stroke-width="1"/>
+        </g>
+        <!-- 月の映り込み -->
+        <g fill="#E8E2D0" opacity="0.4">
+          <ellipse cx="208" cy="266" rx="16" ry="3"/><ellipse cx="208" cy="280" rx="20" ry="2.4"/><ellipse cx="208" cy="296" rx="14" ry="2"/>
+        </g>
+        <!-- 向かい合う双子の影 -->
+        <g fill="#0d1c16">
+          <g><circle cx="124" cy="250" r="13"/><path d="M104 290 q20 -28 40 0 z"/></g>
+          <g transform="translate(186,0) scale(-1,1)"><circle cx="0" cy="250" r="13"/><path d="M-20 290 q20 -28 40 0 z"/></g>
+        </g>
+        <text x="150" y="374" text-anchor="middle" fill="#C9B27C" font-size="14" letter-spacing="9" font-weight="800">NELL</text>
+      </svg>
+    </div>
+    <div class="content">
+      <span class="dist angle">DOOPAへの距離 ▶ 角度違い</span>
+      <h3 class="jp">ネル <span class="en">Nell</span></h3>
+      <p class="meta">1994 ・ アメリカ ・ 監督 マイケル・アプテッド（Michael Apted）</p>
+      <p class="logline">森の奥で誰にも届かなかった言葉が、初めて他者に翻訳される瞬間。</p>
+      <ul class="cast">
+        <li><b>ネル</b> ジョディ・フォスター（製作も兼任） ／ <b>ラヴェル医師</b> リーアム・ニーソン</li>
+        <li>オルセン医師 ナターシャ・リチャードソン ／ ペイリー医師 リチャード・リバティーニ</li>
+      </ul>
+
+      <p class="lbl">STORY</p>
+      <div class="story"><ol>
+        <li>ノースカロライナの山奥、湖畔の丸太小屋で老母が息絶える。配達に来た田舎医師ラヴェルが、薄暗い梁の奥に身を潜める若い女ネルを発見する——人間の言葉とは思えない、流れるような独自の音で叫びながら。</li>
+        <li>ネルは脳卒中で言葉が崩れた母と、幼くして死んだ双子の妹メイから言葉を受け継いだ。二人だけの「ツインスピーク（双子語）」が、英語の残骸と混ざり合い、世界に一つだけの言語になっている。</li>
+        <li>ラヴェルと心理学者オルセンは小屋のそばにテントを張り、観察する側からネルの世界に少しずつ入っていく。月明かりの湖でネルが水面に向かって死んだ妹の名を呼ぶ場面で、彼女の言葉が「世界の見え方そのもの」だと二人は悟る。</li>
+        <li>鏡像のように振る舞うネルの言葉を、ラヴェルは少しずつ解読する。窓ガラスに映る自分とネルを重ね、彼女が今も妹を見ているのだと気づく。やがてネルは初めて町へ連れ出され、騒音と視線の渦に怯えながら世界の輪郭を広げていく。</li>
+        <li>法廷の能力審問。施設収容を主張する医師に対し、ネルは自らの言葉で語り、ラヴェルが通訳する。沈黙していた言語が初めて公的に「翻訳」され、彼女が自分の人生を選びうる存在として認められる。</li>
+      </ol></div>
+
+      <div class="tags"><span class="tag">私的言語</span><span class="tag">孤立と他者</span><span class="tag">翻訳と理解</span><span class="tag">双子の喪失</span><span class="tag">文明と野生</span></div>
+
+      <div class="cols">
+        <section class="diff">
+          <p class="lbl">差別化ポイント</p>
+          <p>『野生児』譚の系譜にありながら、ネルを「解読不能だから劣った存在」ではなく<b>独自に完結した言語体系を持つ者</b>として描く。観察＝測定する科学者の視線が、やがて彼女の言葉の話者へと反転していく構造が核。フォスターは製作も兼ね「他者性（otherness）」をテーマに企画を牽引した。</p>
+        </section>
+        <section class="revo">
+          <p class="lbl">革命的ポイント</p>
+          <ul>
+            <li>ジョディ・フォスターが第1回SAG賞 主演女優賞を単独受賞し、同部門の初代受賞者に。</li>
+            <li>双子の私的言語（idioglossia／クリプトフェイジア）という実在現象を下敷きに、固有の創作言語と身振りを言語学の専門家と共に作り上げた。</li>
+            <li>実在の双子ポト＆カベンゴへの着想を取り込み、私的言語を「障害」でなく「文化」として観客に提示。</li>
+            <li>アカデミー／ゴールデングローブ 主演女優賞にノミネート。</li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="lang">
+        <p class="lbl">言葉の獲得＝世界の広げ方｜<b>双方向の翻訳</b></p>
+        <p>ネルにとって町の言葉を得ることは人生の選択肢を広げる（施設か、森での自立かを自ら選べる）。一方、科学者たちはネルの私的言語を「覚える」ことで、湖や月や死者がどう見えているかという世界の解像度を上げる。広げるのは解像度と選択肢、そして「誰の言語が正しいか」という世界のルール自体も静かに問い直される。</p>
+      </section>
+      <section class="doopa">
+        <p class="lbl">▶ DOOPA創作への応用</p>
+        <p>「相手の私的な言葉を覚えると、相手にしか見えていなかった世界が開く」双方向の翻訳を、カードバトルの勝利条件にできる。敵語を解読・収集して場の見え方を書き換える設計。喪失（双子）から生まれた言葉という設定は、レアカードの切ない由来テキストの素材に。</p>
+      </section>
+
+      <details><summary>ネタバレ注意</summary><div class="body">終盤の法廷（能力審問）で、ネルが自分の言葉で語り通訳され、自立を認められる方向に進む結末の核に触れています。</div></details>
+      <details><summary>事実メモ</summary><div class="body">監督マイケル・アプテッド／1994年／米。原作はマーク・ハンドリーの戯曲『Idioglossia』、脚本ウィリアム・ニコルソン。SAG賞主演女優賞は<b>単独受賞（第1回・初代）</b>、アカデミー／ゴールデングローブは主演女優賞<b>ノミネート（受賞ではない）</b>。ネルの言語はフォスターが言語学者と協働して創作（脚本家の単独音韻設計という説は裏付け取れず訂正済み）。</div></details>
+    </div>
+  </article>
+
+  <!-- ④ 潜水服は蝶の夢を見る -->
+  <article class="film" id="diving-bell" style="--accent:#C4A45A">
+    <div class="poster">
+      <svg viewBox="0 0 300 390" role="img" aria-label="潜水服は蝶の夢を見る キービジュアル：深海に沈む潜水服と、光へ昇る蝶">
+        <defs>
+          <linearGradient id="db-bg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#39768a"/><stop offset="0.5" stop-color="#1d4a5c"/><stop offset="1" stop-color="#08222e"/>
+          </linearGradient>
+        </defs>
+        <rect width="300" height="390" fill="url(#db-bg)"/>
+        <!-- 水面からの光条 -->
+        <g fill="#D9C7A3" opacity="0.09">
+          <polygon points="120,0 150,0 100,390 40,390"/>
+          <polygon points="170,0 196,0 230,390 180,390"/>
+        </g>
+        <!-- 蝶 -->
+        <g transform="translate(150,96)">
+          <ellipse cx="-14" cy="-8" rx="15" ry="20" fill="#C4A45A" transform="rotate(-22 -14 -8)"/>
+          <ellipse cx="14" cy="-8" rx="15" ry="20" fill="#C4A45A" transform="rotate(22 14 -8)"/>
+          <ellipse cx="-11" cy="14" rx="11" ry="13" fill="#a9893f" transform="rotate(20 -11 14)"/>
+          <ellipse cx="11" cy="14" rx="11" ry="13" fill="#a9893f" transform="rotate(-20 11 14)"/>
+          <rect x="-1.6" y="-16" width="3.2" height="34" rx="1.6" fill="#3a2f1a"/>
+        </g>
+        <!-- 気泡 -->
+        <g fill="#cfe2e8" opacity="0.7">
+          <circle cx="150" cy="150" r="3"/><circle cx="160" cy="172" r="2"/><circle cx="142" cy="186" r="2.4"/><circle cx="156" cy="204" r="1.6"/>
+        </g>
+        <!-- 潜水服（ヘルメット＋胴）が沈む -->
+        <g transform="translate(150,290)">
+          <!-- 胴 -->
+          <path d="M-34 30 q-6 -52 34 -52 q40 0 34 52 z" fill="#0f3340"/>
+          <!-- ヘルメット -->
+          <circle cx="0" cy="-26" r="34" fill="#123b49"/>
+          <circle cx="0" cy="-26" r="34" fill="none" stroke="#2E5A6B" stroke-width="3"/>
+          <circle cx="0" cy="-26" r="20" fill="#0a2630"/>
+          <circle cx="-6" cy="-32" r="6" fill="#3f7180" opacity="0.7"/>
+          <!-- ボルト -->
+          <g fill="#2E5A6B">
+            <circle cx="-30" cy="-26" r="3"/><circle cx="30" cy="-26" r="3"/><circle cx="0" cy="-58" r="3"/>
+          </g>
+        </g>
+        <text x="150" y="376" text-anchor="middle" fill="#D9C7A3" font-size="9" letter-spacing="1.4" opacity="0.9">THE DIVING BELL AND THE BUTTERFLY</text>
+      </svg>
+    </div>
+    <div class="content">
+      <span class="dist angle">DOOPAへの距離 ▶ 角度違い</span>
+      <h3 class="jp">潜水服は蝶の夢を見る <span class="en">The Diving Bell and the Butterfly</span></h3>
+      <p class="meta">2007 ・ フランス・アメリカ合作 ・ 監督 ジュリアン・シュナーベル（Julian Schnabel）</p>
+      <p class="logline">左目のまばたき一つしか動かない男が、まばたきで一文字ずつ本を書く。</p>
+      <ul class="cast">
+        <li><b>ジャン＝ドミニック・ボービー</b> マチュー・アマルリック ／ <b>言語療法士</b> マリ＝ジョゼ・クローズ</li>
+        <li>口述筆記者 アンヌ・コンシニ ／ 子どもたちの母 エマニュエル・セニエ</li>
+      </ul>
+
+      <p class="lbl">STORY</p>
+      <div class="story"><ol>
+        <li>脳卒中から目覚めたボービー。画面は彼の生きた左目の内側そのもの——焦点が合わず、ぼやけ、まばたきのたびに視界が黒く閉じる主観カメラだけが続く。やがて感染を防ぐため右目が糸で縫い閉じられる過程さえ、まつ毛越しの一人称で映る。</li>
+        <li>声は出せない。だが観客にはボービーの皮肉で饒舌な内的独白がはっきり聞こえる——口を動かそうとするたび、外の世界には届かない沈黙だけが返る、そのズレが画面に走る。</li>
+        <li>言語療法士がフランス語を頻度順に並べた文字盤（E・S・A・R・I・N…）を読み上げ、欲しい文字でボービーが左目を一回まばたきする。沈黙の病室に読み上げとまばたきの合図だけが続き、最初の言葉がゆっくり綴られていく。</li>
+        <li>想像と記憶が解き放たれ、画面は一気に開く——崩れ落ちる氷河、深海に沈む古い潜水服、晩餐のテーブル、過去の女たち。閉じた病室の主観ショットと、自由に羽ばたく回想・幻想が交互に切り替わる。</li>
+        <li>口述筆記者を相手に、ボービーは約20万回のまばたきで一冊の回想録を綴り上げる。本が世に出たわずか2日後、彼は息を引き取る——閉じ込められた肉体から、書かれた言葉だけが蝶のように外へ出ていく。</li>
+      </ol></div>
+
+      <div class="tags"><span class="tag">閉じ込め症候群</span><span class="tag">言葉による解放</span><span class="tag">想像力と記憶</span><span class="tag">身体と魂の乖離</span><span class="tag">一人称の視点</span></div>
+
+      <div class="cols">
+        <section class="diff">
+          <p class="lbl">差別化ポイント</p>
+          <p>実話の闘病ドラマでありながら、観客を最初から最後まで<b>主人公の生きた左目の内側</b>に閉じ込める。「外から見た難病もの」ではなく、麻痺した身体の内側から世界がどう見え・どう饒舌に思考しているかを徹底して映像化。画家出身の監督ならではの、ぼやけ・縫合・水中といった触覚的な画作りが内面を可視化する。</p>
+        </section>
+        <section class="revo">
+          <p class="lbl">革命的ポイント</p>
+          <ul>
+            <li>閉じ込め症候群の当事者の主観POVを長尺で持続させ、観客の知覚を患者の片目に同化させる手法を確立。</li>
+            <li>ヤヌス・カミンスキの撮影が、焦点ずれ・まつ毛越し・まばたきの黒みを「カメラの呼吸」として演出。</li>
+            <li>シュナーベルがカンヌ監督賞・ゴールデングローブ監督賞を受賞、アカデミー4部門にノミネート。</li>
+            <li>頻度順アルファベット＋まばたきという実在の伝達法を、読み上げのリズムごと観客が体験する映画言語へ翻訳。</li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="lang">
+        <p class="lbl">言葉の獲得＝世界の広げ方｜<b>解像度・選択肢・ルールの同時拡張</b></p>
+        <p>声も身体も失った男にとって、頻度順文字盤を一文字ずつ獲得する行為は、外界へ通じる唯一の回路の再構築。まばたきで綴る一語一語が閉じた潜水服に新しい出口を開ける。頻度順という言語の統計的ルールを体得し、言葉を取り戻すほど世界は記憶・想像・対話へと解像度を上げて広がり、「書く」という選択肢が死の直前まで人生の可能性を拡張する。</p>
+      </section>
+      <section class="doopa">
+        <p class="lbl">▶ DOOPA創作への応用</p>
+        <p>「一文字ずつしか出力できない」極端な制約を、文字を一枚ずつ集めて意味を成立させるカードバトルの設計思想に転用できる。頻度順という「世界のルールに沿った最適な順番」で言葉を解放していく快感を、探索ゲームの語彙アンロック演出に。</p>
+      </section>
+
+      <details><summary>ネタバレ注意</summary><div class="body">終盤、本の出版の2日後に主人公が死去する点に触れています（執筆の核心描写は示唆に留め）。</div></details>
+      <details><summary>事実メモ</summary><div class="body">監督ジュリアン・シュナーベル／2007年／仏米合作。原作はボービー本人の回想録、脚本ロナルド・ハーウッド、撮影ヤヌス・カミンスキ。カンヌ監督賞・ゴールデングローブ（監督賞ほか）・BAFTA脚色賞・セザール賞、アカデミーは4部門ノミネートで<b>受賞なし</b>。伝達に使うのは左目、縫い閉じられるのは右目。原作出版の2日後に肺炎で死去。複数ソースで確認。</div></details>
+    </div>
+  </article>
+
+  <!-- ⑤ メッセージ -->
+  <article class="film" id="arrival" style="--accent:#7A8B8F">
+    <div class="poster">
+      <svg viewBox="0 0 300 390" role="img" aria-label="メッセージ キービジュアル：霧の中の円環状の墨文字（ロゴグラム）と、垂直に浮かぶ殻">
+        <defs>
+          <linearGradient id="ar-bg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2E3A40"/><stop offset="0.5" stop-color="#586a6e"/><stop offset="1" stop-color="#39474a"/>
+          </linearGradient>
+        </defs>
+        <rect width="300" height="390" fill="url(#ar-bg)"/>
+        <!-- 殻（シェル） -->
+        <path d="M150 40 q42 150 0 300 q-42 -150 0 -300 z" fill="#1f292d" opacity="0.55"/>
+        <!-- ヘプタポッドの脚（霧の奥） -->
+        <g stroke="#0E1418" stroke-width="3" opacity="0.22" fill="none" stroke-linecap="round">
+          <path d="M150 300 q-30 30 -52 80"/><path d="M150 300 q-14 34 -22 86"/><path d="M150 300 q0 36 0 90"/>
+          <path d="M150 300 q14 34 22 86"/><path d="M150 300 q30 30 52 80"/><path d="M150 300 q-44 26 -74 60"/><path d="M150 300 q44 26 74 60"/>
+        </g>
+        <!-- ロゴグラム（円環の墨文字） -->
+        <g transform="translate(150,178)">
+          <circle r="68" fill="none" stroke="#0E1418" stroke-width="9"/>
+          <circle r="68" fill="none" stroke="#0E1418" stroke-width="2" opacity="0.5" transform="rotate(8)" stroke-dasharray="3 14"/>
+          <!-- 墨だまり -->
+          <g fill="#0E1418">
+            <ellipse cx="0" cy="-68" rx="13" ry="8"/><path d="M0 -76 q5 -10 -2 -16" stroke="#0E1418" stroke-width="2" fill="none"/>
+            <ellipse cx="59" cy="34" rx="10" ry="7" transform="rotate(30 59 34)"/>
+            <ellipse cx="-59" cy="34" rx="11" ry="7" transform="rotate(-30 -59 34)"/>
+            <ellipse cx="34" cy="-56" rx="7" ry="5"/><ellipse cx="-40" cy="-50" rx="6" ry="4.5"/>
+            <ellipse cx="-2" cy="68" rx="9" ry="6"/>
+          </g>
+          <!-- 飛沫 -->
+          <g fill="#0E1418" opacity="0.7">
+            <circle cx="78" cy="-10" r="2.4"/><circle cx="-80" cy="-4" r="2"/><circle cx="20" cy="80" r="2"/><circle cx="-30" cy="-80" r="1.8"/>
+          </g>
+        </g>
+        <!-- 霧の帯 -->
+        <g fill="#cdd6d8" opacity="0.07"><rect y="120" width="300" height="26"/><rect y="220" width="300" height="34"/></g>
+        <text x="150" y="372" text-anchor="middle" fill="#C9B79C" font-size="13" letter-spacing="8" font-weight="800">ARRIVAL</text>
+      </svg>
+    </div>
+    <div class="content">
+      <span class="dist angle">DOOPAへの距離 ▶ 角度違い</span>
+      <h3 class="jp">メッセージ <span class="en">Arrival</span></h3>
+      <p class="meta">2016 ・ アメリカ ・ 監督 ドゥニ・ヴィルヌーヴ（Denis Villeneuve）</p>
+      <p class="logline">未知の言語を学ぶことは、時間の見方そのものを書き換える。</p>
+      <ul class="cast">
+        <li><b>ルイーズ（言語学者）</b> エイミー・アダムス ／ <b>イアン（物理学者）</b> ジェレミー・レナー</li>
+        <li>ウェバー大佐 フォレスト・ウィテカー ／ ハルパーン マイケル・スタールバーグ ／ 原作 テッド・チャン「あなたの人生の物語」</li>
+      </ul>
+
+      <p class="lbl">STORY</p>
+      <div class="story"><ol>
+        <li>世界12カ所に巨大な楕円形の宇宙船（シェル）が垂直に浮かぶ。モンタナの草原に立つ灰色の殻へ、ルイーズは防護服で運び込まれ、重力が90度回転する暗い船内通路を歩く。</li>
+        <li>白い霧の壁を隔てた向こうに、7本脚の巨大な生命体ヘプタポッドが現れる。彼らが触手の先から黒い墨のような輪を吹き出し、空中に円環状の表意文字が滲んで定着する映像が反復される。</li>
+        <li>ルイーズはホワイトボードに「HUMAN」と書いて自分を指し、一語ずつ言語を解読していく。各国が「武器か道具か」の翻訳をめぐって疑心暗鬼に陥り、軍事衝突の緊張が高まる。</li>
+        <li>円環文字を読み込むほど、ルイーズの脳裏に幼い娘との断片的な記憶（だと思っていた映像）がフラッシュバックのように差し込まれ、時系列が溶けていく。</li>
+        <li>彼女は非線形に時間を知覚し始め、未来の場面から得た情報で現在の危機を解く。すべての映像が一つの円環として閉じたとき、冒頭の「記憶」の正体が反転する。</li>
+      </ol></div>
+
+      <div class="tags"><span class="tag">言語と思考</span><span class="tag">非線形の時間</span><span class="tag">サピア＝ウォーフ仮説</span><span class="tag">喪失と選択</span><span class="tag">コミュニケーションと分断</span></div>
+
+      <div class="cols">
+        <section class="diff">
+          <p class="lbl">差別化ポイント</p>
+          <p>テッド・チャンの短編を、宇宙船や戦闘ではなく<b>「翻訳という地味な知的作業」</b>を主軸に映画化した稀有なSF。派手な侵略劇を期待させる外見の下で、観客が体験するのは言語学者のノートと黒板の前の思考プロセス。物語構造そのものが円環状で、「回想」だと信じて観たものが終盤に意味を反転させる仕掛けが、テーマと形式を完全に一致させている。</p>
+        </section>
+        <section class="revo">
+          <p class="lbl">革命的ポイント</p>
+          <ul>
+            <li>言語が思考と時間認識を規定するというサピア＝ウォーフ仮説を、SF映画の主筋として正面から映像化。</li>
+            <li>始まりも終わりもない円環状の表意文字（ロゴグラム）を美術陣が約100語デザイン（本編使用71語）し、架空言語のビジュアル体系を構築。</li>
+            <li>「記憶＝回想」という映画文法の前提を逆手に取り、観客の時間認識自体を結末で書き換える叙述構造を達成。</li>
+            <li>第89回アカデミー賞8部門ノミネート、録音編集賞を受賞。</li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="lang">
+        <p class="lbl">言葉の獲得＝世界の広げ方｜<b>世界のルール自体</b></p>
+        <p>ルイーズがヘプタポッド語を習得する過程は、世界のルール自体を広げる物語。新しい文法を身につけることで脳は時間を直線でなく円環として知覚するよう作り変えられ、過去・現在・未来が同時に見える世界へと住む次元が変わる。言葉を覚えることが単なる情報伝達でなく、「つらい結末を知ってなお生きるか」という人生の選択肢の見え方まで変容させる。</p>
+      </section>
+      <section class="doopa">
+        <p class="lbl">▶ DOOPA創作への応用</p>
+        <p>「新しいことばを覚えると、世界の解像度ではなく世界のルール（時間の流れ方）そのものが変わる」発想は、カードに刻まれた語を覚えるほどゲームの基本ルールが書き換わる仕掛けに直結。終盤で既出の場面の意味が反転する円環構造は、探索の最後に序盤を読み直させる演出に応用できる。</p>
+      </section>
+
+      <details><summary>ネタバレ注意</summary><div class="body">娘の映像が「回想」ではなく未来の予見であること、ルイーズの非線形時間認識という核心の仕掛けは結末に直結します（後半は示唆に留め）。</div></details>
+      <details><summary>事実メモ</summary><div class="body">監督ドゥニ・ヴィルヌーヴ／2016年／米。原作テッド・チャン「あなたの人生の物語（Story of Your Life）」。第89回アカデミー賞8部門ノミネート、<b>録音編集賞（Sylvain Bellemare）受賞</b>。ロゴグラムは美術監督パトリス・ヴェルメットと画家マルティーヌ・ベルトランによる約100語（本編使用71語）。宇宙船は世界12カ所。WebSearch で裏取り済み。</div></details>
+    </div>
+  </article>
+
+  <!-- ============================================================ -->
+  <!-- グループ C：声にしない人の表現 -->
+  <div class="group">
+    <span class="g-jp">C. 声にしない人の表現</span>
+    <span class="g-en">EXPRESSION WITHOUT A VOICE</span>
+    <p class="g-sub">音声の外側にある語彙。「話せるようになる」より「別の言語世界の尊厳」を描く2本。</p>
+  </div>
+
+  <!-- ⑥ シェイプ・オブ・ウォーター -->
+  <article class="film" id="shape-of-water" style="--accent:#2E8B8B">
+    <div class="poster">
+      <svg viewBox="0 0 300 390" role="img" aria-label="シェイプ オブ ウォーター キービジュアル：水中で触れ合おうとする人の手と半魚人の手、金の光">
+        <defs>
+          <linearGradient id="sw-bg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2E8B8B"/><stop offset="0.55" stop-color="#176055"/><stop offset="1" stop-color="#0c2630"/>
+          </linearGradient>
+          <radialGradient id="sw-spark" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#ffe9b0"/><stop offset="1" stop-color="#C9A24B" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="300" height="390" fill="url(#sw-bg)"/>
+        <!-- 光条 -->
+        <g fill="#bfe7e0" opacity="0.07"><polygon points="90,0 130,0 80,390 20,390"/><polygon points="190,0 220,0 250,390 200,390"/></g>
+        <!-- 気泡 -->
+        <g fill="#bfe7e0" opacity="0.55">
+          <circle cx="60" cy="120" r="4"/><circle cx="70" cy="160" r="2.4"/><circle cx="240" cy="100" r="3"/><circle cx="232" cy="150" r="2"/>
+          <circle cx="48" cy="250" r="2.6"/><circle cx="252" cy="280" r="3.2"/><circle cx="150" cy="70" r="2.2"/>
+        </g>
+        <!-- 中央の光 -->
+        <circle cx="150" cy="196" r="46" fill="url(#sw-spark)"/>
+        <!-- 人の手（左から） -->
+        <g fill="#caa98c">
+          <ellipse cx="74" cy="196" rx="30" ry="20"/>
+          <rect x="96" y="170" width="34" height="9" rx="4"/>
+          <rect x="100" y="184" width="40" height="9" rx="4"/>
+          <rect x="100" y="198" width="40" height="9" rx="4"/>
+          <rect x="98" y="212" width="34" height="9" rx="4"/>
+        </g>
+        <!-- 半魚人の手（右から・水かき） -->
+        <g>
+          <path d="M226 176 q-60 6 -82 20 q22 14 82 20 z" fill="#1f7d72" opacity="0.85"/>
+          <g fill="#1b6b5a">
+            <ellipse cx="226" cy="196" rx="30" ry="20"/>
+            <rect x="170" y="170" width="34" height="8" rx="4"/>
+            <rect x="160" y="184" width="40" height="8" rx="4"/>
+            <rect x="160" y="198" width="40" height="8" rx="4"/>
+            <rect x="168" y="212" width="34" height="8" rx="4"/>
+          </g>
+          <g fill="#2E8B8B" opacity="0.8"><circle cx="222" cy="188" r="2"/><circle cx="230" cy="200" r="2"/></g>
+        </g>
+        <!-- ゆで卵 -->
+        <ellipse cx="46" cy="330" rx="13" ry="16" fill="#f3ead6"/>
+        <text x="150" y="372" text-anchor="middle" fill="#C9A24B" font-size="10.5" letter-spacing="4" font-weight="800">THE SHAPE OF WATER</text>
+      </svg>
+    </div>
+    <div class="content">
+      <span class="dist silent">DOOPAへの距離 ▶ 声なき表現</span>
+      <h3 class="jp">シェイプ・オブ・ウォーター <span class="en">The Shape of Water</span></h3>
+      <p class="meta">2017 ・ アメリカ ・ 監督 ギレルモ・デル・トロ（Guillermo del Toro）</p>
+      <p class="logline">声を持たない女と言葉を持たない半魚人が、声なきまま愛で繋がる。</p>
+      <ul class="cast">
+        <li><b>イライザ（清掃員）</b> サリー・ホーキンス ／ <b>半魚人</b> ダグ・ジョーンズ</li>
+        <li>ストリックランド大佐 マイケル・シャノン ／ ゼルダ オクタヴィア・スペンサー</li>
+      </ul>
+
+      <p class="lbl">STORY</p>
+      <div class="story"><ol>
+        <li>1962年、冷戦下のボルチモア。発話できない清掃員イライザは、政府の極秘研究施設で夜勤につく。ゆで卵をきっちり並べ、タップダンス映画を観る——反復するルーティンが彼女の小さな世界を刻む。</li>
+        <li>研究施設に鎖で繋がれた『資産』——アマゾンから連れてこられた両生類の半魚人が運び込まれる。イライザは清掃の合間に近づき、ゆで卵を差し出し、レコードをかけ、手話で言葉を教え始める。檻越しに指先が触れ合う。</li>
+        <li>ストリックランド大佐が半魚人を解剖しようとすると知り、イライザは隣人の画家ジャイルズと同僚ゼルダを巻き込み、決死の脱出作戦を実行。半魚人を浴室のバスタブに匿う。</li>
+        <li>雨で水位の上がる夜、イライザはバスルーム全体を水で満たし、水中の青い光のなかで半魚人と抱き合う。声の出ない彼女が、初めて口を開いて歌うように愛を語る幻想的なシーンが挿入される。</li>
+        <li>波止場での最終対決。撃たれて倒れたイライザを半魚人が抱え、水へと沈んでいく。彼女の首の傷がエラのように開き、二人は水中で結ばれる——『言葉』の外にある愛の形が示される。</li>
+      </ol></div>
+
+      <div class="tags"><span class="tag">声なき者</span><span class="tag">異種の愛</span><span class="tag">手話とジェスチャー</span><span class="tag">水とフェティッシュ</span><span class="tag">冷戦と他者排除</span></div>
+
+      <div class="cols">
+        <section class="diff">
+          <p class="lbl">差別化ポイント</p>
+          <p>声を持たない清掃員と言葉を持たない半魚人という、<b>双方が音声言語の外側にいる二人</b>の恋愛を中心に据えた点が固有。多くの『美女と野獣』譚が野獣の人間化を結末とするのに対し、本作は人間の側が水の生き物へと変容する——「治す/正す」のではなく「水の領域へ越境する」ことで愛を成就させる逆転構造を持つ。</p>
+        </section>
+        <section class="revo">
+          <p class="lbl">革命的ポイント</p>
+          <ul>
+            <li>第90回アカデミー賞で作品賞・監督賞・作曲賞・美術賞の4部門を受賞（13ノミネート）。</li>
+            <li>『ロード・オブ・ザ・リング/王の帰還』に続く史上2作目の作品賞を受賞したファンタジー映画。</li>
+            <li>怪物との異種間ロマンスを真正面から美しく描き、モンスター映画とアートシネマ／メロドラマの境界を溶かした。</li>
+            <li>発話・聴覚的に「声を奪われた者」、黒人女性、ゲイの隣人、移民スパイらを主役に据え、社会的周縁を寓話化。</li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="lang">
+        <p class="lbl">言葉の獲得＝世界の広げ方｜<b>音声の外の語彙</b></p>
+        <p>音声言語を持たないイライザが、手話・ジェスチャー・卵・音楽・水という非音声の「語彙」で半魚人と世界を共有していく。半魚人に手話を教えることは相手の世界の解像度を上げる行為であり、同時に彼女自身も愛と冒険という選択肢を獲得する。水中で結ばれる結末は、陸の言語秩序とは別の「世界のルールそのもの」へ越境することで、コミュニケーションの可能性を根本から拡張する。</p>
+      </section>
+      <section class="doopa">
+        <p class="lbl">▶ DOOPA創作への応用</p>
+        <p>音声に頼らず、手話・記号・贈り物（卵）・音楽といった「非言語の語彙カード」を相手に手渡して心を通わせる——ことばカードバトルに『発話以外の語彙』カテゴリを導入する着想。相手の世界の解像度を上げるほど絆ゲージが繋がる、非対称コミュニケーションの探索メカニクスに。</p>
+      </section>
+
+      <details><summary>ネタバレ注意</summary><div class="body">結末（イライザが撃たれた後、半魚人が彼女を水中へ連れ去り、首の傷がエラとなって生き返り二人が結ばれる）に触れています。</div></details>
+      <details><summary>事実メモ</summary><div class="body">監督ギレルモ・デル・トロ／2017年／米（撮影はトロント）。第90回アカデミー賞は作品賞・監督賞・作曲賞・美術賞の<b>4冠（13ノミネート）</b>。舞台は1962年冷戦下のボルチモア。共同脚本ヴァネッサ・テイラー。Wikipedia/Britannica 等で確認。</div></details>
+    </div>
+  </article>
+
+  <!-- ⑦ 愛は静けさの中に -->
+  <article class="film" id="children-lesser-god" style="--accent:#2E9CCA">
+    <div class="poster">
+      <svg viewBox="0 0 300 390" role="img" aria-label="愛は静けさの中に キービジュアル：水面の波紋と、語りかける二つの手">
+        <defs>
+          <linearGradient id="cg-bg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2E9CCA"/><stop offset="0.5" stop-color="#1C6E8C"/><stop offset="1" stop-color="#0a3344"/>
+          </linearGradient>
+        </defs>
+        <rect width="300" height="390" fill="url(#cg-bg)"/>
+        <!-- 水面の波紋（同心円） -->
+        <g stroke="#bfe6f2" fill="none" opacity="0.45">
+          <ellipse cx="150" cy="300" rx="40" ry="11" stroke-width="1.6"/>
+          <ellipse cx="150" cy="300" rx="78" ry="20" stroke-width="1.3" opacity="0.7"/>
+          <ellipse cx="150" cy="300" rx="120" ry="30" stroke-width="1.1" opacity="0.5"/>
+          <ellipse cx="150" cy="300" rx="160" ry="40" stroke-width="1" opacity="0.35"/>
+        </g>
+        <!-- 光のきらめき -->
+        <g fill="#dff1f7" opacity="0.6"><circle cx="90" cy="70" r="2"/><circle cx="220" cy="90" r="1.8"/><circle cx="60" cy="150" r="1.4"/><circle cx="250" cy="170" r="1.6"/></g>
+        <!-- 語りかける二つの手（手話） -->
+        <!-- 左の手：開いて指を広げる -->
+        <g fill="#E8D8B0">
+          <ellipse cx="116" cy="186" rx="22" ry="27"/>
+          <rect x="98" y="138" width="9" height="46" rx="4" transform="rotate(-14 102 160)"/>
+          <rect x="112" y="130" width="9" height="52" rx="4" transform="rotate(-4 116 156)"/>
+          <rect x="126" y="132" width="9" height="50" rx="4" transform="rotate(6 130 157)"/>
+          <rect x="138" y="142" width="9" height="44" rx="4" transform="rotate(16 142 164)"/>
+          <path d="M96 196 q-16 2 -20 -10 q-1 -12 16 -12 z"/>
+        </g>
+        <!-- 右の手：少し傾けて応える -->
+        <g fill="#d8c79c">
+          <ellipse cx="190" cy="214" rx="21" ry="25" transform="rotate(12 190 214)"/>
+          <rect x="186" y="170" width="9" height="44" rx="4" transform="rotate(20 190 192)"/>
+          <rect x="172" y="176" width="9" height="46" rx="4" transform="rotate(10 176 199)"/>
+          <rect x="160" y="186" width="9" height="42" rx="4" transform="rotate(-2 164 207)"/>
+          <rect x="200" y="178" width="9" height="42" rx="4" transform="rotate(30 204 199)"/>
+        </g>
+        <!-- 一点の赤 -->
+        <circle cx="150" cy="250" r="4" fill="#C8452B"/>
+        <text x="150" y="372" text-anchor="middle" fill="#E8D8B0" font-size="9.5" letter-spacing="2.5" font-weight="800">CHILDREN OF A LESSER GOD</text>
+      </svg>
+    </div>
+    <div class="content">
+      <span class="dist silent">DOOPAへの距離 ▶ 声なき表現</span>
+      <h3 class="jp">愛は静けさの中に <span class="en">Children of a Lesser God</span></h3>
+      <p class="meta">1986 ・ アメリカ ・ 監督 ランダ・ヘインズ（Randa Haines）</p>
+      <p class="logline">声を持てと迫る愛か、沈黙のまま尊厳を守る愛か。</p>
+      <ul class="cast">
+        <li><b>サラ</b> マーリー・マトリン ／ <b>教師ジェームズ</b> ウィリアム・ハート</li>
+        <li>母ノーマン夫人 パイパー・ローリー ／ 校長フランクリン博士 フィリップ・ボスコ</li>
+      </ul>
+
+      <p class="lbl">STORY</p>
+      <div class="story"><ol>
+        <li>口話を教える新任教師ジェームズが、ニューイングランドの聾学校に赴任する。廊下を磨く清掃員サラ──かつて校内一の優等生だった彼女が、口話を拒んで床にモップをかけている。</li>
+        <li>ジェームズが声で語りかけても、サラは手だけで切り返す。プールサイドで彼が服のまま水に飛び込み、二人は水中でキスをする。音のない世界で、波紋と肌だけが言葉になる。</li>
+        <li>彼はバッハの二重協奏曲をかけ「これが音楽だ」と手話で示そうとする。サラは生徒たちが声を出して歌う発表会を見て激昂する。『あなたは私が話さないことを憎んでいる』と。</li>
+        <li>口論はついに手話の応酬になり、サラは『私を黙らせるな、私の声で語らせて』と激しくサインする。彼女は彼のもとを去り、絶縁していた母と再会して和解する。</li>
+        <li>学校の体育館で開かれるダンスの夜、二人は再び向き合う。沈黙の世界と音の世界、その『あいだ』でどう繋がり続けるかを、互いの手で探り始める。</li>
+      </ol></div>
+
+      <div class="tags"><span class="tag">手話の尊厳</span><span class="tag">沈黙と音のあいだ</span><span class="tag">支配ではない愛</span><span class="tag">アイデンティティ</span><span class="tag">聴者と聾者の境界</span></div>
+
+      <div class="cols">
+        <section class="diff">
+          <p class="lbl">差別化ポイント</p>
+          <p>本作は<b>「障害の克服物語」を意図的に裏切る</b>。ヒロインは最後まで口話を覚えず、話せるようになることを拒み続けることで、聾の文化そのものを欠落ではなく一つの完結した世界として肯定する。聴者の善意が無自覚な支配になりうる構図を、ラブロマンスの形で正面から描いた点が固有。</p>
+        </section>
+        <section class="revo">
+          <p class="lbl">革命的ポイント</p>
+          <ul>
+            <li>聾者であるマーリー・マトリンが21歳でアカデミー主演女優賞を受賞、ろう者初のアカデミー俳優に。同部門の史上最年少記録は現在も未更新。</li>
+            <li>女性監督（ランダ・ヘインズ）作品として史上初めてアカデミー作品賞にノミネート。</li>
+            <li>手話を母語とする聾者を主演に据え、字幕やボイスオーバーに頼らず手話の演技そのものをドラマの中心言語にした。</li>
+            <li>「治して健常者に近づける」障害表象の定型を否定し、手話の世界に留まる選択を尊厳として描いた。</li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="lang">
+        <p class="lbl">言葉の獲得＝世界の広げ方｜<b>並立する言語世界</b></p>
+        <p>これは新しい言葉を覚えて世界が広がる物語ではなく、聴者が「手話という言語」を学ぶことで、欠落としか見えなかった沈黙の世界に豊かなルールと文化があったと気づく物語。第一に広げるのは「世界のルール自体」──音を前提とした世界観の外に、もう一つ完結した言語世界が並立すると知る。第二に、口話を覚えるか否かはサラにとって「どの世界の住人として生きるか」という人生の選択肢でもある。</p>
+      </section>
+      <section class="doopa">
+        <p class="lbl">▶ DOOPA創作への応用</p>
+        <p>「相手の言語を覚える＝相手の世界のルールで戦えるようになる」をカード化し、習得語が多いほど沈黙側／音側どちらの技も使えるハイブリッド戦術が開ける設計に。言葉を奪う（黙らせる）か、言葉を贈る（手話を教える）かで関係パラメータが変わる選択分岐とも好相性。</p>
+      </section>
+
+      <details><summary>事実メモ</summary><div class="body">監督ランダ・ヘインズ／1986年／米パラマウント。原作はマーク・メドフの戯曲（1979年）。アカデミー賞は作品賞・主演男優賞・助演女優賞・脚色賞・主演女優賞の5部門ノミネートで<b>主演女優賞のみ受賞</b>。マーリー・マトリンは第59回（1987年授賞）で21歳・聾者初・主演女優賞史上最年少（現在も記録保持）。Wikipedia/IMDb で確認。</div></details>
+    </div>
+  </article>
+
+  <!-- ===== ポジショニング表 ===== -->
+  <section class="matrix">
+    <h2>横断ポジショニング ― 言葉の獲得が「何を」広げるか</h2>
+    <p class="cap">7本を、広がりの向きと DOOPA コンセプトへの距離で一覧化。</p>
+    <table>
+      <thead>
+        <tr><th>作品</th><th>広げる軸</th><th>一言</th><th>距離</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="film-cell"><b>奇跡の人</b><br><small>1962</small></td>
+          <td>世界の解像度</td>
+          <td>W-A-T-E-R の一語で「世界は分節できる」という根源のルールが開示され、名前を求める怒涛の連鎖が始まる。</td>
+          <td><span class="pill core">核心</span></td>
+        </tr>
+        <tr>
+          <td class="film-cell"><b>ブラック</b><br><small>2005</small></td>
+          <td>人生の選択肢</td>
+          <td>最初の一語で混沌が秩序化し、覚えた言葉を記憶を失う師へ返すことで、ことばの力が次世代へ受け渡される。</td>
+          <td><span class="pill near">近い</span></td>
+        </tr>
+        <tr>
+          <td class="film-cell"><b>ネル</b><br><small>1994</small></td>
+          <td>解像度の双方向</td>
+          <td>町の言葉を得て自立を選び、科学者は私的言語を覚えて湖や月の見え方を獲得する、双方向の翻訳。</td>
+          <td><span class="pill angle">角度違い</span></td>
+        </tr>
+        <tr>
+          <td class="film-cell"><b>潜水服は蝶の夢を見る</b><br><small>2007</small></td>
+          <td>解像度・選択肢・ルールの同時拡張</td>
+          <td>まばたきで頻度順の文字を一語ずつ取り戻すたび、閉じた潜水服に記憶・想像・対話への出口が開く。</td>
+          <td><span class="pill angle">角度違い</span></td>
+        </tr>
+        <tr>
+          <td class="film-cell"><b>メッセージ</b><br><small>2016</small></td>
+          <td>世界のルール</td>
+          <td>未知の文法を学ぶほど時間認識が組み変わり、つらい結末を知ってなお生きるかという選択の見え方まで変容する。</td>
+          <td><span class="pill angle">角度違い</span></td>
+        </tr>
+        <tr>
+          <td class="film-cell"><b>シェイプ・オブ・ウォーター</b><br><small>2017</small></td>
+          <td>音声の外の語彙</td>
+          <td>手話・卵・音楽・水という非音声の語彙で世界を共有し、陸の言語秩序の外へ越境して愛を成就させる。</td>
+          <td><span class="pill silent">声なき表現</span></td>
+        </tr>
+        <tr>
+          <td class="film-cell"><b>愛は静けさの中に</b><br><small>1986</small></td>
+          <td>並立する言語世界</td>
+          <td>聴者が手話を学び、欠落に見えた沈黙に完結した文化があると気づく。覚えるか拒むかが生きる世界の選択になる。</td>
+          <td><span class="pill silent">声なき表現</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===== まとめ ===== -->
+  <section class="closing">
+    <h2>まとめ ― DOOPA「ことばカードバトル」への接続</h2>
+    <p>この7本は、ことばの獲得を <b>「世界の解像度（奇跡の人）」「人生の選択肢（ブラック）」「世界のルール自体（メッセージ）」</b> という三方向の拡張として描き分け、さらに<b>シェイプ・オブ・ウォーター</b>と<b>愛は静けさの中に</b>が「声なき語彙」という第四の領域を開いてみせる。DOOPAの「手を出せない村」では、ことばカードを一枚拾うたびに黒く塗りつぶされた領域が解放され、ある閾値で世界の名前が一斉に解き放たれる“ポンプの瞬間”を、探索のブレイクスルーとして設計できる。覚えた語が時間や場のルールそのものを書き換え、終盤に序盤の意味が反転する円環構造、あるいは言葉を奪う（黙らせる）か贈る（手話を教える）かでパラメータが分岐する非対称コミュニケーションは、<b>勝ち方が人格を染める</b>バトル探索の核に直結する。獲得した語彙が多いほど沈黙側と音側どちらの技も使えるハイブリッド戦術が開く──その語彙の集め方こそが、プレイヤーの世界の広がりと人格を同時に決めていく。</p>
+    <div class="recipe">
+      <div class="chip">解像度が上がる → <b>奇跡の人</b></div>
+      <div class="chip">選択肢が増える → <b>ブラック</b></div>
+      <div class="chip">ルール自体が変わる → <b>メッセージ</b></div>
+      <div class="chip">声の外の語彙 → <b>シェイプ／静けさ</b></div>
+    </div>
+  </section>
+
+  <p class="foot">
+    DOOPA — STORY REFERENCE ／ ことばを獲得する映画 7選<br>
+    キービジュアルは各作品の配色・象徴モチーフから起こした自作SVG。事実は Wikipedia 等で裏取り済み（各カードの「事実メモ」参照）。<br>
+    <a href="../../../">← DOOPA ハブへ戻る</a>
+  </p>
+
+</div>
+</body>
+</html>

@@ -39,6 +39,13 @@
 
 詳細は [battle-lab/README.md](./battle-lab/README.md)。
 
+## 📚 物語リファレンス
+
+ゲームの土台にする物語・テーマの調べもの置き場（読みもの）。
+
+- 🎬 [ことばを獲得する映画 7選](./docs/references/films/) — 「言葉を覚える＝世界が広がる」を主題に、**奇跡の人 / ブラック / ネル / 潜水服は蝶の夢を見る / メッセージ / シェイプ・オブ・ウォーター / 愛は静けさの中に** を、ストーリー＋差別化・革命的ポイント＋DOOPA創作への応用つきで視覚化（自作SVGキービジュアル）。
+  - 公開: **https://heipo548.github.io/doopa/docs/references/films/**
+
 ## 👥 参加方法
 
 | やりたいこと | 必要なもの | 方法 |
@@ -71,6 +78,10 @@ doopa/
 │           ├── index.html
 │           ├── js/         #   data/engine/ui/main（data.jsにカード・敵を集約）
 │           └── tools/      #   headless-check.js（JXAでロジック検証）
+├── docs/                   # 調べもの・設計メモ
+│   └── references/
+│       └── films/          # 📚 物語リファレンス（ことばを獲得する映画7選）
+│           └── index.html  #   自作SVG＋ストーリー＋差別化・革命的ポイント
 └── .github/
     └── ISSUE_TEMPLATE/
         ├── bug_report.md
