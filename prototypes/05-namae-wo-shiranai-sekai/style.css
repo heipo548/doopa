@@ -1,0 +1,343 @@
+/*
+ * style.css — 「名前を知らない世界」体験版
+ *
+ * 見た目の核：パステル絵本＋やわらかい手書き感。そして本作の主役演出＝
+ *   ？？？（読めない）→ 言葉（読める）への “書き換え”。
+ *   .seg クラスで状態を色分けし、覚えた瞬間 .is-reveal でぽんっと立ち上がる。
+ *
+ * すべて1ファイル・外部画像ゼロ。フォントは Yusei Magic→system へ自動フォールバック。
+ */
+
+:root {
+  --cream:   #fffaf1;
+  --parch:   #fff4dc;
+  --ink:     #5f4a38;
+  --ink-soft:#6f5b48;
+  --ink-dim: #a98f76;
+  --line:    #efe0c4;
+  --line-deep:#e7cf9f;
+  --pink:    #ef93a8;
+  --pink-deep:#d77f95;
+  --gold:    #f3cf7a;
+  --mint:    #8fd09a;
+  --sky:     #8fc3ea;
+  --known:   #6a4a2e;     /* 覚えた語の文字色 */
+  --unknown: #a79ebb;     /* ？？？ の色 */
+  --frag:    #c8924f;     /* 断片の色 */
+  --panel-sh: 0 14px 36px rgba(120, 100, 80, 0.22);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  min-height: 100%;
+  font-family: "Yusei Magic", -apple-system, BlinkMacSystemFont, "Hiragino Maru Gothic ProN",
+    "Hiragino Sans", "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+  color: var(--ink);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* ── エリア別の背景（色温度で“読めなさ／あたたかさ”を出す）── */
+body { transition: background 0.8s ease; }
+body[data-theme="title"] {
+  background:
+    radial-gradient(120% 80% at 50% -10%, #fff1f8 0%, rgba(255,255,255,0) 46%),
+    linear-gradient(180deg, #e7dbf7 0%, #dfe6f7 40%, #d8eaf3 70%, #e6f1e6 100%);
+}
+body[data-theme="forest"]  { background: linear-gradient(180deg, #e7f0d8 0%, #dbead0 60%, #cfe3c2 100%); }
+body[data-theme="bridge"]  { background: linear-gradient(180deg, #dcebe8 0%, #cfe6e4 55%, #c6e1da 100%); }
+body[data-theme="village"] { background: linear-gradient(180deg, #f3ecd6 0%, #ebe6cf 55%, #e1ddc2 100%); }
+
+.hidden { display: none !important; }
+
+/* ══════════ フィールド ══════════ */
+.view {
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  padding: 10px 10px 16px; position: relative;
+}
+.field-hud {
+  width: 100%; max-width: 680px; display: flex; justify-content: space-between;
+  align-items: baseline; gap: 10px; padding: 4px 6px 8px; flex-wrap: wrap;
+}
+.field-area {
+  font-size: 18px; font-weight: 800; color: var(--ink);
+  background: var(--parch); border: 2px solid var(--line-deep);
+  border-radius: 999px; padding: 3px 16px; box-shadow: 0 3px 0 rgba(231,207,159,0.5);
+}
+.field-objective { font-size: 13px; color: var(--pink-deep); font-weight: 700; }
+
+.canvas-wrap {
+  width: 100%; max-width: 680px; position: relative;
+  border-radius: 18px; overflow: hidden;
+  border: 3px solid var(--line-deep);
+  box-shadow: var(--panel-sh), inset 0 0 0 4px rgba(255,255,255,0.4);
+}
+#field-canvas { display: block; width: 100%; height: auto; background: #cfe3b8; touch-action: none; }
+
+.field-msg {
+  width: 100%; max-width: 680px; min-height: 22px; margin-top: 8px;
+  font-size: 14px; color: var(--ink-soft); text-align: center;
+}
+.field-controls { margin-top: 2px; }
+.ctrl-hint { font-size: 11.5px; color: var(--ink-dim); }
+
+.vocab-badge {
+  position: fixed; left: 14px; bottom: 14px; z-index: 30;
+  font-family: inherit; font-size: 14px; color: var(--ink);
+  background: var(--cream); border: 2px solid var(--line-deep);
+  border-radius: 999px; padding: 6px 14px; cursor: pointer;
+  box-shadow: 0 4px 0 rgba(231,207,159,0.5);
+}
+.vocab-badge b { color: var(--pink-deep); font-size: 16px; margin-left: 2px; }
+.vocab-badge:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(231,207,159,0.5); }
+
+.menu-btn {
+  position: fixed; right: 14px; top: 14px; z-index: 30;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--cream); border: 2px solid var(--line-deep);
+  font-size: 20px; color: var(--ink); cursor: pointer;
+  box-shadow: 0 4px 0 rgba(231,207,159,0.5);
+}
+.menu-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(231,207,159,0.5); }
+
+/* ══════════ 言葉トークン（本作の主役演出） ══════════ */
+.seg { transition: color 0.3s; }
+.seg.w-unknown, .seg.gen {
+  color: var(--unknown); font-weight: 800; letter-spacing: 0.5px;
+  filter: blur(0.4px); opacity: 0.95;
+}
+.seg.w-frag {
+  color: var(--frag); font-weight: 800;
+  border-bottom: 2px dotted #e3bd84; padding-bottom: 1px;
+}
+.seg.w-known {
+  color: var(--known); font-weight: 800;
+  background: linear-gradient(transparent 58%, #ffe6ad 58%, #ffe6ad 92%, transparent 92%);
+  padding: 0 1px;
+}
+/* 覚えた瞬間：ぽんっと立ち上がって金色に光る */
+.seg.is-reveal { display: inline-block; animation: wreveal 0.75s cubic-bezier(0.2, 1.35, 0.4, 1); }
+@keyframes wreveal {
+  0%   { transform: scale(0.55) translateY(2px); opacity: 0.2; }
+  45%  { transform: scale(1.28); color: #e2972f; text-shadow: 0 0 12px rgba(243, 207, 122, 0.95); }
+  100% { transform: scale(1); }
+}
+
+/* ══════════ オーバーレイ共通 ══════════ */
+.overlay {
+  position: fixed; inset: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: center;
+  padding: 18px;
+}
+/* フィールドの上にかぶせる系（遭遇/会話/調べる）は うっすら暗転 */
+#ov-encounter, #ov-dialogue, #ov-look, #ov-finale {
+  background: rgba(48, 42, 64, 0.42); backdrop-filter: blur(2px);
+}
+#ov-dialogue, #ov-look { align-items: flex-end; }
+
+/* ── ボタン ── */
+.btn {
+  font-family: inherit; cursor: pointer; border-radius: 999px;
+  font-weight: 800; letter-spacing: 1px; font-size: 16px;
+  padding: 12px 22px; border: 2px solid transparent; transition: transform 0.1s, filter 0.1s, box-shadow 0.1s;
+}
+.btn:active { transform: translateY(2px); }
+.btn.primary {
+  background: linear-gradient(180deg, #ffe3ec, #ffc6da); border-color: #f4aac3;
+  color: #c4587a; box-shadow: 0 4px 0 rgba(244, 170, 195, 0.6);
+}
+.btn.primary:active { box-shadow: 0 1px 0 rgba(244, 170, 195, 0.6); }
+.btn.ghost { background: var(--cream); border-color: var(--line-deep); color: var(--ink-soft); box-shadow: 0 4px 0 rgba(231,207,159,0.5); }
+.btn.ghost:active { box-shadow: 0 1px 0 rgba(231,207,159,0.5); }
+.btn.mini { font-size: 13px; padding: 8px 16px; background: transparent; border-color: var(--line); color: var(--ink-dim); }
+.btn.disabled, .btn[disabled] { opacity: 0.4; cursor: default; pointer-events: none; }
+
+/* ══════════ タイトル ══════════ */
+.title-card { text-align: center; max-width: 560px; }
+.title-logo {
+  display: inline-flex; gap: 1px; flex-wrap: wrap; justify-content: center; line-height: 1.1;
+  font-size: clamp(34px, 9vw, 64px); font-weight: 800;
+  filter: drop-shadow(0 6px 8px rgba(120, 100, 120, 0.25));
+}
+.title-logo span {
+  color: #6a5b8c; -webkit-text-stroke: 5px #fffaf0; paint-order: stroke fill;
+}
+.title-logo span:nth-child(3n) { color: #c47c97; }
+.title-logo span:nth-child(3n+1) { color: #6f8bbd; }
+.title-sub { margin-top: 10px; color: var(--ink-dim); font-weight: 700; letter-spacing: 4px; font-size: 14px; }
+.title-tag { margin: 16px auto 0; color: var(--ink-soft); font-size: 15px; max-width: 440px; }
+.title-prologue {
+  margin: 22px auto 0; max-width: 420px; color: #7c6a8a;
+  background: rgba(255, 252, 246, 0.6); border: 1px solid rgba(231, 207, 159, 0.6);
+  border-radius: 16px; padding: 14px 18px; font-size: 14px;
+}
+.title-prologue p + p { margin-top: 4px; }
+.title-btns { margin-top: 26px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.title-btns .btn { min-width: 220px; }
+
+/* ══════════ 遭遇 ══════════ */
+.enc-card {
+  width: 100%; max-width: 560px;
+  background: radial-gradient(120% 100% at 50% 0%, #fffdf8, var(--parch) 85%);
+  border: 3px solid var(--line-deep); border-radius: 24px;
+  padding: 18px 18px 16px; box-shadow: var(--panel-sh);
+}
+.enc-head { display: flex; gap: 14px; align-items: center; }
+.enc-portrait {
+  width: 96px; height: 96px; flex: none;
+  background: rgba(255,255,255,0.5); border: 2px solid var(--line); border-radius: 18px;
+  animation: idlebob 3s ease-in-out infinite;
+}
+@keyframes idlebob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.enc-bubble {
+  flex: 1; background: #fff; border: 2px solid var(--line-deep); border-radius: 16px;
+  padding: 10px 14px; position: relative; min-height: 64px;
+}
+.enc-bubble::before {
+  content: ""; position: absolute; left: -10px; top: 28px;
+  border: 8px solid transparent; border-right-color: #fff;
+}
+.enc-speaker { font-size: 12px; color: var(--ink-dim); font-weight: 800; margin-bottom: 2px; }
+.enc-speech { font-size: 18px; font-weight: 700; color: var(--ink); }
+.enc-mood {
+  margin: 12px 2px 6px; font-size: 14px; color: var(--ink-soft);
+  background: rgba(255, 247, 230, 0.7); border-left: 4px solid var(--gold);
+  padding: 8px 12px; border-radius: 0 10px 10px 0;
+}
+.enc-saywrap { min-height: 52px; margin: 6px 2px 12px; }
+.enc-say { font-size: 15px; color: var(--ink-soft); }
+.enc-hint { text-align: right; color: var(--pink-deep); font-weight: 800; min-height: 16px; font-size: 14px; }
+
+.enc-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.enc-btn {
+  font-family: inherit; cursor: pointer; text-align: left;
+  background: var(--cream); border: 2px solid var(--line-deep); border-radius: 14px;
+  padding: 11px 14px; color: var(--ink); display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap; box-shadow: 0 3px 0 rgba(231,207,159,0.5); transition: transform 0.1s, border-color 0.1s;
+}
+.enc-btn:hover { border-color: var(--pink); }
+.enc-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(231,207,159,0.5); }
+.enc-btn .ic { font-size: 18px; }
+.enc-btn .lb { font-size: 16px; font-weight: 800; }
+.enc-btn small { width: 100%; color: var(--ink-dim); font-size: 11.5px; font-weight: 600; }
+.enc-btn.ok { background: linear-gradient(180deg, #e8f7e4, #cfeecb); border-color: var(--mint); }
+
+/* ══════════ 会話・調べる（下パネル） ══════════ */
+.dia-card, .look-card {
+  width: 100%; max-width: 600px;
+  background: radial-gradient(120% 100% at 50% 0%, #fffdf8, var(--parch) 85%);
+  border: 3px solid var(--line-deep); border-radius: 22px;
+  padding: 16px 20px 14px; box-shadow: var(--panel-sh);
+}
+.dia-name {
+  display: inline-block; font-size: 13px; font-weight: 800; color: var(--pink-deep);
+  background: #fff; border: 2px solid var(--line-deep); border-radius: 999px;
+  padding: 2px 14px; margin-bottom: 8px;
+}
+.dia-body, .look-body { font-size: 17px; color: var(--ink); min-height: 60px; }
+.dia-hint, .look-hint { text-align: right; color: var(--pink-deep); font-weight: 800; min-height: 18px; font-size: 15px; }
+
+/* ══════════ ラスト ══════════ */
+.fin-card {
+  width: 100%; max-width: 520px; text-align: center;
+  background: radial-gradient(120% 100% at 50% 0%, #fffdf8, var(--parch) 85%);
+  border: 3px solid var(--line-deep); border-radius: 24px;
+  padding: 22px 22px 18px; box-shadow: var(--panel-sh);
+}
+.fin-portrait { width: 110px; height: 110px; margin: 0 auto 8px; display: block; animation: idlebob 3s ease-in-out infinite; }
+.fin-body { font-size: 17px; color: var(--ink); min-height: 80px; }
+.fin-prompt { margin-top: 12px; font-size: 15px; font-weight: 800; color: var(--ink-soft); }
+.fin-choices { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.fin-choices .enc-btn { justify-content: center; min-width: 200px; }
+.fin-hint { margin-top: 8px; color: var(--pink-deep); font-weight: 800; min-height: 16px; }
+
+/* ══════════ エンディング ══════════ */
+#ov-ending { background: linear-gradient(180deg, #efe6f7 0%, #e3ecf6 60%, #e9f2e6 100%); }
+.end-card { text-align: center; max-width: 560px; }
+.end-montage { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 14px; min-height: 50px; margin-bottom: 22px; }
+.end-word {
+  font-size: clamp(20px, 5vw, 30px); font-weight: 800; color: var(--known);
+  animation: wlight 0.8s ease both;
+}
+@keyframes wlight {
+  0% { opacity: 0; transform: scale(0.4); text-shadow: 0 0 16px var(--gold); }
+  60% { transform: scale(1.18); text-shadow: 0 0 14px var(--gold); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.end-text { font-size: 16px; color: var(--ink-soft); white-space: pre-line; min-height: 60px; }
+.end-titlecard { margin-top: 22px; animation: fadeup 1.2s ease both; }
+.end-name {
+  font-size: clamp(26px, 7vw, 40px); font-weight: 800; color: #6a5b8c;
+  -webkit-text-stroke: 4px #fffaf0; paint-order: stroke fill;
+}
+.end-sub { margin-top: 6px; color: var(--ink-dim); font-weight: 800; letter-spacing: 4px; }
+.end-actions { margin-top: 26px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+@keyframes fadeup { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }
+
+/* ══════════ ポーズ・言葉一覧 ══════════ */
+#ov-pause, #ov-vocab { background: rgba(48, 42, 64, 0.5); backdrop-filter: blur(3px); }
+.pause-card, .vocab-card {
+  width: 100%; max-width: 420px; text-align: center;
+  background: var(--cream); border: 3px solid var(--line-deep); border-radius: 22px;
+  padding: 24px; box-shadow: var(--panel-sh);
+}
+.pause-card h2, .vocab-card h2 { color: var(--ink); margin-bottom: 18px; font-size: 20px; }
+.vocab-card h2 span { color: var(--pink-deep); font-size: 16px; margin-left: 6px; }
+.pause-card .btn { display: block; width: 100%; margin-top: 10px; }
+.vocab-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; max-height: 50vh; overflow: auto; }
+.vocab-chip {
+  background: var(--parch); border: 2px solid var(--line-deep); border-radius: 14px;
+  padding: 8px 14px; min-width: 78px;
+}
+.vocab-chip b { display: block; font-size: 18px; color: var(--known); }
+.vocab-chip small { font-size: 11px; color: var(--ink-dim); }
+.vocab-empty { color: var(--ink-dim); margin-bottom: 18px; }
+
+/* ══════════ 習得ポップアップ ══════════ */
+.learn-pop {
+  position: fixed; left: 50%; top: 38%; z-index: 60; transform: translate(-50%, -50%) scale(0.6);
+  opacity: 0; pointer-events: none;
+  font-size: clamp(22px, 6vw, 34px); font-weight: 800;
+  color: #8a5a1e; white-space: nowrap;
+  background: radial-gradient(120% 120% at 50% 30%, #fff7e0, #ffe7ad);
+  border: 3px solid var(--gold); border-radius: 999px; padding: 14px 30px;
+  box-shadow: 0 12px 30px rgba(214, 170, 70, 0.45);
+}
+.learn-pop.frag { color: #7a6a52; background: radial-gradient(120% 120% at 50% 30%, #fbf6ee, #ece3d2); border-color: #d8cbb4; }
+.learn-pop.show { animation: lpop 1.15s ease both; }
+@keyframes lpop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+  30% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; transform: translate(-50%, -52%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -64%) scale(0.96); }
+}
+.lp-spark { color: var(--gold); margin: 0 10px; font-size: 0.8em; }
+
+/* ══════════ トースト ══════════ */
+.toast {
+  position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%) translateY(10px);
+  z-index: 55; background: rgba(60, 50, 44, 0.92); color: #fff7ec;
+  font-size: 14px; padding: 10px 20px; border-radius: 999px; opacity: 0;
+  transition: opacity 0.3s, transform 0.3s; pointer-events: none; max-width: 90vw; text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ══════════ レスポンシブ ══════════ */
+@media (max-width: 480px) {
+  .enc-actions { grid-template-columns: 1fr 1fr; }
+  .enc-speech { font-size: 16px; }
+  .ctrl-hint { font-size: 10.5px; }
+  .field-area { font-size: 16px; }
+}
+@media (max-width: 360px) {
+  .enc-actions { grid-template-columns: 1fr; }
+}
+
+/* アニメ酔い対策 */
+@media (prefers-reduced-motion: reduce) {
+  .seg.is-reveal, .enc-portrait, .fin-portrait, .learn-pop.show, .end-word, .end-titlecard { animation: none !important; }
+  body { transition: none; }
+}
