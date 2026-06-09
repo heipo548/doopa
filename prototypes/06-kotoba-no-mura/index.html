@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>ことばの むら — おぼえた ことばで、せかいが かわる。…だれかが、あなたを かぞえている。</title>
+  <meta name="description" content="DOOPA プロト#06（体験版）。なぐらない村で、記憶をなくした主人公が言葉を覚えると世界の色が変わる。だが“かぞえうた”＝神的存在が、あなたのクリック・読み飛ばし・よそ見を静かに数えていて、最後に本当のあなたを言い当てる。戦わない・ことばで いいあう探索RPG。" />
+
+  <!-- 日本語の手書き風フォント（Yusei Magic）。読み込めない/オフラインでも system フォントへ自動フォールバック（依存ゼロを保つ）。 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Yusei+Magic&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<!-- data-theme は ui.render() が現在エリア/title/ending をセット、data-tone は明暗(light/warm/dim/dark)を入れる＝背景の色温度が変わる -->
+<body data-theme="title" data-tone="warm">
+
+  <!-- ════════ フィールド（見下ろしマップ） ════════ -->
+  <div id="view-field" class="view hidden">
+    <div id="field-hud" class="field-hud">
+      <div id="field-area" class="field-area"></div>
+      <div id="field-objective" class="field-objective"></div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="field-canvas" width="660" height="484" aria-label="フィールド"></canvas>
+    </div>
+
+    <div id="field-msg" class="field-msg" aria-live="polite"></div>
+    <div class="field-controls">
+      <span class="ctrl-hint">うごく：タップ / WASD・やじるし　　しらべる・はなす：ちかづいて タップ / Space</span>
+    </div>
+
+    <button id="vocab-badge" class="vocab-badge" title="ことばの ずかん">📖 ことば <b id="vocab-count">0</b></button>
+    <button id="menu-btn" class="menu-btn hidden" title="メニュー（中断）" aria-label="メニュー">☰</button>
+  </div>
+
+  <!-- ════════ オーバーレイ群（すべて .overlay・hidden でトグル） ════════ -->
+
+  <!-- タイトル（ui.renderTitle が中身を作る） -->
+  <div id="ov-title" class="overlay hidden"></div>
+
+  <!-- 言い争い（ui.renderArgueShell が中身を作る） -->
+  <div id="ov-argue" class="overlay hidden"></div>
+
+  <!-- 会話（NPC） -->
+  <div id="ov-dialogue" class="overlay hidden">
+    <div class="dia-card">
+      <div id="dia-name" class="dia-name"></div>
+      <div id="dia-body" class="dia-body"></div>
+      <div id="dia-hint" class="dia-hint"></div>
+    </div>
+  </div>
+
+  <!-- 調べる／立て札 -->
+  <div id="ov-look" class="overlay hidden">
+    <div class="look-card">
+      <div id="look-body" class="look-body"></div>
+      <div id="look-hint" class="look-hint"></div>
+    </div>
+  </div>
+
+  <!-- エンディング（ui.renderEndingShell が中身を作る） -->
+  <div id="ov-ending" class="overlay hidden"></div>
+
+  <!-- ポーズ（ui.renderPause が中身を作る） -->
+  <div id="ov-pause" class="overlay hidden"></div>
+
+  <!-- ことばの ずかん（ui.renderVocab が中身を作る） -->
+  <div id="ov-vocab" class="overlay hidden"></div>
+
+  <!-- 言葉 習得ポップ（画面中央） -->
+  <div id="learn-pop" class="learn-pop"></div>
+
+  <!-- 一時メッセージ -->
+  <div id="toast" class="toast"></div>
+
+  <!-- ════════ スクリプト読み込み順（contract）：
+       data → meta → audio → words → state → save → field → argue → ui → main ════════ -->
+  <script src="js/data.js?v=1"></script>
+  <script src="js/meta.js?v=1"></script>
+  <script src="js/audio.js?v=1"></script>
+  <script src="js/words.js?v=1"></script>
+  <script src="js/state.js?v=1"></script>
+  <script src="js/save.js?v=1"></script>
+  <script src="js/field.js?v=1"></script>
+  <script src="js/argue.js?v=1"></script>
+  <script src="js/ui.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+</body>
+</html>
