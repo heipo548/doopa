@@ -101,10 +101,41 @@ var test = [
   "argueResolve('harsh'); ok(isKnown('acchi'),'argue：harshで あっち を覚える');",
   "ok(game.tone<0,'tone：とげ選択で世界が暗くなる（dark分岐の素地）');",
 
+  // ── 全語に図鑑ヒントがあり、全語が“どこかの周で”入手可能 ──
+  "ok(WORD_ORDER.every(function(id){return !!WORDS[id].hint;}),'words：全20語に 図鑑ヒント');",
+
+  // ── ダーク経路：ぬしを とげで おしきると きらい＋kind付きフラグ ──
+  "newGame(); enterArea('mori'); startArgue('nushi',{doneFlag:'mori_done'});",
+  "learnWord('urusai');",
+  "argueChoose('say:urusai'); var hh=argueChoose('say:urusai');",
+  "ok(hh && hh.resolved==='harsh','nushi：とげ連打で harsh 到達');",
+  "argueResolve('harsh');",
+  "ok(isKnown('kirai') && isKnown('michi'),'nushi harsh：みち＋きらい（ダーク周回限定語）');",
+  "ok(hasFlag('mori_done_harsh'),'解決の種類つきフラグ（mori_done_harsh）');",
+
+  // ── “理解を しめす”ことば：探索で覚えた みず が、ぬしとの場で 道具になる ──
+  "newGame(); enterArea('mori'); startArgue('nushi',{doneFlag:'mori_done'});",
+  "learnWord('mizu');",
+  "var __t1=game.argue.tsuuji; var rmz=argueChoose('say:mizu');",
+  "ok(rmz && rmz.say.join('').indexOf('けずった')>=0,'reactions：みず に ぬしが 専用の返事をする');",
+  "ok(game.argue.tsuuji>__t1,'reactions：みず で つうじが ふかまる（収集語の道具化）');",
+
+  // ── soul（かぞえうたの消えない記憶）──
+  "var r1=soulRunStart(); var r2=soulRunStart(); ok(r2===r1+1,'soul：rounds が増える（newGameでも消えない）');",
+  "soulOnClear('dim','n_kara'); ok(soulData().lastChoice==='n_kara' && soulData().clears>=1,'soul：結末となづけを記憶');",
+
   // ── 審判（メタ）──
   "ok(typeof metaWatch()==='number','meta：watch スコアが数値');",
   "var vd=metaVerdict(); ok(Array.isArray(vd) && vd.length>=3,'meta：審判テキストが3行以上 生成される');",
-  "ok(typeof metaSummary().clicks==='number','meta：サマリが取れる');",
+  "ok(vd.join('').indexOf('ふん')>=0,'meta：滞在時間を言い当てる行がある');",
+  "ok(typeof metaSummary().clicks==='number' && typeof metaSummary().steps==='number','meta：サマリ（歩数含む）が取れる');",
+
+  // ── 審判の周回記憶：2周目は「また きたね」＋まえの なづけ ──
+  "newGame(); enterArea('hokora');",
+  "var wobj = areaObjects().find(function(o){return o.id==='o_watcher';});",
+  "activateById('o_watcher');",
+  "ok(game._narr && game._narr.lines.join('').indexOf('また')>=0,'watcher：2周目は「また、きたね」');",
+  "ok(game._narr.lines.join('').indexOf('なにも いわなかった')>=0,'watcher：まえの なづけ（沈黙）を おぼえている');",
 
   // ── セーブ往復（軽い難読化）──
   "newGame(); learnWord('koe'); learnWord('hana'); game.currentArea='mura'; saveGame();",

@@ -93,11 +93,13 @@ const SE = {
     _tone(294, 0.6, t + 0.02, "triangle", 0.04);
   },
   name:    () => { const t = _now(); _tone(659, 0.14, t, "triangle", 0.10); _tone(988, 0.3, t + 0.12, "triangle", 0.10); },
+  // 世界パルス：節目の言葉を覚えた瞬間、世界が“ひらく”音（上昇スイープ＋きらめき）。
+  pulse:   () => { const t = _now(); _sweep(220, 880, 0.5, "sine", 0.08); _tone(1318.5, 0.4, t + 0.15, "triangle", 0.05); _tone(1760, 0.3, t + 0.3, "sine", 0.03); },
 };
 function playSe(name) { if (!_ac) return; const fn = SE[name]; if (fn) { try { fn(); } catch (e) {} } }
 
 // 文字送りブリップ（話者ごとに音程を少し変える＝“しゃべってる風”）。
-const _blipPitch = { default: 660, moko: 720, ton: 560, uta: 480, popo: 700, muku: 600, nushi: 300, watcher: 392, player: 640 };
+const _blipPitch = { default: 660, moko: 720, ton: 560, uta: 480, piko: 820, popo: 700, muku: 600, nushi: 300, watcher: 392, player: 640 };
 function audioBlip(speaker) {
   if (!_ac || _muted) return;
   const base = _blipPitch[speaker] || _blipPitch.default;
@@ -107,12 +109,24 @@ function audioBlip(speaker) {
 }
 
 // ──────────────────────────────────────────
-// BGM（rAF 駆動の簡易チップチューン）。テーマとトーンでピッチ/テンポが変わる。
+// BGM（rAF 駆動のチップチューン）。テーマとトーンでピッチ/テンポ/厚みが変わる。
+//   各曲：mel（32step メロディ・半音オフセット・null=休符）＋ bass（4stepごとの根音）。
+//   さらに アルペジオ（裏拍・ベース+1oct）と ハット（表拍・短い高音）で“8bitバンド”にする。
+//   暗いトーン：テンポ↓・根音↓・アルペジオとハットを抜く（音がやせて 沈む）。
 // ──────────────────────────────────────────
-// 各テーマのメロディ（半音オフセットの並び）。null は休符。
-const _PATTERNS = {
-  village: [0, 4, 7, 12, 7, 4, 0, null, 2, 5, 9, 5, null, 7, 4, 0],
-  forest:  [0, 3, 7, 10, 7, 3, null, 0, -2, 3, 7, 3, null, 0, null, null],
+const _SONGS = {
+  village: { // あさの むら：はずむ ルラバイ（Cメジャー）
+    step: 0.16,
+    mel:  [0, null, 4, 7,  9, 7, 4, null,  5, 9, 12, 9,  7, null, 4, null,
+           0, null, 4, 7,  9, 12, 14, 12,  9, 7, 5, 4,   2, null, 0, null],
+    bass: [0, 0, 5, 5, 7, 7, 0, 0],
+  },
+  forest: { // もや の もり：すこし ふしぎ（マイナー寄り）
+    step: 0.19,
+    mel:  [0, null, 3, 5,  7, null, 5, 3,   0, null, -2, 0,  3, null, null, null,
+           7, null, 10, 7, 5, null, 3, 5,   3, 0, -2, null,  0, null, null, null],
+    bass: [0, 0, -4, -4, 3, 3, 0, 0],
+  },
 };
 const _BASE_ROOT = 261.63; // C4
 
@@ -120,21 +134,26 @@ function _bgmTick() {
   if (!_bgmActive) { _bgmRaf = null; return; }
   if (_ac && !_muted && _theme !== "shrine") {
     try {
-      const lookahead = _now() + 0.25;
-      // テンポ：暗いほど遅く（step 秒）。明=0.17 / 暗=0.30 くらい。
-      const stepDur = 0.17 + (_toneFactor < 0 ? Math.min(0.13, (-_toneFactor) / 100 * 0.13) : 0);
-      const pat = _PATTERNS[_theme] || _PATTERNS.village;
-      // 根音：暗いほど数半音下げる（最大 -4）。
-      const rootSemi = (_toneFactor < 0 ? Math.round(_toneFactor / 25) : 0); // 0..-4
+      const nowT = _now();
+      // ミュート/タブ復帰などで予定時刻が過去に置き去りなら、今に追従（過去ノートの一斉発火＝バースト防止）。
+      if (_bgmNext < nowT - 0.05) _bgmNext = nowT + 0.02;
+      const lookahead = nowT + 0.25;
+      const song = _SONGS[_theme] || _SONGS.village;
+      // テンポ：暗いほど遅く。根音：暗いほど下げる（最大-4半音）。
+      const dark = _toneFactor < 0 ? -_toneFactor : 0; // 0..100
+      const stepDur = song.step + Math.min(0.12, dark / 100 * 0.12);
+      const rootSemi = _toneFactor < 0 ? Math.round(_toneFactor / 25) : 0;
       const root = _BASE_ROOT * Math.pow(2, rootSemi / 12);
+      const sparse = dark > 30; // 暗い：アルペジオ/ハットを抜いて“やせた”音に
+
       while (_bgmNext < lookahead) {
-        const semi = pat[_bgmStep % pat.length];
-        if (semi != null) {
-          const f = root * Math.pow(2, semi / 12);
-          _tone(f, stepDur * 0.9, _bgmNext, "triangle", 0.05);
-          // ベース（1 拍おき）
-          if (_bgmStep % 4 === 0) _tone(f / 2, stepDur * 1.6, _bgmNext, "square", 0.035);
-        }
+        const i = _bgmStep % song.mel.length;
+        const semi = song.mel[i];
+        const bSemi = song.bass[Math.floor(_bgmStep / 4) % song.bass.length];
+        if (semi != null) _tone(root * Math.pow(2, semi / 12), stepDur * 1.6, _bgmNext, "triangle", 0.055);
+        if (_bgmStep % 4 === 0) _tone((root / 2) * Math.pow(2, bSemi / 12), stepDur * 3.4, _bgmNext, "square", 0.04);
+        if (!sparse && _bgmStep % 2 === 1) _tone(root * Math.pow(2, (bSemi + 12) / 12), stepDur * 0.8, _bgmNext, "triangle", 0.018);
+        if (!sparse && _bgmStep % 2 === 0) _tone(1700, 0.03, _bgmNext, "square", 0.012);
         _bgmNext += stepDur;
         _bgmStep++;
       }

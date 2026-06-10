@@ -60,17 +60,35 @@ function render() {
 function renderTitle() {
   const has = (typeof hasSave === "function") && hasSave();
   const muted = (typeof isMuted === "function") && isMuted();
+  // soul（かぞえうたの記憶）：一度でもクリアしていると、タイトルの ささやきが かわる＝不気味の入口。
+  const s = (typeof soulData === "function") ? soulData() : null;
+  const cleared = !!(s && s.clears > 0);
+  const found = s ? ["light", "dim", "dark"].filter((k) => s.endings && s.endings[k] > 0).length : 0;
+  const whisper = cleared
+    ? "…おかえり。 これで " + ((s.rounds || 0) + 1) + "かいめ、だね。"
+    : "…だれかが、あなたを かぞえている。";
+
+  // 浮遊する ？？？（クリア後は、覚えたはずの言葉が まじる）
+  const floatWords = cleared ? ["？？？", "ともだち", "？？？", "みてる", "？？？", "すき"] : ["？？？", "？？？", "？？？", "？？？", "？？？", "？？？"];
+  let sky = '<div class="title-sky" aria-hidden="true">';
+  floatWords.forEach((w, i) => {
+    sky += '<span class="title-float" style="left:' + (8 + i * 15) + '%; animation-duration:' + (9 + (i % 3) * 4) + 's; animation-delay:' + (i * 1.7) + 's; font-size:' + (12 + (i % 3) * 4) + 'px;">' + escapeHtml(w) + '</span>';
+  });
+  sky += '</div>';
+
   _setHtml("ov-title",
+    sky +
     '<div class="title-card">' +
       '<div class="title-logo">ことばの むら</div>' +
       '<div class="title-sub">おぼえた ことばで、せかいが かわる。</div>' +
-      '<div class="title-whisper">…だれかが、あなたを かぞえている。</div>' +
+      '<div class="title-whisper">' + escapeHtml(whisper) + '</div>' +
       '<div class="title-menu">' +
         '<button class="btn primary" data-action="start">▶ はじめる</button>' +
         '<button class="btn" data-action="continue"' + (has ? "" : " disabled") + '>つづきから</button>' +
         '<button class="btn ghost" data-action="mute">' + (muted ? "🔇 おと: けし" : "🔊 おと: あり") + '</button>' +
       '</div>' +
-      '<div class="title-foot">DOOPA proto #06 ／ なぐらない・ことばで いいあう むら ／ 15〜25ふん</div>' +
+      '<div class="title-foot">DOOPA proto #06 ／ なぐらない・ことばで いいあう むら ／ 15〜25ふん' +
+        (cleared ? '　／　むすび ' + found + '/3' : '') + '</div>' +
     '</div>');
 }
 
@@ -80,7 +98,13 @@ function renderTitle() {
 function refreshFieldHud() {
   const area = (typeof curArea === "function") ? curArea() : null;
   _setHtml("field-area", area ? area.name : "");
-  _setHtml("field-objective", "つぎ：" + ((typeof fieldObjective === "function") ? fieldObjective() : ""));
+  // ふだんは進行ヒント。…ただし“見られている度”が高いと、ごくまれに 一瞬だけ べつの文が まじる。
+  let objText = "つぎ：" + ((typeof fieldObjective === "function") ? fieldObjective() : "");
+  if (!_reduce() && typeof metaWatch === "function" && metaWatch() >= 45) {
+    const tMs = (typeof performance !== "undefined" && performance.now) ? performance.now() : 0;
+    if (Math.floor(tMs / 1000) % 17 === 16 && (tMs % 1000) < 420) objText = "…みてる。";
+  }
+  _setHtml("field-objective", objText);
   const vc = _el("vocab-count"); if (vc) vc.textContent = String((typeof vocabCount === "function") ? vocabCount() : 0);
   const msg = _el("field-msg");
   if (msg && game && game.log && game.log.length) msg.textContent = game.log[game.log.length - 1];
@@ -95,24 +119,27 @@ const PALETTE = {
   shrine:  { grass1: "#cfc7e0", grass2: "#bcb2d6", path: "#d8cbe6", flower: ["#e8c8e0", "#c9bce6", "#bcd0e6"] },
 };
 function _themeName() { const a = (typeof curArea === "function") ? curArea() : null; return a ? a.theme : "village"; }
-// トーン色かぶせ（暗いほど濃く）。
+// トーン色かぶせ。dim/dark は multiply（かけ算合成）＝色味を保ったまま“夜に沈む”。
 function _toneOverlay() {
   const b = (typeof toneBucket === "function") ? toneBucket() : "warm";
   if (b === "light") return null;
-  if (b === "warm") return "rgba(255,238,200,0.05)";
-  if (b === "dim") return "rgba(70,80,140,0.20)";
-  return "rgba(28,30,60,0.42)"; // dark
+  if (b === "warm") return { color: "rgba(255,238,200,0.05)", blend: "source-over" };
+  if (b === "dim") return { color: "#a8a4cc", blend: "multiply" };
+  return { color: "#646090", blend: "multiply" }; // dark
 }
 
 // ──────────────────────────────────────────
 // フィールド描画
 // ──────────────────────────────────────────
+function _nowSec() { return (typeof performance !== "undefined" && performance.now) ? performance.now() / 1000 : 0; }
+
 function drawField() {
   const ctx = _ctx("field-canvas"); if (!ctx) return;
   const area = (typeof curArea === "function") ? curArea() : null; if (!area) return;
   const T = (typeof FIELD_TILE === "number") ? FIELD_TILE : 44;
   const W = area.cols * T, H = area.rows * T;
   const pal = PALETTE[area.theme] || PALETTE.village;
+  const t = _nowSec();
 
   ctx.clearRect(0, 0, W, H);
   // 地形
@@ -120,7 +147,7 @@ function drawField() {
     const line = area.grid[y] || "";
     for (let x = 0; x < area.cols; x++) {
       const ch = line[x] || " ";
-      _drawTile(ctx, ch, x * T, y * T, T, pal, x, y);
+      _drawTile(ctx, ch, x * T, y * T, T, pal, x, y, t);
     }
   }
   // オブジェクト（手前のものほど あとに描く＝下の行が前）
@@ -139,18 +166,78 @@ function drawField() {
   const p = app.player;
   if (p) _drawPlayer(ctx, p.x * T + T / 2, p.y * T + T / 2, T, p);
 
-  // トーンの色かぶせ
+  // トーンの色かぶせ（multiply＝夜に沈む。headless の fakeCtx でも安全）
   const ov = _toneOverlay();
-  if (ov) { ctx.save(); ctx.fillStyle = ov; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+  if (ov) {
+    ctx.save();
+    try { ctx.globalCompositeOperation = ov.blend || "source-over"; } catch (e) {}
+    ctx.fillStyle = ov.color; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    try { ctx.globalCompositeOperation = "source-over"; } catch (e) {}
+  }
+
+  // 浮遊パーティクル（明＝はなびら／暗＝しずんだ ほこり）＝世界の“呼吸”
+  const bucket = (typeof toneBucket === "function") ? toneBucket() : "warm";
+  if (!_reduce()) _drawParticles(ctx, W, H, t, bucket);
+  // ビネット（ふちを そっと しめる＝絵本の ページ感。暗いほど濃く）
+  _drawVignette(ctx, W, H, bucket);
   // 暗いと“目”がよぎる（不気味の気配）
-  if ((typeof toneBucket === "function") && toneBucket() === "dark") _drawSkyEye(ctx, W, H);
+  if (bucket === "dark") _drawSkyEye(ctx, W, H);
 }
 
+// 浮遊パーティクル：状態を持たない（位置は時間 t から計算）＝headless でも安全・再開ずれなし。
+function _drawParticles(ctx, W, H, t, bucket) {
+  ctx.save();
+  const n = 12;
+  for (let i = 0; i < n; i++) {
+    const seedX = (i * 97 + 31) % W, seedY = (i * 53 + 17) % H;
+    const drift = Math.sin(t * 0.7 + i * 1.7) * 14;
+    if (bucket === "light" || bucket === "warm") {
+      // はなびら：ふわふわ おちる
+      const x = (seedX + drift + W) % W;
+      const y = (seedY + t * (14 + (i % 3) * 6)) % H;
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = (i % 2) ? "#f7b8cc" : "#fff3f7";
+      ctx.beginPath(); ctx.ellipse(x, y, 3.2, 2.2, (t + i) % (Math.PI * 2), 0, Math.PI * 2); ctx.fill();
+    } else {
+      // しずんだ ほこり：ゆっくり のぼる（dim/dark）
+      const x = (seedX + drift * 0.5 + W) % W;
+      const y = H - ((seedY + t * (6 + (i % 3) * 3)) % H);
+      ctx.globalAlpha = bucket === "dark" ? 0.30 : 0.18;
+      ctx.fillStyle = bucket === "dark" ? "#9a8fd0" : "#cfc8e8";
+      ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function _drawVignette(ctx, W, H, bucket) {
+  try {
+    const a = bucket === "dark" ? 0.30 : bucket === "dim" ? 0.18 : 0.09;
+    const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.42, W / 2, H / 2, Math.max(W, H) * 0.72);
+    g.addColorStop(0, "rgba(40,30,50,0)");
+    g.addColorStop(1, "rgba(40,30,50," + a + ")");
+    ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+  } catch (e) {}
+}
+
+// フィールドの名札 ★ループ1の核心：世界は さいしょ ？？？ だらけ。
+//   であった ひと・おぼえた ことば の分だけ、世界が“読める”ようになる（＝きみの語彙で 世界に 注釈がつく）。
 function _objTag(o) {
-  if (o.kind === "npc") { const n = NPCS[o.ref]; return n ? n.name : null; }
-  if (o.kind === "argue") { const d = ARGUES[o.ref]; if (o.doneFlag && hasFlag(o.doneFlag)) return null; return d ? d.speaker : null; }
-  if (o.kind === "sign") return "たてふだ";
-  if (o.kind === "exit") return "→";
+  if (o.kind === "npc") {
+    const n = NPCS[o.ref]; if (!n) return null;
+    return hasFlag("met_" + o.ref) ? n.name : "？？？";
+  }
+  if (o.kind === "argue") {
+    const d = ARGUES[o.ref];
+    if (o.doneFlag && hasFlag(o.doneFlag)) return d ? d.speaker : null; // 解決後＝名前が わかる
+    return "？？？！";                                                  // 解決前＝なにか 起きてる（読めない）
+  }
+  if (o.kind === "look" && o.tagWord) {
+    return isKnown(o.tagWord) ? (o.tagText || (WORDS[o.tagWord] && WORDS[o.tagWord].text) || null) : "？？？";
+  }
+  if (o.kind === "sign") return isKnown("koe") ? "たてふだ" : "？？？";
+  if (o.kind === "exit") return "→"; // 出入口だけは常に読める（迷子防止）
   return null;
 }
 
@@ -160,37 +247,65 @@ function _rr(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
 
-function _drawTile(ctx, ch, px, py, T, pal, gx, gy) {
+function _drawTile(ctx, ch, px, py, T, pal, gx, gy, t) {
   // ベースのくさ（市松でほんのり濃淡）
   ctx.fillStyle = ((gx + gy) % 2 === 0) ? pal.grass1 : pal.grass2;
   ctx.fillRect(px, py, T, T);
-  if (ch === "=") { ctx.fillStyle = pal.path; ctx.fillRect(px + 2, py + 2, T - 4, T - 4); }
+  // くさの“穂”をまばらに（決定的な擬似乱数＝座標ハッシュ。毎フレーム同じ場所に生える）
+  if (ch === "." && (gx * 7 + gy * 13) % 9 === 0) {
+    ctx.strokeStyle = "rgba(110,160,90,0.45)"; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(px + T * 0.3, py + T * 0.74); ctx.lineTo(px + T * 0.26, py + T * 0.58);
+    ctx.moveTo(px + T * 0.38, py + T * 0.74); ctx.lineTo(px + T * 0.4, py + T * 0.56);
+    ctx.moveTo(px + T * 0.46, py + T * 0.74); ctx.lineTo(px + T * 0.52, py + T * 0.6);
+    ctx.stroke();
+  }
+  if (ch === "=") {
+    ctx.fillStyle = pal.path; _rr(ctx, px + 1.5, py + 1.5, T - 3, T - 3, 7); ctx.fill();
+    // 小石をひとつ（道の手ざわり）
+    if ((gx * 5 + gy * 11) % 7 === 0) { ctx.fillStyle = "rgba(160,130,90,0.35)"; ctx.beginPath(); ctx.arc(px + T * 0.62, py + T * 0.4, T * 0.05, 0, Math.PI * 2); ctx.fill(); }
+  }
   else if (ch === ",") {
     const c = pal.flower[(gx * 3 + gy) % pal.flower.length];
+    const sway = t ? Math.sin(t * 1.6 + gx * 1.3 + gy) * T * 0.02 : 0; // 風で ゆれる
     ctx.fillStyle = c;
-    ctx.beginPath(); ctx.arc(px + T * 0.5, py + T * 0.55, T * 0.12, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#fff6c8"; ctx.beginPath(); ctx.arc(px + T * 0.5, py + T * 0.55, T * 0.04, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px + T * 0.5 + sway, py + T * 0.55, T * 0.12, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#fff6c8"; ctx.beginPath(); ctx.arc(px + T * 0.5 + sway, py + T * 0.55, T * 0.04, 0, Math.PI * 2); ctx.fill();
   } else if (ch === "T") { _drawTree(ctx, px + T / 2, py + T * 0.62, T); }
   else if (ch === "H") { _drawHouse(ctx, px, py, T); }
-  else if (ch === "~") { _drawWater(ctx, px, py, T, gx, gy); }
+  else if (ch === "~") { _drawWater(ctx, px, py, T, gx, gy, t); }
   else if (ch === "o") { _drawStone(ctx, px, py, T); }
 }
 
 function _drawTree(ctx, cx, by, T) {
+  // 木かげ（じめんに 落とす）
+  ctx.fillStyle = "rgba(80,110,70,0.18)";
+  ctx.beginPath(); ctx.ellipse(cx, by + T * 0.22, T * 0.3, T * 0.1, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = "#9b7b53"; ctx.fillRect(cx - T * 0.06, by - T * 0.05, T * 0.12, T * 0.28);
   ctx.fillStyle = "#7bbf6a"; ctx.beginPath(); ctx.arc(cx, by - T * 0.12, T * 0.34, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = "#8fd07c"; ctx.beginPath(); ctx.arc(cx - T * 0.12, by - T * 0.22, T * 0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.18)"; ctx.beginPath(); ctx.arc(cx + T * 0.12, by - T * 0.26, T * 0.12, 0, Math.PI * 2); ctx.fill();
 }
 function _drawHouse(ctx, px, py, T) {
   ctx.fillStyle = "#f3e6cf"; ctx.fillRect(px + T * 0.12, py + T * 0.4, T * 0.76, T * 0.5);
   ctx.fillStyle = "#e08a86"; ctx.beginPath();
   ctx.moveTo(px + T * 0.06, py + T * 0.42); ctx.lineTo(px + T * 0.5, py + T * 0.1); ctx.lineTo(px + T * 0.94, py + T * 0.42); ctx.closePath(); ctx.fill();
   ctx.fillStyle = "#9b7b53"; ctx.fillRect(px + T * 0.42, py + T * 0.6, T * 0.16, T * 0.3);
+  // 世界が くらいと、まどに あかりが ともる（むらは 生きている）
+  const b = (typeof toneBucket === "function") ? toneBucket() : "warm";
+  if (b === "dim" || b === "dark") {
+    ctx.fillStyle = "rgba(255,214,130,0.9)"; ctx.fillRect(px + T * 0.2, py + T * 0.5, T * 0.14, T * 0.14);
+    ctx.fillStyle = "rgba(255,214,130,0.25)"; ctx.beginPath(); ctx.arc(px + T * 0.27, py + T * 0.57, T * 0.18, 0, Math.PI * 2); ctx.fill();
+  }
 }
-function _drawWater(ctx, px, py, T, gx, gy) {
+function _drawWater(ctx, px, py, T, gx, gy, t) {
   ctx.fillStyle = "#9fd4ea"; ctx.fillRect(px, py, T, T);
+  // なみ：時間で うねる（headless では t=0 で 静止＝安全）
+  const ph = t ? Math.sin(t * 1.8 + gx * 0.9 + gy * 1.3) * 3 : ((gx + gy) % 2) * 4;
   ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(px + 6, py + T * 0.4 + ((gx + gy) % 2) * 4); ctx.quadraticCurveTo(px + T * 0.5, py + T * 0.3, px + T - 6, py + T * 0.45); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px + 6, py + T * 0.4 + ph); ctx.quadraticCurveTo(px + T * 0.5, py + T * 0.3 + ph * 0.5, px + T - 6, py + T * 0.45 + ph); ctx.stroke();
+  ctx.strokeStyle = "rgba(255,255,255,0.22)";
+  ctx.beginPath(); ctx.moveTo(px + 10, py + T * 0.7 - ph * 0.6); ctx.quadraticCurveTo(px + T * 0.5, py + T * 0.62 - ph * 0.3, px + T - 10, py + T * 0.72 - ph * 0.6); ctx.stroke();
 }
 function _drawStone(ctx, px, py, T) {
   ctx.fillStyle = "#b9aed0"; _rr(ctx, px + T * 0.16, py + T * 0.18, T * 0.68, T * 0.7, 6); ctx.fill();
@@ -238,7 +353,7 @@ function _drawSprite(ctx, o, cx, cy, T) {
     return;
   }
 }
-function _npcColor(ref) { return ({ moko: "#fdfaf4", ton: "#e2c79b", uta: "#d9cae6" })[ref] || "#fdfaf4"; }
+function _npcColor(ref) { return ({ moko: "#fdfaf4", ton: "#e2c79b", uta: "#d9cae6", piko: "#ffe08a" })[ref] || "#fdfaf4"; }
 function _argColor(ref) { return ({ quarrel: "#f3c08a", nushi: "#7c6f5a", watcher: "#e9e4f2" })[ref] || "#ddd"; }
 
 function _drawAnimal(ctx, cx, cy, T, color, key, calm) {
@@ -258,9 +373,17 @@ function _drawAnimal(ctx, cx, cy, T, color, key, calm) {
     ctx.beginPath(); ctx.arc(cx, cy + r * 0.3, r * 0.1, 0, Math.PI * 2); ctx.fill();
     return;
   }
+  // め（ときどき まばたき＝生きてる感。位置ハッシュで個体ごとに タイミングが ずれる）
+  const tA = _nowSec();
+  const blink = !_reduce() && (((tA * 0.8 + (cx * 0.013 + cy * 0.007)) % 3.7) < 0.12);
   ctx.fillStyle = "#5b4636";
-  ctx.beginPath(); ctx.arc(cx - r * 0.35, cy - r * 0.05, r * 0.1, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx + r * 0.35, cy - r * 0.05, r * 0.1, 0, Math.PI * 2); ctx.fill();
+  if (blink) {
+    ctx.fillRect(cx - r * 0.45, cy - r * 0.08, r * 0.22, r * 0.06);
+    ctx.fillRect(cx + r * 0.23, cy - r * 0.08, r * 0.22, r * 0.06);
+  } else {
+    ctx.beginPath(); ctx.arc(cx - r * 0.35, cy - r * 0.05, r * 0.1, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + r * 0.35, cy - r * 0.05, r * 0.1, 0, Math.PI * 2); ctx.fill();
+  }
   // くち（ぬし/けんかは への字、それ以外は にこ）
   ctx.strokeStyle = "#5b4636"; ctx.lineWidth = 1.6;
   ctx.beginPath();
@@ -400,6 +523,14 @@ function typeInto(elId, text, opts) {
 function showLearn(id, kind, onDone) {
   const w = WORDS[id]; if (!w) { if (onDone) onDone(); return; }
   if (typeof playSe === "function") playSe(w.meta ? "reveal" : "learn");
+  // 節目の言葉（reveal）は、世界ぜんたいが いっしゅん ひらく（白いパルス＋専用音）
+  if (w.reveal && typeof document !== "undefined" && document.body && document.body.classList) {
+    try {
+      document.body.classList.add("world-pulse");
+      if (typeof playSe === "function") playSe("pulse");
+      setTimeout(() => { try { document.body.classList.remove("world-pulse"); } catch (e) {} }, _reduce() ? 60 : 950);
+    } catch (e) {}
+  }
   const pop = _el("learn-pop");
   const cls = w.tone === "toge" ? "toge" : w.tone === "yawa" ? "yawa" : "";
   if (pop) {
@@ -407,6 +538,11 @@ function showLearn(id, kind, onDone) {
       '<div class="lp-word">' + escapeHtml(w.text) + '</div>' +
       '<div class="lp-desc">' + escapeHtml(w.desc || "") + '</div></div>';
     if (pop.classList) pop.classList.add("show");
+  }
+  // ことばバッジが ぴょこっと はねる（“ふえた”の体感）
+  const badge = _el("vocab-badge");
+  if (badge && badge.classList) {
+    try { badge.classList.add("bump"); setTimeout(() => { try { badge.classList.remove("bump"); } catch (e) {} }, 500); } catch (e) {}
   }
   const hold = _reduce() ? 60 : 1100;
   setTimeout(() => { if (pop && pop.classList) pop.classList.remove("show"); if (onDone) onDone(); }, hold);
@@ -449,7 +585,7 @@ function renderVocab() {
     const w = WORDS[id], known = isKnown(id);
     const tc = w.tone === "toge" ? "toge" : w.tone === "yawa" ? "yawa" : "";
     if (known) cells += '<div class="vc ' + tc + '"><div class="vc-word">' + escapeHtml(w.text) + '</div><div class="vc-desc">' + escapeHtml(w.desc || "") + '</div></div>';
-    else cells += '<div class="vc locked"><div class="vc-word">？？？</div><div class="vc-desc">まだ しらない ことば</div></div>';
+    else cells += '<div class="vc locked"><div class="vc-word">？？？</div><div class="vc-desc vc-hint">' + escapeHtml(w.hint || "まだ しらない ことば") + '</div></div>';
   });
   _setHtml("ov-vocab",
     '<div class="vocab-card">' +
@@ -500,7 +636,14 @@ function endingShowTitlecard(kind) {
   const tc = _el("end-card-title");
   const t = (ENDING[kind] && ENDING[kind].title) || "ことばの むら";
   if (tc) tc.textContent = "—— " + t + " ——";
-  let html = '<button class="btn primary" data-action="again">▶ もういちど（ちがう ことばで）</button>' +
+  // ちいさな統計（かぞえうたの“余韻”＝この周のきみ）。むすび回収率は周回の道しるべ。
+  const s = (typeof soulData === "function") ? soulData() : null;
+  const found = s ? ["light", "dim", "dark"].filter((k) => s.endings && s.endings[k] > 0).length : 0;
+  const mins = (typeof metaElapsedSec === "function") ? Math.max(1, Math.round(metaElapsedSec() / 60)) : 0;
+  const stats = '<div class="end-stats">ことば ' + ((typeof vocabCount === "function") ? vocabCount() : 0) + ' / ' + WORD_ORDER.length +
+                '　·　' + mins + 'ふん' + (found ? '　·　むすび ' + found + '/3' : '') + '</div>';
+  let html = stats +
+             '<button class="btn primary" data-action="again">▶ もういちど（ちがう ことばで）</button>' +
              '<button class="btn" data-action="openVocab">📖 ことばの ずかん</button>' +
              '<button class="btn ghost" data-action="title">タイトルへ</button>';
   _setHtml("end-actions", html);

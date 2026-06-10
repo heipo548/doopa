@@ -94,12 +94,15 @@ function argueChoose(actionId) {
     const tone = toneOfWord(id);
     if (typeof metaNoteSay === "function") metaNoteSay(tone);
 
-    if (tone === "yawa") { a.tsuuji = Math.min(10, a.tsuuji + 2); a.wari = Math.max(0, a.wari - 1); adjustTone(4); }
+    // “理解を しめす”ことば（みず/はな 等＝探索の成果）：相手の心に いちばん深く とどく。
+    const rx = def.reactions && def.reactions[id];
+    if (rx) { a.tsuuji = Math.min(10, a.tsuuji + 2); a.wari = Math.max(0, a.wari - 1); adjustTone(2); }
+    else if (tone === "yawa") { a.tsuuji = Math.min(10, a.tsuuji + 2); a.wari = Math.max(0, a.wari - 1); adjustTone(4); }
     else if (tone === "toge") { a.wari = Math.max(0, a.wari - 3); a.tsuuji = Math.max(0, a.tsuuji - 1); adjustTone(-7); }
     else { a.tsuuji = Math.min(10, a.tsuuji + 1); }
     if (typeof setBgmTone === "function") setBgmTone(game.tone || 0);
 
-    const res = { say: _reaction(a, id, tone), se: tone === "toge" ? "sayToge" : (tone === "yawa" ? "sayYawa" : "select") };
+    const res = { say: _reaction(a, id, tone), se: rx ? "sayYawa" : (tone === "toge" ? "sayToge" : (tone === "yawa" ? "sayYawa" : "select")) };
 
     if (id === def.core && a.tsuuji >= _coreThreshold()) {
       res.resolved = "warm";
@@ -113,6 +116,7 @@ function argueChoose(actionId) {
 }
 
 function _reaction(a, id, tone) {
+  if (a.def.reactions && a.def.reactions[id]) return a.def.reactions[id].slice();
   if (id === a.def.core) {
     if (a.tsuuji >= _coreThreshold()) return ["きみは そっと 「{{" + id + "}}」と いった。"];
     return ["きみは 「{{" + id + "}}」と いった。", "（…まだ、とどいていない きがする）"];
@@ -129,7 +133,8 @@ function argueResolve(kind) {
   const gained = [];
   (r.gained || []).forEach((id) => { if (!isKnown(id)) { learnWord(id); gained.push(id); } });
   a.done = true;
-  if (a.doneFlag) setFlag(a.doneFlag);
+  // “どう解決したか”もフラグに残す（例 quarrel_done_warm）。あとの世界（doneLook の分岐）が これを見る。
+  if (a.doneFlag) { setFlag(a.doneFlag); setFlag(a.doneFlag + "_" + kind); }
   return { text: (r.text || []).slice(), gained: gained, gainedSay: r.gainedSay || null, toast: r.toast || "" };
 }
 

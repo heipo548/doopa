@@ -48,11 +48,12 @@ var test = [
   "function drainNarr(max){ var n=0; while(game._narr && n++<(max||80)){ narrAdvance(); } }",
   "function talk(id){ activateById(id); var g=0; while(app.screen==='dialogue' && g++<20){ advanceDialogue(); } }",
 
-  // ── 村：もこ→こえ / とん→なまえ ──
+  // ── 村：もこ→こえ / とん→なまえ / ぴこ（はな未所持→ヒントだけ）──
   "startGame();",
   "ok(app.screen==='field' && curArea().id==='mura','開始：ことばの むら');",
   "talk('o_moko'); ok(isKnown('koe'),'村：もこ と話して こえ を覚える');",
   "talk('o_ton'); ok(isKnown('namae'),'村：とん と話して なまえ を覚える');",
+  "talk('o_piko'); ok(!isKnown('suki'),'村：ぴこ は はなが ないと すき を教えない（もりへのフック）');",
 
   // ── 村のけんか（言い争い）：みみ→ごめん、みる、ごめんで warm ──
   "activateById('o_quarrel'); ok(app.screen==='argue','村：けんかに 介入＝言い争い開始');",
@@ -82,8 +83,11 @@ var test = [
   "ok(hasFlag('mori_done') && app.screen==='field','ぬし：だいじょうぶで warm 解決（mori_done）');",
   "ok(isKnown('michi'),'ぬし：warmで みち を覚える');",
 
-  // ── 村へ もどる → うた が現れ かず を教える ──
+  // ── 村へ もどる → ぴこに はなを あげて すき / なかなおりの ふたりから いっしょ ──
   "activateById('o_exit_mura'); ok(curArea() && curArea().id==='mura','もり→村');",
+  "talk('o_piko'); ok(isKnown('suki'),'村：はなを あげて すき を覚える（はなの使い道）');",
+  "activateById('o_quarrel'); drainNarr();",
+  "ok(isKnown('issho') && app.screen==='field','村：なかなおりした ふたりから いっしょ を覚える');",
   "var __uta = areaObjects().some(function(o){return o.id==='o_uta';}); ok(__uta,'村：mori_done で うた が現れる');",
   "talk('o_uta'); ok(isKnown('kazu') && hasFlag('uta_done'),'村：うた と話して かず を覚える（uta_done で ほこら解錠）');",
 
@@ -100,10 +104,10 @@ var test = [
   "ok(app.screen==='ending','エンディングへ到達');",
   "ok(['light','dim','dark'].indexOf(game.ending)>=0,'エンディング種別が決まる（'+game.ending+'）');",
 
-  // ── 主要語が揃うか ──
-  "var __need=['koe','namae','gomen','arigatou','mizu','hana','ki','sora','daijoubu','mamoru','michi','kazu','miteru','tomodachi'];",
+  // ── 主要語が揃うか（warm周＝18/20。きらい・あっちは とげ周回限定）──
+  "var __need=['koe','namae','gomen','arigatou','mizu','hana','ki','sora','daijoubu','mamoru','michi','suki','issho','kazu','miteru','tomodachi'];",
   "var __miss=__need.filter(function(id){return !isKnown(id);});",
-  "ok(__miss.length===0,'到達時に主要14語が揃う'+(__miss.length?('（不足:'+__miss.join(',')+'）'):''));",
+  "ok(__miss.length===0,'到達時に主要16語が揃う'+(__miss.length?('（不足:'+__miss.join(',')+'）'):''));",
   "__o.push('—— 覚えた語数: '+vocabCount()+' / '+WORD_ORDER.length+' ／ tone='+game.tone+' ／ watch='+metaWatch());",
 
   "__o.join('\\n');"

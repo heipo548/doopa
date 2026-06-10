@@ -113,8 +113,11 @@ function fieldUpdate(dt) {
     if (Math.abs(vx) >= Math.abs(vy)) p.dir = vx < 0 ? "left" : "right";
     else p.dir = vy < 0 ? "up" : "down";
     const step = PLAYER_SPEED * dt;
+    const ox = p.x, oy = p.y;
     _moveAxis(p, "x", vx * step);
     _moveAxis(p, "y", vy * step);
+    // 実際に動けた距離を“歩数”として数える（かぞえうたは、あるいた分も みている）。
+    if (typeof metaNoteSteps === "function") metaNoteSteps(Math.hypot(p.x - ox, p.y - oy));
     p.moving = true; p.bob += dt * 9;
     p.stepT += dt;
     if (p.stepT > 0.32) { p.stepT = 0; if (typeof playSe === "function") playSe("step"); }

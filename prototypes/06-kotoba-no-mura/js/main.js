@@ -36,6 +36,7 @@ function startGame() {
   _initAudioOnce();
   newGame();
   if (typeof metaReset === "function") metaReset();
+  if (typeof soulRunStart === "function") soulRunStart(); // かぞえうたの“消えない記憶”に 周回を刻む
   game.startedAt = Date.now();
   enterArea(PLAYER_INIT.spawnArea || "mura");
   render();
@@ -124,7 +125,7 @@ function activateById(id) {
     case "sign": startLines(obj.sign || ["……"]); break;
     case "npc": startNpc(obj.ref, obj); break;
     case "argue": startArg(obj.ref, obj); break;
-    case "doneLook": startLines(obj.doneLook || ["……"]); break;
+    case "doneLook": startDoneLook(obj); break;
     case "exit": doExit(d.area); break;
     case "locked": startLines(obj.lockMsg || ["まだ ここからは いけない。"]); break;
     default: break;
@@ -165,6 +166,21 @@ function startLines(lines) {
   setHtml("look-hint", "");
   narrate("look-body", lines, { hintId: "look-hint", onDone: () => { closeLook(); } });
 }
+// 言い争いの“あと”の様子。どう解決したかで 世界の その後が ちがう：
+//   あたたかく おさめた → なかなおりの 景色（いっしょ を覚えられる）／とげ → まだ とどいていない 景色。
+function startDoneLook(obj) {
+  const harsh = obj.doneFlag && hasFlag(obj.doneFlag + "_harsh");
+  const lines = (harsh && obj.doneLookHarsh) ? obj.doneLookHarsh : (obj.doneLook || ["……"]);
+  const learnId = (!harsh && obj.doneLearn && !isKnown(obj.doneLearn)) ? obj.doneLearn : null;
+  if (!learnId) { startLines(lines); return; }
+  game.look = { obj: null, step: null, advance: false, phase: "plain" };
+  game.state = STATES.LOOK; app.screen = "look"; stopFieldLoop(); render();
+  setHtml("look-hint", "");
+  narrate("look-body", lines, { hintId: "look-hint", onDone: () => {
+    learnWord(learnId);
+    showLearn(learnId, "word", () => { closeLook(); });
+  } });
+}
 function advanceLook() {
   if (game._narr) { narrAdvance(); return; }                  // plain（立て札）系
   if (twActive()) { if (typeof metaNoteSkip === "function") metaNoteSkip(); twFinish(); return; }
@@ -197,9 +213,20 @@ function closeLook() { game.look = null; game._narr = null; backToField(); }
 function startNpc(npcId, obj) {
   const npc = NPCS[npcId];
   if (!npc) { backToField(); return; }
-  let lines = npc.lines.slice();
-  if (npc.gateFlag && hasFlag(npc.gateFlag) && npc.afterGate) lines = npc.afterGate.slice();
-  game.dialogue = { npcId: npcId, lines: lines, idx: 0, learn: npc.learn || null, after: npc.after || null, gateFlag: npc.gateFlag || null, phase: "lines", gated: !!(npc.gateFlag && hasFlag(npc.gateFlag)) };
+  const gated = !!(npc.gateFlag && hasFlag(npc.gateFlag));
+  let lines, learn = npc.learn || null, after = npc.after || null, skipGate = false;
+  if (gated && npc.afterGate) {
+    // 再訪：世界が くらいと 別の せりふ＝覚えた言葉と選んだ言葉が、会話の中身まで 変える
+    const darkish = (typeof toneBucket === "function") && (toneBucket() === "dim" || toneBucket() === "dark");
+    lines = ((darkish && npc.afterGateDark) ? npc.afterGateDark : npc.afterGate).slice();
+    learn = null; after = null;
+  } else if (npc.itemGate && !hasItem(npc.itemGate.item)) {
+    // もちものが ないと 本題に 入らない（ぴこ＝はな）。gateFlag は立てない＝もってきたら やりなおせる。
+    lines = npc.itemGate.linesNoItem.slice(); learn = null; after = null; skipGate = true;
+  } else {
+    lines = npc.lines.slice();
+  }
+  game.dialogue = { npcId: npcId, lines: lines, idx: 0, learn: learn, after: after, gateFlag: npc.gateFlag || null, phase: "lines", gated: gated, skipGate: skipGate };
   game.state = STATES.DIALOGUE; app.screen = "dialogue"; stopFieldLoop(); render();
   setHtml("dia-name", renderText(npc.name || "？？？"));
   setHtml("dia-hint", "");
@@ -212,9 +239,10 @@ function advanceDialogue() {
   if (d.phase === "lines") {
     d.idx++;
     if (d.idx < d.lines.length) { typeInto("dia-body", d.lines[d.idx], { speaker: d.npcId, onDone: () => setHtml("dia-hint", "▶") }); return; }
-    setFlag("talked_" + d.npcId);
+    setFlag("met_" + d.npcId);                       // “であった”（フィールドの名札が ？？？→名前 になる）
+    if (!d.skipGate) setFlag("talked_" + d.npcId);   // “はなした”（再訪せりふの判定。ぴこのはな未所持は除く）
     // 初回かつ未習得なら覚える → after → ゲートを立てる（uta は uta_done＝ほこら解錠）
-    if (!d.gated && d.learn && !isKnown(d.learn)) {
+    if (!d.gated && !d.skipGate && d.learn && !isKnown(d.learn)) {
       learnWord(d.learn);
       showLearn(d.learn, "word", () => {
         setHtml("dia-name", renderText(NPCS[d.npcId].name || "？？？"));
@@ -233,7 +261,8 @@ function advanceDialogue() {
 }
 function closeDialogue() {
   const d = game.dialogue;
-  if (d && d.gateFlag) setFlag(d.gateFlag);           // moko/ton は talked_*、uta は uta_done を立てる
+  // moko/ton は talked_*、uta は uta_done を立てる。ぴこ(はな未所持)は立てない＝もってくれば 本題へ。
+  if (d && d.gateFlag && !d.skipGate) setFlag(d.gateFlag);
   game.dialogue = null;
   backToField();
   if (typeof saveGame === "function") saveGame();
@@ -312,7 +341,15 @@ function startWatcher(obj) {
   setHtml("arg-speaker", renderText(ARGUES.watcher.speaker));
   setHtml("arg-mood", "しずかだ。 おとが、ひとつも ない。");
   setHtml("arg-actions", "");
-  narrate("arg-say", ARGUES.watcher.open, { hintId: "arg-hint", speaker: "watcher", onDone: _watcherReveal });
+  // かぞえうたは まえの周を おぼえている（soul は newGame でも消えない）。
+  let open = ARGUES.watcher.open.slice();
+  const s = (typeof soulData === "function") ? soulData() : null;
+  if (s && s.rounds >= 2) {
+    const ret = (ARGUES.watcher.returnLines || []).map((l) => l.replace("{n}", String(s.rounds)));
+    const mem = (s.lastChoice && ARGUES.watcher.memoryByChoice && ARGUES.watcher.memoryByChoice[s.lastChoice]) || [];
+    open = ret.concat(mem, open);
+  }
+  narrate("arg-say", open, { hintId: "arg-hint", speaker: "watcher", onDone: _watcherReveal });
 }
 function _watcherReveal() {
   if (typeof playSe === "function") playSe("reveal");
@@ -342,7 +379,8 @@ function onNameChoice(id) {
   setHtml("arg-actions", "");
   if (typeof playSe === "function") playSe("name");
   if (c.word) { learnWord(c.word); game.name = (WORDS[c.word] ? WORDS[c.word].text : c.label); }
-  else game.name = null;
+  else game.name = c.nameText || null;     // 「かぞえうた」を名のる選択（語は覚えない・名前だけ半分こ）
+  game._lastNameChoice = c.id;             // soul が次の周まで おぼえている
   const finish = () => narrate("arg-say", c.say, { hintId: "arg-hint", speaker: "watcher", fresh: c.word || null, onDone: () => { setFlag("watcher_done"); startEnding(); } });
   if (c.word) showLearn(c.word, "word", finish);
   else finish();
@@ -357,6 +395,7 @@ function startEnding() {
   if (typeof saveGame === "function") saveGame();
   const kind = (typeof endingKind === "function") ? endingKind() : "dim";
   game.ending = kind;
+  if (typeof soulOnClear === "function") soulOnClear(kind, game._lastNameChoice || null); // 結末となづけを“次の周”へ
   render(); renderEndingShell();
   setHtml("end-text", renderText(ENDING.montageIntro[0]));
   const words = (typeof knownWords === "function") ? knownWords() : [];

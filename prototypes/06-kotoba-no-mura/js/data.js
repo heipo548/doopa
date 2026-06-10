@@ -19,27 +19,28 @@
 //   reveal:true … 覚えると世界の見え方（？？？）が大きく変わる節目の語。
 //   meta:true   … “かぞえうた”の正体に触れる語（かず・みてる）。覚えると不気味が立ち上がる。
 // ──────────────────────────────────────────
+//   hint … 図鑑で未習得のとき出す“ありか”の手がかり（攻略サイトなしで20/20を目指せるように）。
 const WORDS = {
-  koe:      { id: "koe",      text: "こえ",       tone: "neutral", desc: "だれかが はっする おと。さいしょに もらう ことば。" },
-  namae:    { id: "namae",    text: "なまえ",     tone: "neutral", desc: "じぶんを よぶ ことば。きみには、まだ ない。" },
-  gomen:    { id: "gomen",    text: "ごめん",     tone: "yawa",    desc: "ぶつかった こころを やわらげる ことば。" },
-  arigatou: { id: "arigatou", text: "ありがとう", tone: "yawa",    desc: "もらった ものに かえす、あたたかい ことば。" },
-  mizu:     { id: "mizu",     text: "みず",       tone: "neutral", desc: "もりを ながれる、つめたく すきとおった もの。" },
-  hana:     { id: "hana",     text: "はな",       tone: "neutral", desc: "みちばたで ゆれる、やわらかい いろ。" },
-  ki:       { id: "ki",       text: "き",         tone: "neutral", desc: "そらへ のびる、おおきな せなか。" },
-  sora:     { id: "sora",     text: "そら",       tone: "neutral", desc: "むらの うえに ひろがる ところ。だれかが みている?" },
-  michi:    { id: "michi",    text: "みち",       tone: "neutral", desc: "むらと もりを つなぐ せん。" },
-  daijoubu: { id: "daijoubu", text: "だいじょうぶ", tone: "yawa",  desc: "こわがる せなかに そっと かける ことば。", reveal: true },
-  mamoru:   { id: "mamoru",   text: "まもる",     tone: "yawa",    desc: "けわしい かおの ほんとうの いみ。" },
-  suki:     { id: "suki",     text: "すき",       tone: "yawa",    desc: "むねが あたたかく なる ことば。" },
-  issho:    { id: "issho",    text: "いっしょ",   tone: "yawa",    desc: "ひとりを ふたりに する ことば。" },
-  kazu:     { id: "kazu",     text: "かず",       tone: "neutral", desc: "いち、に、さん。…なにかを かぞえる ための ことば。", reveal: true, meta: true },
-  miteru:   { id: "miteru",   text: "みてる",     tone: "neutral", desc: "ずっと、きみを。そらの むこうから。", reveal: true, meta: true },
-  tomodachi:{ id: "tomodachi",text: "ともだち",   tone: "yawa",    desc: "ことばに ひとつ（＝きみ）たした、いちばん あたたかい ことば。", reveal: true },
-  urusai:   { id: "urusai",   text: "うるさい",   tone: "toge",    desc: "あいての こえを とめる、するどい ことば。" },
-  dame:     { id: "dame",     text: "だめ",       tone: "toge",    desc: "とびらを とじる ことば。" },
-  kirai:    { id: "kirai",    text: "きらい",     tone: "toge",    desc: "いちばん つめたい ことば。" },
-  acchi:    { id: "acchi",    text: "あっち",     tone: "toge",    desc: "あいてを むこうへ おいやる ことば。" },
+  koe:      { id: "koe",      text: "こえ",       tone: "neutral", desc: "だれかが はっする おと。さいしょに もらう ことば。", hint: "むらの しろい こが おしえてくれる" },
+  namae:    { id: "namae",    text: "なまえ",     tone: "neutral", desc: "じぶんを よぶ ことば。きみには、まだ ない。", hint: "まるい こが きいてくる" },
+  gomen:    { id: "gomen",    text: "ごめん",     tone: "yawa",    desc: "ぶつかった こころを やわらげる ことば。", hint: "けんかに みみを すますと…" },
+  arigatou: { id: "arigatou", text: "ありがとう", tone: "yawa",    desc: "もらった ものに かえす、あたたかい ことば。", hint: "けんかを あたたかく おさめると…" },
+  mizu:     { id: "mizu",     text: "みず",       tone: "neutral", desc: "もりを ながれる、つめたく すきとおった もの。", hint: "もりの ながれを じっと みる" },
+  hana:     { id: "hana",     text: "はな",       tone: "neutral", desc: "みちばたで ゆれる、やわらかい いろ。", hint: "もりの みちばたで" },
+  ki:       { id: "ki",       text: "き",         tone: "neutral", desc: "そらへ のびる、おおきな せなか。", hint: "もりの おおきな せなか" },
+  sora:     { id: "sora",     text: "そら",       tone: "neutral", desc: "むらの うえに ひろがる ところ。だれかが みている?", hint: "き を しってから、みあげる" },
+  michi:    { id: "michi",    text: "みち",       tone: "neutral", desc: "むらと もりを つなぐ せん。", hint: "ぬしと けりが つくと…" },
+  daijoubu: { id: "daijoubu", text: "だいじょうぶ", tone: "yawa",  desc: "こわがる せなかに そっと かける ことば。", reveal: true, hint: "ぬしの こえに みみを すます" },
+  mamoru:   { id: "mamoru",   text: "まもる",     tone: "yawa",    desc: "けわしい かおの ほんとうの いみ。", hint: "ぬしの あしもとを みる" },
+  suki:     { id: "suki",     text: "すき",       tone: "yawa",    desc: "むねが あたたかく なる ことば。", hint: "はなを、だれかに あげる" },
+  issho:    { id: "issho",    text: "いっしょ",   tone: "yawa",    desc: "ひとりを ふたりに する ことば。", hint: "なかなおりした ふたりに、もういちど あう" },
+  kazu:     { id: "kazu",     text: "かず",       tone: "neutral", desc: "いち、に、さん。…なにかを かぞえる ための ことば。", reveal: true, meta: true, hint: "もりの あとで、むらに あらわれる だれか" },
+  miteru:   { id: "miteru",   text: "みてる",     tone: "neutral", desc: "ずっと、きみを。そらの むこうから。", reveal: true, meta: true, hint: "きたの ほこらで" },
+  tomodachi:{ id: "tomodachi",text: "ともだち",   tone: "yawa",    desc: "ことばに ひとつ（＝きみ）たした、いちばん あたたかい ことば。", reveal: true, hint: "さいごの といに、こたえる" },
+  urusai:   { id: "urusai",   text: "うるさい",   tone: "toge",    desc: "あいての こえを とめる、するどい ことば。", hint: "けんかで きこえてしまう" },
+  dame:     { id: "dame",     text: "だめ",       tone: "toge",    desc: "とびらを とじる ことば。", hint: "けんかで きこえてしまう" },
+  kirai:    { id: "kirai",    text: "きらい",     tone: "toge",    desc: "いちばん つめたい ことば。", hint: "ぬしを とげで おしきると…" },
+  acchi:    { id: "acchi",    text: "あっち",     tone: "toge",    desc: "あいてを むこうへ おいやる ことば。", hint: "けんかを とげで おわらせると…" },
 };
 
 // 図鑑/エンディングのモンタージュ順（覚えた語だけ並ぶ）。
@@ -78,7 +79,7 @@ const AREAS = {
     ],
     objects: [
       // 井戸：覚える前は「・・・」。かず＋みてる を覚えると、かぞえる声＝あなたを数える声に化ける。
-      { id: "o_well", kind: "look", sprite: "well", solid: true, tx: 7, ty: 4, reach: 1.6,
+      { id: "o_well", kind: "look", sprite: "well", solid: true, tx: 7, ty: 4, reach: 1.6, tagWord: "kazu", tagText: "かぞえる いど",
         look: { steps: [
           { say: ["ふるい いどが ある。", "のぞくと、そこから かすかな おとが きこえる……", "「{{kazu}}… {{kazu}}… {{kazu}}…」", "（…なにを いっているんだろう）"] },
           { say: ["また、おとが する。", "「{{kazu}}… {{kazu}}…」", "（{{kazu}} を しらないと、これが なにか わからない）"] },
@@ -90,9 +91,14 @@ const AREAS = {
       // NPC たち
       { id: "o_moko",  kind: "npc", ref: "moko",  solid: true, tx: 4, ty: 6, reach: 1.5 },
       { id: "o_ton",   kind: "npc", ref: "ton",   solid: true, tx: 11, ty: 3, reach: 1.5 },
+      { id: "o_piko",  kind: "npc", ref: "piko",  solid: true, tx: 4, ty: 9, reach: 1.5 },
       // 村のけんか（言い争い A2）。仲裁すると ごめん／ありがとう を覚える。
+      //   あたたかく おさめた あとに もういちど あうと いっしょ を覚える（とげで おわらせた周では覚えられない）。
       { id: "o_quarrel", kind: "argue", ref: "quarrel", solid: false, tx: 4, ty: 8, reach: 1.5,
-        doneFlag: "quarrel_done", doneLook: ["ぽぽと むくは、ならんで そらを みている。", "「…さっきは、ありがとな」"] },
+        doneFlag: "quarrel_done",
+        doneLook: ["ぽぽと むくは、ならんで そらを みている。", "「…さっきは、ありがとな」", "ふたりは もう、{{issho}}だ。"],
+        doneLearn: "issho",
+        doneLookHarsh: ["ぽぽは、むこうを むいたまま だ。", "むくは、ちいさく ためいきを ついた。", "…ことばは、まだ とどいていない。"] },
       // “かぞえうた”の おばあ：もりを 終えると あらわれ、かず を おしえる。
       { id: "o_uta",   kind: "npc", ref: "uta",   solid: true, tx: 11, ty: 6, reach: 1.6, appearWhen: "mori_done" },
       // 出口
@@ -123,25 +129,25 @@ const AREAS = {
     ],
     objects: [
       // みずべ：みず を覚える（2回 調べる）。
-      { id: "o_pond", kind: "look", sprite: "pond", solid: false, tx: 10, ty: 4, reach: 1.7,
+      { id: "o_pond", kind: "look", sprite: "pond", solid: false, tx: 10, ty: 4, reach: 1.7, tagWord: "mizu",
         look: { steps: [
-          { say: ["きれいな ながれ。", "てを ひたすと、つめたい。", "（これは…？）"] },
+          { say: ["きれいな ながれ。", "てを ひたすと、つめたい。", "（これは…？　…もういちど、よく みてみよう）"] },
           { say: ["ながれを じっと みる。", "すきとおって、そこの いしまで みえる。"], learn: "mizu",
             after: ["これは {{mizu}}。", "{{mizu}} を おぼえると、もりの おとが すこし すんで きこえた。"] },
         ] } },
-      { id: "o_flower", kind: "look", sprite: "flower", solid: false, tx: 2, ty: 2, reach: 1.5,
+      { id: "o_flower", kind: "look", sprite: "flower", solid: false, tx: 2, ty: 2, reach: 1.5, tagWord: "hana",
         look: { steps: [
           { say: ["みちばたに、ちいさな いろ。", "そっと さわると、ゆれた。"], learn: "hana",
             after: ["これは {{hana}}。", "ひとつ つんで、ふところに いれた。"], give: "hana_item" },
           { say: ["{{hana}} は、まだ さいている。"] },
         ] } },
-      { id: "o_tree", kind: "look", sprite: "tree", solid: true, tx: 12, ty: 8, reach: 1.6,
+      { id: "o_tree", kind: "look", sprite: "tree", solid: true, tx: 12, ty: 8, reach: 1.6, tagWord: "ki",
         look: { steps: [
           { say: ["おおきな せなか。", "みあげると、はが そらを かくしている。"], learn: "ki",
             after: ["これは {{ki}}。", "{{ki}} の すきまから、{{sora}} が のぞいた。"] },
           { say: ["{{ki}} の みきに、てを あてる。", "とくとく、と なにかが ながれている きがする。"] },
         ] } },
-      { id: "o_sky", kind: "look", sprite: "sky", solid: false, tx: 3, ty: 9, reach: 1.5,
+      { id: "o_sky", kind: "look", sprite: "sky", solid: false, tx: 3, ty: 9, reach: 1.5, tagWord: "sora",
         look: { steps: [
           { need: "ki", say: ["きの あいだから、うえを みあげる。", "とおく、たかい ところが ひろがっている。"], learn: "sora",
             after: ["これは {{sora}}。", "…ずっと むこうで、なにかが きらりと ひかった きがした。"] },
@@ -149,7 +155,9 @@ const AREAS = {
         ] } },
       // もりの ぬし（言い争い A1）。けわしい かおだが、ほんとうは みち の あぶなさを まもっている。
       { id: "o_nushi", kind: "argue", ref: "nushi", solid: false, tx: 8, ty: 5, reach: 1.4,
-        doneFlag: "mori_done", doneLook: ["もりの ぬしは、みちの わきで しずかに たっている。", "「…きを つけて いけよ」"] },
+        doneFlag: "mori_done",
+        doneLook: ["もりの ぬしは、みちの わきで しずかに たっている。", "「…きを つけて いけよ」"],
+        doneLookHarsh: ["もりの ぬしは、こちらを みなかった。"] },
       { id: "o_exit_mura", kind: "exit", ref: "mura", sprite: "exitR", solid: false, tx: 14, ty: 5, reach: 1.2 },
     ],
   },
@@ -201,6 +209,7 @@ const NPCS = {
     ],
     gateFlag: "talked_moko",
     afterGate: ["「{{koe}} を つかって、みんなと はなしてみて。」", "「むらの そとの もりにも、いってみたら?」"],
+    afterGateDark: ["「…ねえ。 さいきん、{{sora}} が ちかい きが しない?」", "「……ううん、なんでもない。」"],
   },
   ton: {
     name: "とん", portrait: "ton", learn: "namae",
@@ -216,6 +225,30 @@ const NPCS = {
     ],
     gateFlag: "talked_ton",
     afterGate: ["「もりの ぬしは こわい かおだけど、わるい やつじゃ ないよ。」"],
+    afterGateDark: ["「…いどの こえ、きょうは おおきいね。」", "「…きみが きてから、かな。 ……ごめん、いまのは わすれて。」"],
+  },
+  // ぴこ：はなばたけの とりの子。もりで つんだ「はな」を あげると すき を おしえてくれる。
+  //   世界が くらいと、ようすが かわる（＝覚えた言葉と選んだ言葉で、世界の中身まで変わる）。
+  piko: {
+    name: "ぴこ", portrait: "piko", learn: "suki",
+    itemGate: { item: "hana_item", linesNoItem: [
+      "ちいさな とりの こが、はなばたけを みつめている。",
+      "「…おはな、すきなの。 でも、ここのは つんじゃ だめなんだって。」",
+      "「もりには、つんでも いい おはなが さいてる らしいよ。」",
+    ] },
+    lines: [
+      "ちいさな とりの こが、きみの ふところを ゆびさした。",
+      "「あ……それ、もりの {{hana}}?」",
+      "きみは {{hana}} を そっと さしだした。",
+      "「…………くれるの?」",
+    ],
+    after: [
+      "「えへへ。 ……{{suki}}。」",
+      "「きみの こと、{{suki}} に なっちゃった。」",
+    ],
+    gateFlag: "talked_piko",
+    afterGate: ["「おはな、だいじに するね。」"],
+    afterGateDark: ["「…そら、くらいね。」", "「……だれかに みられてる きが する。 …きの せい、かな。」"],
   },
   // もりを終えると村に現れる“かぞえうた”の おばあ。かず をおしえ、不気味の扉をひらく。
   uta: {
@@ -260,7 +293,11 @@ const ARGUES = {
       miru: { label: "ようすを みる", say: ["ふたりを よく みる。", "ほんとうは、なかなおり したくて、めを そらしている。"] },
     },
     core: "gomen",
-    sayPool: ["gomen", "arigatou", "daijoubu", "urusai", "dame", "kirai"],
+    sayPool: ["gomen", "arigatou", "daijoubu", "hana", "urusai", "dame", "kirai"],
+    // “理解を しめす”ことば：もりで おぼえた 自然のことばが、けんかの 場でも 道具になる。
+    reactions: {
+      hana: ["きみは {{hana}} の はなしを した。", "ふたりは、すこし だまった。 …こえが、やわらかく なる。"],
+    },
     // つうじ が高い状態で core(ごめん) を渡す → warm。とげ連打で wari を 0 に → harsh。
     resolve: {
       warm: {
@@ -293,7 +330,11 @@ const ARGUES = {
               learnSay: ["ぬしは、ふさいで——{{mamoru}}って いた。"] },
     },
     core: "daijoubu",
-    sayPool: ["daijoubu", "arigatou", "mamoru", "suki", "urusai", "dame", "acchi"],
+    sayPool: ["daijoubu", "arigatou", "mamoru", "mizu", "suki", "urusai", "dame", "acchi"],
+    // みず を しっていると、ぬしの しんぱいの“理由”を 指させる＝ことばが 探索の成果として効く。
+    reactions: {
+      mizu: ["きみは {{mizu}} を ゆびさして、みちの さきを みた。", "ぬしは、ふかく うなずいた。 「…わかるか。 そうだ、{{mizu}} が けずったんだ」"],
+    },
     resolve: {
       warm: {
         text: ["きみが {{daijoubu}} と いうと、ぬしの かたから ちからが ぬけた。", "「……わかって、くれたか」", "ぬしは みちを あけ、あぶない さきへ てを さしのべた。"],
@@ -303,14 +344,15 @@ const ARGUES = {
       },
       harsh: {
         text: ["きみが とげの ことばを なげると、ぬしは いっしゅん だまり、みちを あけた。", "「……すきに、しろ」", "とおれた。 けれど ぬしは、かなしそうに みおくった。"],
-        gained: ["michi"],
-        gainedSay: ["（…{{mamoru}} ろうと していた こえを、ふみこえて いく）"],
+        gained: ["michi", "kirai"],
+        gainedSay: ["（…{{mamoru}} ろうと していた こえを、ふみこえて いく）", "せなかで、ちいさな こえが した。 「…{{kirai}}。」"],
         toast: "みちは ひらいた。 でも、せなかが つめたい。",
       },
     },
   },
 
-  // ほこらの“かぞえうた”＝審判。ここは特別：words ではなく、あなたの“ログ”が読み上げられる（argue.js が分岐）。
+  // ほこらの“かぞえうた”＝審判。ここは特別：words ではなく、あなたの“ログ”が読み上げられる（main が直接演出）。
+  //   さらに かぞえうたは、まえの“周”を おぼえている（soul ストレージ＝消えない記憶）。
   watcher: {
     speaker: "かぞえうた", portrait: "watcher", theme: "shrine", verdict: true,
     open: [
@@ -319,6 +361,14 @@ const ARGUES = {
       "「よく きた。 きみの ことばは、ぜんぶ かぞえた。」",
       "「ことばだけ じゃ ない。 きみ じしんも。」",
     ],
+    // 2周目以降の さしこみ（{n} は周回数。main が置換）。
+    returnLines: ["「……また、きたね。」", "「これで {n}かいめ。 だいじょうぶ、ぜんぶ かぞえてる。」"],
+    // まえの周の「なづけ」を おぼえている（lastChoice で分岐）。
+    memoryByChoice: {
+      n_tomo: ["「まえの きみは、{{tomodachi}} と こたえた。」", "「…いい なまえ だった。」"],
+      n_kazo: ["「まえの きみは、わたしの なまえを なのった。」", "「……かえして、とは いわない。」"],
+      n_kara: ["「まえの きみは、さいご、なにも いわなかった。」", "「こんどは、きかせて ほしいな。」"],
+    },
     learnWatch: "miteru",
     learnWatchSay: ["「ずっと {{miteru}} た。 そらの むこうから。」", "—— {{miteru}}。 きみが いま、おぼえた ことば。"],
   },
@@ -405,6 +455,12 @@ const VERDICT = {
                soft:  "" },
     idle:    { sharp: "「いちばん ながく だまっていたのは {n}びょう。 …なにを、かんがえてた?」",
                soft:  "" },
+    time:    { sharp: "「きみは ここに {n}ふん いた。 みじかい? ながい? …わたしには、ぜんぶ おなじ。」",
+               soft:  "「{n}ふん、いっしょに いたね。」" },
+    steps:   { sharp: "「{n}ぽ あるいた。 いそいで、どこへ いくの?」",
+               soft:  "「{n}ぽ、あるいたね。 よく あるいた。」" },
+    rounds:  { sharp: "「ここに くるのは {n}かいめ。 …かぞえてるのは、おたがいさま だね。」",
+               soft:  "「{n}かいめ、だね。 おかえり。」" },
   },
   // しめ（watch が高い＝不気味 / 低い＝やさしい）。
   closeSharp: [
@@ -421,10 +477,14 @@ const VERDICT = {
   toName: ["「さいごに ひとつ。 きみは、なんと よばれたい?」"],
 };
 
-// 最後の名づけ（自分の なまえ を きめる）。マルチエンドの引き金にもなる小さな選択。
+// 最後の名づけ（自分の なまえ を きめる）。かぞえうたは この選択を“次の周まで”おぼえている。
 const NAME_CHOICES = [
-  { id: "n_tomo",  label: "ともだち", word: "tomodachi", say: ["「——{{tomodachi}}。」", "かぞえうたは、ふっと わらった きがした。"] },
-  { id: "n_kara",  label: "（なにも いわない）", word: null, say: ["きみは、なにも いわなかった。", "それも、ひとつの こたえ。"] },
+  { id: "n_tomo",  label: "ともだち", word: "tomodachi",
+    say: ["「——{{tomodachi}}。」", "かぞえうたは、ふっと わらった きがした。"] },
+  { id: "n_kazo",  label: "かぞえうた", word: null, nameText: "かぞえうた",
+    say: ["「……それは、わたしの なまえ。」", "「…………。」", "「…いいよ。 はんぶんこ、ね。」"] },
+  { id: "n_kara",  label: "（なにも いわない）", word: null,
+    say: ["きみは、なにも いわなかった。", "それも、ひとつの こたえ。"] },
 ];
 
 // ── window へ明示エクスポート ──
