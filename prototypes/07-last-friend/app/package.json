@@ -1,0 +1,22 @@
+{
+  "name": "last-friend-demo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "deploy": "node scripts/deploy.mjs"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "@fontsource/dotgothic16": "^5.2.8",
+    "puppeteer-core": "^25.1.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.3.0"
+  }
+}

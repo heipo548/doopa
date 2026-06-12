@@ -26,6 +26,9 @@
 | 02 | [saigo-no-tomodachi](./prototypes/02-saigo-no-tomodachi/) | さいごのともだち | ことばで戦う口喧嘩RPG。ぶつけるか手をのばすか、語彙が増え夜明けが変わる | 🟢 active | @heipo548 |
 | 03 | [word-to-world](./prototypes/03-word-to-world/) | WO_RD → WORLD | 探索×言葉カードバトル。精神HPを削るか見えない思いやりを満たすか、勝ち方が人格を染める。終盤、神様が操作の癖を見透かす | 🟢 active | @heipo548 |
 | 04 | [kotoba-no-android](./prototypes/04-kotoba-no-android/) | ルゥと せかいの あいだ | 手を出せない村のことばカードバトル探索。言い負かすか寄り添うか、勝ち方が人格を染め、終盤『井戸の こえ』が操作の癖を見透かす。ことばに きみを 足すと せかいに なる | 🟢 active | @heipo548 |
+| 05 | [namae-wo-shiranai-sekai](./prototypes/05-namae-wo-shiranai-sekai/) | 名前を知らない世界 | 戦わない探索RPG。観察・対話で言葉を覚えると ？？？が「読める言葉」に変わる | 🟢 active | @heipo548 |
+| 06 | [kotoba-no-mura](./prototypes/06-kotoba-no-mura/) | ことばの むら | 言葉で世界が読める×"かぞえうた"がきみの行動を数えて審判する探索RPG | 🟢 active | @heipo548 |
+| 07 | [last-friend](./prototypes/07-last-friend/) | さいごのともだち（体験版） | ことばを覚えるたび ███ が「読める」に変わるRPG。Phaser+TS製・SQEXコンテスト応募作の体験版 | 🟢 active | @heipo548 |
 
 詳細は [prototypes/README.md](./prototypes/README.md)。
 

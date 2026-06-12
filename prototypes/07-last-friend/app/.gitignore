@@ -1,0 +1,4 @@
+# 依存とビルド中間物はコミットしない。
+# 公開用の成果物は scripts/deploy.mjs が 1つ上（プロトタイプ直下）へコピーする。
+node_modules/
+dist/
