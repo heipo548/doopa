@@ -29,6 +29,7 @@
 | 05 | [namae-wo-shiranai-sekai](./prototypes/05-namae-wo-shiranai-sekai/) | 名前を知らない世界 | 戦わない探索RPG。観察・対話で言葉を覚えると ？？？が「読める言葉」に変わる | 🟢 active | @heipo548 |
 | 06 | [kotoba-no-mura](./prototypes/06-kotoba-no-mura/) | ことばの むら | 言葉で世界が読める×"かぞえうた"がきみの行動を数えて審判する探索RPG | 🟢 active | @heipo548 |
 | 07 | [last-friend](./prototypes/07-last-friend/) | さいごのともだち（体験版） | ことばを覚えるたび ███ が「読める」に変わるRPG。Phaser+TS製・SQEXコンテスト応募作の体験版 | 🟢 active | @heipo548 |
+| 08 | [mana](./prototypes/08-mana/) | 真名 -マナ- | 漢字の成り立ちを魔法に、万物へ名前を取り戻すADV。Phaser+TS製・SQEXコンテスト応募作の体験版 | 🟢 active | @heipo548 |
 
 詳細は [prototypes/README.md](./prototypes/README.md)。
 
