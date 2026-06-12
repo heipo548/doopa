@@ -1,0 +1,23 @@
+{
+  "name": "mana-demo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "真名 -マナ- 体験版（序章「灯し村」） SQUARE ENIX GAME CONTEST 2026 提出用デモ",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "deploy": "node scripts/deploy.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "phaser": "^3.85.1"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.1.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.8",
+    "vitest": "^2.1.9"
+  }
+}
