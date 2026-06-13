@@ -8,6 +8,7 @@ import { AudioSystem } from './AudioSystem';
 import { FlagManager } from './FlagManager';
 import { HintSystem } from './HintSystem';
 import { Inventory } from './Inventory';
+import { MusicSystem } from './MusicSystem';
 import { RecipeEngine } from './RecipeEngine';
 import { SaveSystem, type SaveData } from './SaveSystem';
 
@@ -17,6 +18,7 @@ export interface Ctx {
   engine: RecipeEngine;
   hints: HintSystem;
   audio: AudioSystem;
+  music: MusicSystem;
   save: SaveSystem;
   playerName: string;
   playtime: number; // 秒
@@ -25,12 +27,14 @@ export interface Ctx {
 }
 
 export function createCtx(): Ctx {
+  const audio = new AudioSystem();
   const ctx: Ctx = {
     inv: new Inventory(),
     flags: new FlagManager(),
     engine: new RecipeEngine(RECIPES),
     hints: new HintSystem(),
-    audio: new AudioSystem(),
+    audio,
+    music: new MusicSystem(audio),
     save: new SaveSystem(),
     playerName: DEFAULT_PLAYER_NAME,
     playtime: 0,

@@ -1,8 +1,10 @@
 // DialogueScene — 会話UI（常駐オーバーレイ §7-6）
-// タイプライター 30字/秒。E/クリックで全文表示→次へ。話者名と話者色で枠を着色。
+// タイプライター 30字/秒。E/クリックで全文表示→次へ。
+// 見た目: 和紙の札＋手描き風の二重枠＋話者の朱印札＋タイプ音。
 
 import Phaser from 'phaser';
 import { COLORS, FONT, GAME_HEIGHT, GAME_WIDTH, SPEAKERS, type DialogueLine } from '../config';
+import { getCtx } from '../systems/context';
 
 interface Batch {
   lines: DialogueLine[];
@@ -19,8 +21,9 @@ export class DialogueScene extends Phaser.Scene {
   private charAcc = 0;
   private closedAt = -10000;
 
-  private box!: Phaser.GameObjects.Rectangle;
-  private edge!: Phaser.GameObjects.Rectangle;
+  private ui!: Phaser.GameObjects.Container;
+  private seal!: Phaser.GameObjects.Container;
+  private sealBg!: Phaser.GameObjects.Graphics;
   private nameText!: Phaser.GameObjects.Text;
   private bodyText!: Phaser.GameObjects.Text;
   private cursor!: Phaser.GameObjects.Text;
@@ -37,31 +40,57 @@ export class DialogueScene extends Phaser.Scene {
     this.shown = 0;
     this.charAcc = 0;
     this.closedAt = -10000;
+
     const y = GAME_HEIGHT - 72;
-    this.box = this.add
-      .rectangle(GAME_WIDTH / 2, y, 920, 116, COLORS.paper, 0.95)
-      .setStrokeStyle(2.5, COLORS.inkSoft)
-      .setDepth(10);
-    this.edge = this.add.rectangle(GAME_WIDTH / 2 - 456, y, 8, 116, COLORS.inkSoft, 1).setDepth(11);
+    this.ui = this.add.container(0, 0).setDepth(10);
+
+    // 影 → 和紙 → 手描き風の二重枠
+    const shadow = this.add.rectangle(GAME_WIDTH / 2 + 4, y + 5, 920, 116, 0x2a2426, 0.25);
+    const paper = this.add.tileSprite(GAME_WIDTH / 2, y, 920, 116, 'paper').setAlpha(0.98);
+    const frame = this.add.graphics();
+    frame.lineStyle(2.5, COLORS.inkSoft, 1);
+    frame.strokeRect(GAME_WIDTH / 2 - 460, y - 58, 920, 116);
+    frame.lineStyle(1.1, COLORS.inkSoft, 0.55);
+    frame.strokeRect(GAME_WIDTH / 2 - 455, y - 53, 910, 106);
+    // 四隅の墨だまり
+    const blots = this.add.graphics();
+    blots.fillStyle(COLORS.ink, 0.5);
+    for (const [bx, by] of [
+      [GAME_WIDTH / 2 - 460, y - 58],
+      [GAME_WIDTH / 2 + 460, y - 58],
+      [GAME_WIDTH / 2 - 460, y + 58],
+      [GAME_WIDTH / 2 + 460, y + 58],
+    ] as const) {
+      blots.fillCircle(bx, by, 3);
+    }
+    this.ui.add([shadow, paper, frame, blots]);
+
+    // 話者の朱印札（縦長の seal）
+    this.seal = this.add.container(GAME_WIDTH / 2 - 432, y - 58);
+    this.sealBg = this.add.graphics();
     this.nameText = this.add
-      .text(GAME_WIDTH / 2 - 440, y - 48, '', { fontFamily: FONT, fontSize: '15px', color: '#8C6E4A' })
-      .setDepth(11)
+      .text(0, 0, '', { fontFamily: FONT, fontSize: '14px', color: '#F5F0E6', align: 'center' })
+      .setOrigin(0.5)
       .setResolution(2);
+    this.seal.add([this.sealBg, this.nameText]);
+    this.ui.add(this.seal);
+
     this.bodyText = this.add
-      .text(GAME_WIDTH / 2 - 440, y - 26, '', {
+      .text(GAME_WIDTH / 2 - 430, y - 30, '', {
         fontFamily: FONT,
         fontSize: '19px',
         color: COLORS.inkStr,
-        wordWrap: { width: 880 },
-        lineSpacing: 6,
+        wordWrap: { width: 870 },
+        lineSpacing: 7,
       })
       .setDepth(11)
       .setResolution(2);
     this.cursor = this.add
-      .text(GAME_WIDTH / 2 + 430, y + 38, '▼', { fontFamily: FONT, fontSize: '14px', color: COLORS.inkSoftStr })
+      .text(GAME_WIDTH / 2 + 430, y + 38, '▼', { fontFamily: FONT, fontSize: '14px', color: '#8A6A4A' })
       .setOrigin(1)
       .setDepth(11);
-    this.tweens.add({ targets: this.cursor, alpha: { from: 1, to: 0.2 }, duration: 500, yoyo: true, repeat: -1 });
+    this.tweens.add({ targets: this.cursor, alpha: { from: 1, to: 0.2 }, y: this.cursor.y + 3, duration: 520, yoyo: true, repeat: -1 });
+    this.ui.add([this.bodyText, this.cursor]);
     this.setUiVisible(false);
 
     this.input.keyboard?.on('keydown-E', () => this.advance());
@@ -89,10 +118,13 @@ export class DialogueScene extends Phaser.Scene {
     const full = this.currentText();
     if (this.shown < full.length) {
       this.charAcc += (delta / 1000) * CHARS_PER_SEC;
+      let typed = false;
       while (this.charAcc >= 1 && this.shown < full.length) {
         this.shown++;
         this.charAcc -= 1;
+        typed = true;
       }
+      if (typed && this.shown % 3 === 0) getCtx(this).audio.se('tick');
       this.bodyText.setText(full.slice(0, this.shown));
       this.cursor.setVisible(this.shown >= full.length);
     }
@@ -112,6 +144,7 @@ export class DialogueScene extends Phaser.Scene {
       this.cursor.setVisible(true);
       return;
     }
+    getCtx(this).audio.se('paper');
     this.lineIdx++;
     if (this.lineIdx < this.cur.lines.length) {
       this.showLine();
@@ -134,6 +167,9 @@ export class DialogueScene extends Phaser.Scene {
     this.cur = batch;
     this.lineIdx = 0;
     this.setUiVisible(true);
+    // 出現のひと呼吸
+    this.ui.setAlpha(0).setY(6);
+    this.tweens.add({ targets: this.ui, alpha: 1, y: 0, duration: 160, ease: 'Quad.easeOut' });
     this.showLine();
   }
 
@@ -141,8 +177,20 @@ export class DialogueScene extends Phaser.Scene {
     if (!this.cur) return;
     const line = this.cur.lines[this.lineIdx];
     const sp = SPEAKERS[line.speaker] ?? SPEAKERS.system;
-    this.nameText.setText(sp.label).setColor(sp.color);
-    this.edge.setFillStyle(Phaser.Display.Color.HexStringToColor(sp.color).color, 1);
+    const hasName = sp.label.length > 0;
+    this.seal.setVisible(hasName);
+    if (hasName) {
+      this.nameText.setText(sp.label);
+      const w = Math.max(64, this.nameText.width + 22);
+      const col = Phaser.Display.Color.HexStringToColor(sp.color).color;
+      this.sealBg.clear();
+      this.sealBg.fillStyle(0x2a2426, 0.3);
+      this.sealBg.fillRoundedRect(-w / 2 + 2, -14, w, 30, 5);
+      this.sealBg.fillStyle(col, 1);
+      this.sealBg.fillRoundedRect(-w / 2, -16, w, 30, 5);
+      this.sealBg.lineStyle(1.5, 0xf5f0e6, 0.55);
+      this.sealBg.strokeRoundedRect(-w / 2 + 3, -13, w - 6, 24, 4);
+    }
     this.shown = 0;
     this.charAcc = 0;
     this.bodyText.setText('');
@@ -150,10 +198,8 @@ export class DialogueScene extends Phaser.Scene {
   }
 
   private setUiVisible(v: boolean): void {
-    this.box.setVisible(v);
-    this.edge.setVisible(v);
-    this.nameText.setVisible(v);
-    this.bodyText.setVisible(v);
-    this.cursor.setVisible(v && this.shown >= this.currentText().length);
+    this.ui.setVisible(v);
+    if (!v) return;
+    this.cursor.setVisible(this.shown >= this.currentText().length);
   }
 }

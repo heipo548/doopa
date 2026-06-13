@@ -214,7 +214,7 @@ await assert(await hasFlag('s1_done'), 'S1: 烏→鳥');
 await assert((await gems()) >= 1, '玉 1個目');
 
 // ---- S3: 水 ----
-await walkTo(2390, 1135);
+await walkTo(2390, 1122);
 await pressE();
 await assert(await hasGlyph('水'), '水を拾った');
 await walkTo(2355, 1205);

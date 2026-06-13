@@ -14,6 +14,7 @@ interface Bullet {
   vx: number;
   vy: number;
   born: number;
+  lastTrail: number;
 }
 
 export class BossController {
@@ -23,7 +24,9 @@ export class BossController {
   private blob2: Phaser.GameObjects.Container | null = null;
   private swirls: Phaser.GameObjects.Particles.ParticleEmitter[] = [];
   private bullets: Bullet[] = [];
-  private dashState: 'rest' | 'dash' = 'rest';
+  private trail: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private embers: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private dashState: 'rest' | 'windup' | 'dash' = 'rest';
   private dashLeft = 900;
   private dashVx = 0;
   private dashVy = 0;
@@ -49,6 +52,8 @@ export class BossController {
       this.phase = 'p1';
       this.world.endCutscene();
       this.world.setBossGate(true);
+      this.world.setBattleVeil(true);
+      this.world.musicStinger(true);
     });
   }
 
@@ -71,6 +76,7 @@ export class BossController {
         this.phase = 'p2';
         this.blob.setAlpha(1);
         this.blob2?.setAlpha(1);
+        this.embers?.start();
       }
     }
     this.updateBullets(time, delta);
@@ -81,16 +87,26 @@ export class BossController {
     if (!blob) return;
     this.dashLeft -= delta;
     if (this.dashState === 'rest' && this.dashLeft <= 0) {
-      // プレイヤーへ向かって突進（速度200・1.5s間隔 §10）
+      // 予兆: 身を縮め、狙いの線が走る（260ms）
       const p = this.world.playerPos();
       const dx = p.x - blob.x;
       const dy = p.y - blob.y;
       const len = Math.hypot(dx, dy) || 1;
       this.dashVx = (dx / len) * 200;
       this.dashVy = (dy / len) * 200;
+      this.dashState = 'windup';
+      this.dashLeft = 260;
+      this.world.tweens.add({ targets: blob, scaleX: 1.18, scaleY: 0.82, duration: 240, ease: 'Quad.easeIn' });
+      const aim = this.world.add.graphics().setDepth(595);
+      aim.lineStyle(2, 0xb03030, 0.4);
+      aim.lineBetween(blob.x, blob.y, blob.x + (dx / len) * 260, blob.y + (dy / len) * 260);
+      this.world.tweens.add({ targets: aim, alpha: 0, duration: 300, onComplete: () => aim.destroy() });
+    } else if (this.dashState === 'windup' && this.dashLeft <= 0) {
+      // 突進（速度200・約1.5s間隔 §10）
       this.dashState = 'dash';
       this.dashLeft = 650;
       this.world.playSe('thud');
+      this.world.tweens.add({ targets: blob, scaleX: 1, scaleY: 1, duration: 160 });
     } else if (this.dashState === 'dash') {
       blob.x += this.dashVx * (delta / 1000);
       blob.y += this.dashVy * (delta / 1000);
@@ -120,14 +136,15 @@ export class BossController {
       this.bulletTimer = 2000;
       this.bulletWave++;
       const offset = (this.bulletWave % 2) * (Math.PI / 8);
+      this.world.playSe('gust');
       for (let i = 0; i < 8; i++) {
         const a = (i * Math.PI) / 4 + offset;
         const img = this.world.add
-          .image(blob.x, blob.y, 'dot8')
-          .setTint(0xe06a30)
-          .setScale(1.8)
-          .setDepth(700);
-        this.bullets.push({ img, vx: Math.cos(a) * 120, vy: Math.sin(a) * 120, born: time });
+          .image(blob.x, blob.y, 'flameDrop')
+          .setScale(1.25)
+          .setDepth(700)
+          .setRotation(a - Math.PI / 2); // 雫のしっぽを進行方向の逆へ
+        this.bullets.push({ img, vx: Math.cos(a) * 120, vy: Math.sin(a) * 120, born: time, lastTrail: time });
       }
     }
     this.checkContact(time, blob, 46);
@@ -140,6 +157,11 @@ export class BossController {
       const b = this.bullets[i];
       b.img.x += b.vx * (delta / 1000);
       b.img.y += b.vy * (delta / 1000);
+      // 火の尾
+      if (this.trail && time - b.lastTrail > 120) {
+        b.lastTrail = time;
+        this.trail.emitParticleAt(b.img.x, b.img.y);
+      }
       const out =
         b.img.x < BOSS_ARENA.x - 60 ||
         b.img.x > BOSS_ARENA.x + BOSS_ARENA.w + 60 ||
@@ -196,10 +218,33 @@ export class BossController {
     if (!this.blob) return;
     // sys_en 演出: 火＋火＝炎（プレイヤー使用不可のシステムレシピ §8-2）
     this.world.showFormula('火 ＋ 火 ＝ 炎');
+    this.world.musicStinger(false);
+    this.world.cameras.main.shake(220, 0.005);
     this.blob2 = this.makeBlob(this.blob.x + 60, this.blob.y, 40);
     this.blob.setScale(0.8);
     this.phase = 'p2';
     this.bulletTimer = 1400;
+    // 弾の尾・火の粉の雨
+    this.trail = this.world.add.particles(0, 0, 'flameDrop', {
+      lifespan: 320,
+      scale: { start: 0.7, end: 0 },
+      alpha: { start: 0.55, end: 0 },
+      speed: { min: 4, max: 14 },
+      emitting: false,
+    });
+    this.trail.setDepth(699);
+    this.embers = this.world.add.particles(0, 0, 'inkdot', {
+      x: { min: BOSS_ARENA.x + 30, max: BOSS_ARENA.x + BOSS_ARENA.w - 30 },
+      y: BOSS_ARENA.y + 16,
+      speedY: { min: 28, max: 60 },
+      speedX: { min: -14, max: 14 },
+      lifespan: { min: 1800, max: 3200 },
+      scale: { start: 1.1, end: 0 },
+      alpha: { start: 0.8, end: 0 },
+      frequency: 130,
+      tint: [0xe06a30, 0xf0c060, 0xb03030],
+    });
+    this.embers.setDepth(698);
   }
 
   /** 社の鐘（E）→ ゴーン → 5秒の鎮み。初回のみ「丁」落下（§10） */
@@ -212,7 +257,10 @@ export class BossController {
     this.bullets = [];
     this.blob?.setAlpha(0.4);
     this.blob2?.setAlpha(0.4);
+    this.embers?.stop();
     this.world.cameras.main.shake(160, 0.004);
+    // 鐘の音色が波になって広がり、世界が一拍だけ青ざめる
+    this.bellWave();
     if (!this.bellUsed) {
       this.bellUsed = true;
       this.world.spawnFragment('丁', 1430, 230);
@@ -222,12 +270,43 @@ export class BossController {
     }
   }
 
+  /** 鐘の波紋 — 音が見える */
+  private bellWave(): void {
+    const ring = this.world.add.graphics().setDepth(720);
+    const st = { r: 20, a: 0.7 };
+    this.world.tweens.add({
+      targets: st,
+      r: 420,
+      a: 0,
+      duration: 900,
+      ease: 'Cubic.easeOut',
+      onUpdate: () => {
+        ring.clear();
+        ring.lineStyle(3, 0xd8e4f0, st.a);
+        ring.strokeCircle(1400, 180, st.r);
+        ring.lineStyle(1.4, 0xf5f0e6, st.a * 0.7);
+        ring.strokeCircle(1400, 180, st.r * 0.82);
+      },
+      onComplete: () => ring.destroy(),
+    });
+  }
+
   /** 灯 → RESOLVE（演出本体は WorldScene.runFinale） */
   beginResolve(): { x: number; y: number } {
     this.phase = 'resolve';
     for (const b of this.bullets) b.img.destroy();
     this.bullets = [];
     for (const s of this.swirls) s.stop();
+    this.trail?.destroy();
+    this.trail = null;
+    if (this.embers) {
+      this.embers.stop();
+      const em = this.embers;
+      this.embers = null;
+      this.world.time.delayedCall(3200, () => {
+        if (em.active) em.destroy();
+      });
+    }
     const pos = { x: this.blob?.x ?? BOSS_HOME.x, y: this.blob?.y ?? BOSS_HOME.y };
     this.world.setBossGate(false);
     return pos;

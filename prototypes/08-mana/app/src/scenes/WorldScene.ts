@@ -15,16 +15,18 @@ import {
   DEBUG_SPOTS, DECORS, NPCS, PLAYER_START, RIVER_BRIDGE_GAP, RIVER_SOLID, RIVER_VIEW,
   SHADOW_BLOCKER, STORM_ZONE, TATEFUDA, WALLS, ZONES, type Rect,
 } from '../data/level_village';
+import { makeDecor } from '../entities/Decor';
 import { Dog } from '../entities/Dog';
 import { Nameless } from '../entities/Nameless';
 import {
-  makeBench, makeBridge, makeCrow, makeDecor, makeHole, makeKamadoNamed, makeLantern,
+  makeBench, makeBridge, makeCrow, makeHole, makeKamadoNamed, makeLantern,
   makeOldTree, makePedestal, makePlaque, makeSign, makeStatue, makeWaterwheel, makeWell,
 } from '../entities/NamedThing';
 import { Npc } from '../entities/Npc';
 import { Player } from '../entities/Player';
 import { crystallize } from '../fx/GlyphCrystallize';
 import { inkBurst } from '../fx/InkParticles';
+import { inkCover, inkReveal } from '../fx/Transitions';
 import { BossController } from '../systems/BossController';
 import { ColorSystem } from '../systems/ColorSystem';
 import { getCtx, type Ctx } from '../systems/context';
@@ -44,6 +46,9 @@ interface FragmentPickup {
   glyph: string;
   cont: Phaser.GameObjects.Container;
   hidden: boolean;
+  // 浮遊アニメで cont.y が揺れるため、拾得判定は設置座標で行う
+  baseX: number;
+  baseY: number;
 }
 
 export class WorldScene extends Phaser.Scene implements WorldApi {
@@ -85,6 +90,9 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
   private lastStormToast = 0;
   private lastDarkWarn = 0;
   private holeUsed = false;
+  private stepAcc = 0;
+  private moodAcc = 0;
+  private battleVeil: Phaser.GameObjects.Image | null = null;
 
   constructor() {
     super('World');
@@ -109,9 +117,12 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
     this.cutscene = false;
     this.listenHold = 0;
     this.holeUsed = false;
+    this.stepAcc = 0;
+    this.moodAcc = 0;
+    this.battleVeil = null;
 
     this.cameras.main.setBackgroundColor(COLORS.paperStr);
-    this.cameras.main.fadeIn(600, 13, 12, 11);
+    inkReveal(this);
 
     this.buildGround();
     const walls = this.buildWalls();
@@ -136,6 +147,7 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
     if (this.shadowWall) this.physics.add.collider(this.player, this.shadowWall);
     this.physics.add.collider(this.player, this.gateWall);
 
+    this.buildAmbient();
     this.hud = new Hud(this, this.ctx);
     this.boss = new BossController(this);
     this.listenRing = this.add.graphics().setDepth(900);
@@ -147,7 +159,14 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
         w: kb.addKey('W'), a: kb.addKey('A'), s: kb.addKey('S'), d: kb.addKey('D'),
         e: kb.addKey('E'), z: kb.addKey('Z'), q: kb.addKey('Q'), x: kb.addKey('X'),
       };
+      kb.on('keydown-M', () => {
+        const muted = this.ctx.audio.toggleMute();
+        this.toast(muted ? 'おと: オフ' : 'おと: オン');
+      });
     }
+
+    this.ctx.music.start();
+    this.ctx.music.setMood(this.ctx.flags.has('boss_done') ? 'celebrate' : 'village');
 
     this.scene.launch('Dialogue');
     this.dlg = this.scene.get('Dialogue') as DialogueScene;
@@ -199,12 +218,134 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
       { x: rv.x + rv.w / 2, y: rv.y + rv.h / 2 },
       'river',
     );
-    const flow = this.add.graphics().setDepth(4);
-    flow.lineStyle(2, 0xffffff, 0.35);
+    // 岸辺の白い縁取り
+    const bank = this.add.graphics().setDepth(4);
+    bank.lineStyle(2.5, 0xffffff, 0.45);
+    bank.lineBetween(rv.x + 2, rv.y, rv.x + 2, rv.y + rv.h);
+    bank.lineBetween(rv.x + rv.w - 2, rv.y, rv.x + rv.w - 2, rv.y + rv.h);
+    bank.lineStyle(1.2, 0x6a8a90, 0.5);
+    bank.lineBetween(rv.x + 7, rv.y, rv.x + 7, rv.y + rv.h);
+    bank.lineBetween(rv.x + rv.w - 7, rv.y, rv.x + rv.w - 7, rv.y + rv.h);
+    // 流れの筋（ゆらゆら動く）
     for (let i = 0; i < 7; i++) {
       const fy = rv.y + 60 + i * 75;
-      flow.lineBetween(rv.x + 25, fy, rv.x + 70, fy + 14);
+      const streak = this.add
+        .image(rv.x + 30 + (i % 3) * 35, fy, 'streak')
+        .setTint(0xffffff)
+        .setAlpha(0.4)
+        .setScale(2.2, 1.4)
+        .setAngle(78)
+        .setDepth(4);
+      this.tweens.add({
+        targets: streak,
+        y: fy + 46,
+        alpha: 0.12,
+        duration: 1700 + i * 230,
+        repeat: -1,
+        ease: 'Sine.easeIn',
+      });
     }
+    // 木の葉が流れてくる
+    this.time.addEvent({
+      delay: 3800,
+      loop: true,
+      callback: () => {
+        if (this.cutscene) return;
+        const leaf = this.add
+          .image(rv.x + 25 + Math.random() * (rv.w - 50), rv.y + 10, 'leaf')
+          .setDepth(5)
+          .setAlpha(0.95)
+          .setAngle(Math.random() * 360);
+        this.tweens.add({
+          targets: leaf,
+          y: rv.y + rv.h - 16,
+          x: leaf.x + (Math.random() - 0.5) * 40,
+          angle: leaf.angle + 240,
+          duration: 9000,
+          ease: 'Sine.easeInOut',
+          onComplete: () => leaf.destroy(),
+        });
+      },
+    });
+  }
+
+  /** 紙の質感・世界の縁・雲影・靄 — 画面に「絵巻の空気」を流す */
+  private buildAmbient(): void {
+    // 紙の繊維（スクリーン全体に乗算で焼き込む）
+    const grain = this.add
+      .tileSprite(480, 270, 960, 540, 'paper')
+      .setScrollFactor(0)
+      .setDepth(1500)
+      .setAlpha(0.9);
+    grain.setBlendMode(Phaser.BlendModes.MULTIPLY);
+    // ビネット
+    this.add
+      .image(480, 270, 'vignette')
+      .setScrollFactor(0)
+      .setDepth(1501)
+      .setDisplaySize(960, 540)
+      .setAlpha(0.2);
+    // 世界の縁 — 黙に蝕まれた淵
+    const edges: [number, number, number, boolean][] = [
+      [340, 810, 0, false], // 左
+      [2640, 810, 0, true], // 右（反転）
+    ];
+    for (const [x, y, angle, flip] of edges) {
+      this.add
+        .image(x, y, 'edgeInk')
+        .setDisplaySize(210, 1700)
+        .setAngle(angle)
+        .setFlipX(flip)
+        .setDepth(540)
+        .setAlpha(0.6);
+    }
+    this.add.image(1440, 110, 'edgeInk').setDisplaySize(220, 2960).setAngle(90).setDepth(540).setAlpha(0.6);
+    this.add.image(1440, 1510, 'edgeInk').setDisplaySize(220, 2960).setAngle(-90).setDepth(540).setAlpha(0.6);
+    // 雲影 — 大きな薄墨がゆっくり地面を渡る
+    for (let i = 0; i < 3; i++) {
+      const cloud = this.add
+        .image(400 + i * 900, 300 + i * 420, 'glow')
+        .setTint(0x141210)
+        .setAlpha(0.05)
+        .setScale(9 + i * 2)
+        .setDepth(530);
+      this.tweens.add({
+        targets: cloud,
+        x: cloud.x + 1400,
+        y: cloud.y + 160,
+        duration: 52000 + i * 14000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+    }
+    // 靄 — 暗がりの間と丘のふもとに
+    for (const [mx, my, sc] of [
+      [1680, 1020, 3.2],
+      [620, 620, 2.6],
+      [2050, 920, 2.4],
+    ] as const) {
+      const mist = this.add.image(mx, my, 'mist').setAlpha(0.3).setScale(sc, 1.4).setDepth(520);
+      this.tweens.add({
+        targets: mist,
+        x: mx + 70,
+        alpha: 0.16,
+        duration: 7000 + Math.random() * 3000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+    }
+  }
+
+  /** 座標が属するゾーン id（装飾の彩色プレート登録に使う） */
+  private zoneAt(x: number, y: number): string | undefined {
+    for (const z of ZONES) {
+      if (x >= z.rect.x && x <= z.rect.x + z.rect.w && y >= z.rect.y && y <= z.rect.y + z.rect.h) {
+        return z.id;
+      }
+    }
+    return undefined;
   }
 
   private buildWalls(): Phaser.Physics.Arcade.StaticGroup {
@@ -243,7 +384,19 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
   }
 
   private buildDecor(): void {
-    for (const d of DECORS) makeDecor(this, d.type, d.x, d.y, d.s ?? 1);
+    for (const d of DECORS) {
+      const res = makeDecor(this, d.type, d.x, d.y, d.s ?? 1);
+      // 彩色プレートを持つ装飾（鳥居・社・窓灯・花・石灯籠）はフィナーレで色づく
+      if (res.mono && res.color) {
+        this.colorSys.register(
+          `decor_${d.type}_${d.x}_${d.y}`,
+          res.mono as (Phaser.GameObjects.GameObject & { alpha: number })[],
+          res.color as (Phaser.GameObjects.GameObject & { alpha: number })[],
+          { x: d.x, y: d.y },
+          this.zoneAt(d.x, d.y),
+        );
+      }
+    }
     makeSign(this, TATEFUDA.x, TATEFUDA.y);
     // 社の鐘
     const bellDef = entityById('bell');
@@ -413,7 +566,7 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
     cont.setDepth(opts.inDark ? 600 : 10 + y * 0.001);
     this.tweens.add({ targets: cont, y: y - 8, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     if (opts.hidden) cont.setVisible(false);
-    this.fragments.set(id, { glyph, cont, hidden: opts.hidden ?? false });
+    this.fragments.set(id, { glyph, cont, hidden: opts.hidden ?? false, baseX: x, baseY: y });
   }
 
   private buildDark(): void {
@@ -471,6 +624,38 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
     this.player.move(dx, dy, locked, time, delta);
     this.player.setDepth(10 + this.player.y * 0.001);
 
+    // 足音と土埃
+    if (this.player.moving && !locked) {
+      this.stepAcc += delta;
+      if (this.stepAcc >= 295) {
+        this.stepAcc = 0;
+        this.ctx.audio.se('step');
+        const puff = this.add
+          .image(this.player.x + (Math.random() - 0.5) * 10, this.player.y + 4, 'inkdot')
+          .setTint(0xcfc8b8)
+          .setAlpha(0.5)
+          .setScale(1.3)
+          .setDepth(9);
+        this.tweens.add({
+          targets: puff,
+          y: puff.y - 7,
+          scale: 2.4,
+          alpha: 0,
+          duration: 460,
+          onComplete: () => puff.destroy(),
+        });
+      }
+    } else {
+      this.stepAcc = 200;
+    }
+
+    // BGM ムード（500ms ごとに現在地から判定）
+    this.moodAcc += delta;
+    if (this.moodAcc >= 500) {
+      this.moodAcc = 0;
+      this.ctx.music.setMood(this.currentMood());
+    }
+
     if (this.lightOrb) {
       this.lightOrb.x += (this.player.x - this.lightOrb.x) * 0.08;
       this.lightOrb.y += (this.player.y - 30 - this.lightOrb.y) * 0.08;
@@ -500,6 +685,19 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
       this.boss.start();
     }
     this.boss.update(time, delta);
+  }
+
+  /** 現在地と進行から BGM ムードを決める */
+  private currentMood(): 'village' | 'dark' | 'river' | 'hill' | 'shrine' | 'boss' | 'celebrate' {
+    if (this.ctx.flags.has('boss_done')) return 'celebrate';
+    if (this.boss.isFighting()) return 'boss';
+    if (this.playerIn(BOSS_ARENA)) return 'shrine';
+    if (this.darkRT && this.playerIn(DARK_ZONE)) return 'dark';
+    const x = this.player.x;
+    const y = this.player.y;
+    if (x >= 1700 && y >= 900) return 'river';
+    if (y < 660 && x < 1140) return 'hill';
+    return 'village';
   }
 
   private updateStorm(time: number): void {
@@ -624,7 +822,7 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
     let bestD = max;
     for (const [id, f] of this.fragments) {
       if (f.hidden || !f.cont.visible) continue;
-      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, f.cont.x, f.cont.y);
+      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, f.baseX, f.baseY);
       if (d < bestD) {
         bestD = d;
         best = id;
@@ -663,6 +861,7 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
   }
 
   private talkTo(npcId: string): void {
+    this.npcs.get(npcId)?.talkPulse();
     const flags = this.ctx.flags;
     if (npcId === 'kotono') {
       if (!flags.has('p0_done')) this.sayKey('kotono_intro');
@@ -845,6 +1044,8 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
         if (!handled) {
           this.ctx.audio.se('fail');
           this.sayKey('naming_mismatch', { GLYPH: res.glyph });
+        } else {
+          this.ctx.audio.solveJingle();
         }
       },
     });
@@ -938,6 +1139,29 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
 
   endCutscene(): void {
     this.cutscene = false;
+  }
+
+  /** ボス戦中の赤いビネット */
+  setBattleVeil(on: boolean): void {
+    if (on && !this.battleVeil) {
+      this.battleVeil = this.add
+        .image(480, 270, 'vignette')
+        .setScrollFactor(0)
+        .setDepth(1490)
+        .setDisplaySize(960, 540)
+        .setTint(0xb03030)
+        .setAlpha(0);
+      this.tweens.add({ targets: this.battleVeil, alpha: { from: 0, to: 0.3 }, duration: 900, yoyo: true, repeat: -1 });
+    } else if (!on && this.battleVeil) {
+      const veil = this.battleVeil;
+      this.battleVeil = null;
+      this.tweens.killTweensOf(veil);
+      this.tweens.add({ targets: veil, alpha: 0, duration: 600, onComplete: () => veil.destroy() });
+    }
+  }
+
+  musicStinger(descend = false): void {
+    this.ctx.music.stinger(descend);
   }
 
   setBossGate(on: boolean): void {
@@ -1217,11 +1441,28 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
     this.setFlag('boss_done');
     const lanternPos = { x: 1480, y: 234 };
     this.boss.beginResolve();
+    this.setBattleVeil(false);
     this.boss.convergeTo(lanternPos.x, lanternPos.y - 10, () => {
       const lantern = makeLantern(this, lanternPos.x, lanternPos.y);
       lantern.setScale(0);
       this.tweens.add({ targets: lantern, scale: 1, duration: 500, ease: 'Back.easeOut' });
       this.ctx.audio.se('bell');
+      // 灯籠から光の柱が立ちのぼる
+      const pillar = this.add
+        .image(lanternPos.x, lanternPos.y - 240, 'glow')
+        .setDisplaySize(110, 540)
+        .setTint(0xffe0a0)
+        .setAlpha(0)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(840);
+      this.tweens.add({
+        targets: pillar,
+        alpha: { from: 0, to: 0.75 },
+        duration: 700,
+        yoyo: true,
+        hold: 600,
+        onComplete: () => pillar.destroy(),
+      });
       this.time.delayedCall(900, () => this.colorizeAllSequence(() => this.afterColorize()));
     });
   }
@@ -1259,15 +1500,67 @@ export class WorldScene extends Phaser.Scene implements WorldApi {
   private afterColorize(): void {
     this.plaqueText.setText('灯し村').setFontSize(15).setColor('#B03030');
     this.hud.revealSister();
+    this.startCelebration();
     this.sayKey('boss_resolve', undefined, () => {
       this.sayKey('sister_voice', { SISTER: SISTER_NAME }, () => {
-        this.time.delayedCall(900, () => {
-          this.cameras.main.fadeOut(1600, 245, 240, 230);
-          this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-            this.scene.start('EndCard');
-          });
+        this.time.delayedCall(1300, () => {
+          inkCover(this, () => this.scene.start('EndCard'));
         });
       });
+    });
+  }
+
+  /** 彩色後の世界 — 花弁が舞い、鳥が空を渡る */
+  private startCelebration(): void {
+    this.ctx.music.setMood('celebrate');
+    this.time.addEvent({
+      delay: 650,
+      loop: true,
+      callback: () => {
+        const view = this.cameras.main.worldView;
+        const x = view.x + Math.random() * view.width;
+        const y = view.y - 16;
+        const p = this.add
+          .image(x, y, 'petal')
+          .setDepth(545)
+          .setAlpha(0.95)
+          .setAngle(Math.random() * 360)
+          .setScale(0.8 + Math.random() * 0.5);
+        this.tweens.add({
+          targets: p,
+          x: x - 130 - Math.random() * 130,
+          y: y + view.height + 60,
+          angle: p.angle + 380,
+          duration: 6600 + Math.random() * 2600,
+          ease: 'Sine.easeIn',
+          onComplete: () => p.destroy(),
+        });
+      },
+    });
+    this.time.addEvent({
+      delay: 15000,
+      loop: true,
+      callback: () => {
+        const view = this.cameras.main.worldView;
+        for (let i = 0; i < 3; i++) {
+          const bird = this.add
+            .text(view.x - 60 - i * 50, view.y + 70 + i * 26, '鳥', {
+              fontFamily: FONT, fontSize: `${18 - i * 3}px`, color: '#3A5A80',
+            })
+            .setDepth(546)
+            .setAlpha(0.75)
+            .setResolution(2);
+          this.tweens.add({ targets: bird, scaleY: { from: 0.8, to: 1.1 }, duration: 260, yoyo: true, repeat: -1 });
+          this.tweens.add({
+            targets: bird,
+            x: view.x + view.width + 80,
+            y: bird.y - 50,
+            duration: 9000 + i * 700,
+            onComplete: () => bird.destroy(),
+          });
+        }
+        this.ctx.audio.se('bird');
+      },
     });
   }
 

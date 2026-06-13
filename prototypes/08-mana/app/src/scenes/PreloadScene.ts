@@ -2,7 +2,7 @@
 
 import Phaser from 'phaser';
 import { COLORS, GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { makeInkTextures } from '../fx/InkParticles';
+import { makeAllTextures } from '../fx/Textures';
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -19,7 +19,7 @@ export class PreloadScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    makeInkTextures(this);
+    makeAllTextures(this);
 
     const fontLoad = Promise.all([
       document.fonts.load('500 32px "Shippori Mincho"'),

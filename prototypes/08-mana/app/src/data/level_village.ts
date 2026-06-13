@@ -83,30 +83,69 @@ export const COLORIZE_PAN: { x: number; y: number; zone: string }[] = [
 ];
 
 export interface DecorDef {
-  type: 'tree' | 'stone' | 'grass' | 'torii' | 'house' | 'shrineHouse';
+  type:
+    | 'tree'
+    | 'pine'
+    | 'stone'
+    | 'grass'
+    | 'flower'
+    | 'torii'
+    | 'house'
+    | 'shrineHouse'
+    | 'fence'
+    | 'stoneLantern'
+    | 'path';
   x: number;
   y: number;
   s?: number;
 }
 
 export const DECORS: DecorDef[] = [
+  // 建物・社
   { type: 'house', x: 525, y: 780 },
   { type: 'shrineHouse', x: 1480, y: 150 },
   { type: 'torii', x: 1180, y: 250 },
+  // 木々
   { type: 'tree', x: 440, y: 1100, s: 1 },
   { type: 'tree', x: 1080, y: 700, s: 0.8 },
   { type: 'tree', x: 2480, y: 1100, s: 1.1 },
   { type: 'tree', x: 2240, y: 1190, s: 0.9 },
   { type: 'tree', x: 1620, y: 1400, s: 1 },
   { type: 'tree', x: 420, y: 200, s: 0.9 },
+  { type: 'tree', x: 1280, y: 1180, s: 0.85 },
+  { type: 'tree', x: 2520, y: 1380, s: 0.95 },
+  { type: 'pine', x: 1700, y: 330, s: 1.1 },
+  { type: 'pine', x: 1260, y: 170, s: 0.9 },
+  { type: 'pine', x: 640, y: 150, s: 0.85 },
+  // 石・草・花
   { type: 'stone', x: 950, y: 1080 },
   { type: 'stone', x: 1280, y: 1380 },
   { type: 'stone', x: 720, y: 240 },
+  { type: 'stone', x: 2160, y: 1300, s: 0.7 },
   { type: 'grass', x: 880, y: 1020 },
   { type: 'grass', x: 1540, y: 1230 },
   { type: 'grass', x: 2300, y: 1330 },
   { type: 'grass', x: 600, y: 470 },
   { type: 'grass', x: 1340, y: 900 },
+  { type: 'grass', x: 520, y: 950 },
+  { type: 'grass', x: 1750, y: 1100 },
+  { type: 'grass', x: 2450, y: 1240 },
+  { type: 'grass', x: 800, y: 380 },
+  { type: 'flower', x: 905, y: 1035 },
+  { type: 'flower', x: 560, y: 935 },
+  { type: 'flower', x: 1565, y: 1245 },
+  { type: 'flower', x: 2320, y: 1345, s: 1.1 },
+  { type: 'flower', x: 1360, y: 915 },
+  { type: 'flower', x: 825, y: 395, s: 0.9 },
+  { type: 'flower', x: 2425, y: 1255 },
+  // 柵・敷石・石灯籠
+  { type: 'fence', x: 470, y: 690 },
+  { type: 'fence', x: 1100, y: 1170, s: 0.9 },
+  { type: 'path', x: 760, y: 845, s: 0.9 },
+  { type: 'path', x: 1320, y: 255, s: 1 },
+  { type: 'stoneLantern', x: 1255, y: 305 },
+  { type: 'stoneLantern', x: 1610, y: 300 },
+  { type: 'stoneLantern', x: 640, y: 800, s: 0.9 },
 ];
 
 export const PLAYER_START = { x: 700, y: 900 };
