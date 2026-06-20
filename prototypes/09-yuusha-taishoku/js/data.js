@@ -97,7 +97,7 @@ DATA.policies = [
     desc: '有給取得率・残業削減・福利厚生を公表。世間に「意外とまとも」を刷り込む。',
     risk: '勇者に「印象操作では？」と警戒されるかも',
     effect() {
-      State.add('seken', 16);
+      State.add('seken', 18);
       State.add('mayoi', 4);
       State.bump('kingdom_pr_risk', 6);
     },
@@ -116,7 +116,7 @@ DATA.policies = [
     risk: '勇者に警戒される',
     effect() {
       const boost = State.flag('recon_warrior') ? 8 : 0; // 諜報で不満を掴んでいれば強化
-      State.add('nakama', 18 + boost);
+      State.add('nakama', 20 + boost);
       State.bump('warrior_pull', 1);
     },
     result: { scene: 'flyer', cap: '街道に落ちた求人チラシを、戦士ガルドが拾った。' },
@@ -133,8 +133,8 @@ DATA.policies = [
     desc: '魔族医師による無料診療所を村に開く。世間の評判と、勇者の迷いに効く。',
     risk: '王国に「前線基地」と誤解される',
     effect() {
-      State.add('seken', 14);
-      State.add('mayoi', 10);
+      State.add('seken', 16);
+      State.add('mayoi', 12);
       State.bump('village_support', 12);
       State.bump('misunderstood', 1); // 王国の誤解報道イベントの呼び水
     },
@@ -153,7 +153,7 @@ DATA.policies = [
     risk: 'バレると警戒される',
     effect() {
       State.setFlag('recon_father', true);  // 謝罪会見・夜の独白・最終面談が解放/強化
-      State.add('mayoi', 3);
+      State.add('mayoi', 4);
     },
     result: { scene: 'spy', cap: '諜報員が勇者の故郷を訪れた。——勇者は「父に認められたい」という思いで旅を続けている。' },
     talk: [
@@ -171,7 +171,7 @@ DATA.policies = [
     risk: '世間の評判は少し下がるかも',
     effect() {
       const boost = State.flag('recon_father') ? 14 : 0; // 過去を知った上での会見は刺さる
-      State.add('mayoi', 16 + boost);
+      State.add('mayoi', 22 + boost);
       State.add('seken', -4);
       State.bump('maou_rapport', 1);
     },
@@ -189,8 +189,8 @@ DATA.policies = [
     desc: 'ダンジョンの罠に注意看板を立て、安全基準を整える。世間の評判に効く。',
     risk: '勇者一行が、ダンジョンを楽に越えてしまう',
     effect() {
-      State.add('seken', 12);
-      State.add('mayoi', 4);
+      State.add('seken', 14);
+      State.add('mayoi', 6);
       State.bump('dungeon_safe', 1);
     },
     result: { scene: 'sign', cap: '落とし穴の前に「この先、落とし穴」の看板が立った。' },
@@ -208,7 +208,7 @@ DATA.policies = [
     risk: '王国との対立が強まる',
     requires: 'misreport', // 王国の誤解報道イベント後に解放
     effect() {
-      State.add('seken', 16);
+      State.add('seken', 18);
       State.add('mayoi', 5);
       State.bump('kingdom_conflict', 1);
     },
@@ -226,8 +226,8 @@ DATA.policies = [
     desc: '魔族の孤児院に、僧侶ミリアを招く。仲間（僧侶）と勇者の迷いに効く。',
     risk: '教会の反発を招く',
     effect() {
-      State.add('nakama', 12);
-      State.add('mayoi', 9);
+      State.add('nakama', 14);
+      State.add('mayoi', 12);
       State.setFlag('priest_shaken', true);
       State.bump('church_backlash', 8);
     },
@@ -246,7 +246,7 @@ DATA.policies = [
     risk: '機密漏洩のリスク',
     effect() {
       const boost = State.flag('recon_warrior') ? 4 : 0;
-      State.add('nakama', 16 + boost);
+      State.add('nakama', 18 + boost);
       State.setFlag('mage_hooked', true);
     },
     result: { scene: 'research', cap: '魔法使いノエルが、宿屋で資料を読みふけっている。' },
@@ -280,7 +280,7 @@ DATA.reconExtra = [
     title: '王国の不正資料を入手',
     desc: '王国広報の裏側を掴む。最終面談で「王国の嘘」を突けるようになる。',
     risk: 'きわどい橋。露見すれば評判が揺れる',
-    effect() { State.setFlag('recon_kingdom', true); State.add('seken', 6); },
+    effect() { State.setFlag('recon_kingdom', true); State.add('seken', 8); },
     result: { scene: 'spy', cap: '一枚の書類。王国は、診療所が無害だと“知った上で”侵略拠点と発表していた。' },
     talk: [
       { who: 'shadow', text: '……書類一枚。だが、これで充分だ。' },
@@ -318,7 +318,7 @@ DATA.events = [
   {
     id: 'monologue', once: true,
     cond: () => State.stage('mayoi') >= 2,
-    run() { State.setFlag('mayoi_open', true); State.add('mayoi', 6); }, // 以後、迷いが進みやすい
+    run() { State.setFlag('mayoi_open', true); State.add('mayoi', 8); }, // 以後、迷いが進みやすい
     scene: 'monologue',
     lines: [
       { who: 'narr', text: '夜。焚き火のそばで、勇者がひとり、口をひらいた。' },

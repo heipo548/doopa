@@ -248,6 +248,9 @@ const UI = (() => {
     E['ending-badge'].textContent = e.badge; E['ending-badge'].classList.toggle('bad', !e.good);
     E['ending-title'].textContent = e.title;
     E['ending-body'].innerHTML = e.body.replace(/\n/g, '<br>');
+    // カードに good/bad を付け、入場アニメを毎回再生し直す
+    const card = E['ov-ending'].querySelector('.ending-card');
+    if (card) { card.classList.toggle('good', e.good); card.classList.toggle('bad', !e.good); card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; }
     E['ov-ending'].classList.remove('hidden');
     document.body.dataset.scene = 'ending';
     E['ending-replay'].onclick = () => { endingActive = false; E['ov-ending'].classList.add('hidden'); SFX.play('select'); onReplay && onReplay(); };

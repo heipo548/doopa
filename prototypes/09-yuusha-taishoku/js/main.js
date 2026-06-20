@@ -9,6 +9,7 @@ const Game = (() => {
   let last = 0, t = 0;
   let phase = 'title';
   let resultTap = null;     // 演出シーンをタップで進めるためのコールバック
+  let montageSkip = null;   // 部署モンタージュをタップで飛ばすためのコールバック
   let newsLog = [];
 
   /* ── 起動 ── */
@@ -94,32 +95,68 @@ const Game = (() => {
         ],
         onChoice: (ch) => {
           if (ch.id === 'meeting') { tutorialResolve(); return; }
+          // 攻撃を選ぶと「和平の腕輪」がアップになる（なぜ殴れないかを画で見せる）
+          showThroneless('bracelet', '— 和平の腕輪 —');
           SFX.play('bracelet');
           UI.runDialogue([
-            { who: 'narr',  text: '——魔王の腕で、和平の腕輪が、強く光った。' },
+            { who: 'narr',  text: '——魔王の腕で、和平の腕輪が、燃えるように光った。' },
             { who: 'belze', text: '魔王様、その腕輪を、お忘れですか。' },
-            { who: 'belze', text: '人間を傷つければ——魔族の村を守る、結界が消えます。' },
-            { who: 'maou',  text: '勇者ひとりのために、民を危険にさらすわけには、いかないか。' },
+            { who: 'belze', text: '人間を傷つけたその時、魔族の村を守る結界が……消えます。' },
+            { who: 'maou',  text: '……勇者ひとりのために、民を危険にさらすわけには、いかないか。' },
             { who: 'belze', text: 'はい。ですので今回は、殴らずに解決しましょう。' },
             { who: 'maou',  text: '魔王なのに？' },
             { who: 'belze', text: '魔王なのに、です。' },
-          ], tutorialChoice); // もう一度4択へ
+          ], () => { backToThrone(); tutorialChoice(); }); // 玉座に戻してもう一度4択へ
         },
       }
     );
   }
+  // 玉座の間の絵に戻す／別の絵に切替（チュートリアルの場面転換用）
+  function backToThrone() { UI.show('scene'); UI.setSceneDraw((c, tt) => Sprites.scene(c, 'throne_meeting', tt)); UI.sceneCaption('— 魔王城・玉座の間 —'); }
+  function showThroneless(scene, cap) { UI.show('scene'); UI.setSceneDraw((c, tt) => Sprites.scene(c, scene, tt)); UI.sceneCaption(cap || ''); }
+
   function tutorialResolve() {
+    backToThrone();
     UI.runDialogue([
       { who: 'belze', text: 'では——勇者を倒すのではなく、勇者が「戦う理由」を、なくしましょう。' },
       { who: 'narr',  text: '〘 勇者を倒すのではなく、勇者が戦う理由をなくす。〙' },
-      { who: 'belze', text: '勝ち筋は3つ。上の3つのゲージを、どれかひとつ「最大」にできれば、勇者は引き返します。' },
-      { who: 'belze', text: '①勇者の迷い … 最大にすれば、勇者は剣を置く（退職）。\n②仲間の不満 … 最大にすれば、パーティーは解散。\n③世間の評判 … 最大にすれば、王国が討伐を中止。' },
-      { who: 'belze', text: '広報・人事・福祉・諜報。各部署をまわって、1週に施策を1つ。水晶で勇者のようすを見て、私のところで週を進めてください。' },
-      { who: 'belze', text: 'さあ、魔王様。あなたの“運営”を、はじめましょう。勇者の到着まで、あと10週です。' },
-    ], () => {
-      State.tutorialDone = true; State.save();
-      backToField('各部署で施策を1つ。水晶で観察し、玉座のベルゼで次の週へ。');
-    });
+      { who: 'belze', text: '攻め筋は、三つ。' },
+      { who: 'belze', text: 'ひとつ、勇者本人の心を、揺らす。\nひとつ、仲間の心を、離れさせる。\nひとつ、世間の風向きを、変える。' },
+      { who: 'belze', text: 'どれを深く攻めるかは、魔王様しだい。——手は、各部署が持っています。' },
+    ], () => runDeptMontage(() => {
+      backToThrone();
+      UI.runDialogue([
+        { who: 'belze', text: '1週に、施策はひとつだけ。同じ手は二度は打てません。水晶で勇者のようすを見て、私のところで週を進めてください。' },
+        { who: 'maou',  text: '……わかった。会議を、始めよう。' },
+        { who: 'belze', text: 'はい。勇者の到着まで——あと10週です。' },
+      ], () => {
+        State.tutorialDone = true; State.save();
+        backToField('各部署で施策を1つ。水晶で観察し、玉座のベルゼで次の週へ。');
+      });
+    }));
+  }
+
+  // 各部署をパンパンとフォーカス表示するモンタージュ（タップで飛ばせる）
+  function runDeptMontage(onDone) {
+    phase = 'cutscene'; UI.show('scene');
+    const beats = [
+      { scene: 'focus_pr',      cap: '広報室 ── パズズ。\n世間の、風向きを変える。' },
+      { scene: 'focus_hr',      cap: '人事室 ── リリム。\n仲間を、引き抜く。' },
+      { scene: 'focus_welfare', cap: '福祉室 ── オーク看護長。\n村と、勇者の心に効く。' },
+      { scene: 'focus_recon',   cap: '諜報室 ── シャドウ。\n次の一手を、仕込む。' },
+    ];
+    let i = 0, done = false, tmr = null;
+    function finish() { if (done) return; done = true; clearTimeout(tmr); montageSkip = null; onDone(); }
+    function step() {
+      if (i >= beats.length) { finish(); return; }
+      const b = beats[i++];
+      UI.setSceneDraw((c, tt) => Sprites.scene(c, b.scene, tt));
+      UI.sceneCaption(b.cap + '\n（タップでスキップ）');
+      SFX.play('cursor');
+      tmr = setTimeout(step, 900);
+    }
+    montageSkip = finish;
+    step();
   }
 
   /* ════════════ 調べる：相手ごとの分岐 ════════════ */
@@ -139,19 +176,17 @@ const Game = (() => {
   function talkBelze() {
     phase = 'dialogue';
     UI.runDialogue(DATA.belzeHint(), () => {
-      if (State.policyDone) {
-        // 施策済み→次の週へ進めるか聞く（選択後にオーバーレイは UI 側で閉じる）
-        UI.runDialogue([{ who: 'belze', text: '今週の手は、打ちました。次の週へ進みますか？' }], null, {
-          choices: [
-            { id: 'next', label: '▶ 次の週へ進む', hint: '勇者がさらに近づく' },
-            { id: 'stay', label: '× まだ城を歩く' },
-          ],
-          onChoice: (ch) => { if (ch.id === 'next') advanceWeek(); else unlockField(); },
-        });
-      } else {
-        // まだ施策していない→案内して城へ戻す
-        UI.runDialogue([{ who: 'belze', text: 'まずは各部署で、今週の施策を1つ。水晶で勇者を見てから、私のところへ。' }], unlockField);
-      }
+      // 施策の有無に関わらず週は進められる（詰み防止）。ただし未実施なら一言うながす。
+      const prompt = State.policyDone
+        ? '今週の手は、打ちました。次の週へ進みますか？'
+        : 'まだ今週の手を打っていません。各部署で施策を1つ、おすすめします。——それでも、進めますか？';
+      UI.runDialogue([{ who: 'belze', text: prompt }], null, {
+        choices: [
+          { id: 'next', label: '▶ 次の週へ進む', hint: '勇者がさらに近づく' },
+          { id: 'stay', label: '× まだ城を歩く' },
+        ],
+        onChoice: (ch) => { if (ch.id === 'next') advanceWeek(); else unlockField(); },
+      });
     });
   }
 
@@ -168,15 +203,15 @@ const Game = (() => {
     UI.runDialogue([{ who: thing.char, text: greet }], () => openDeptPolicies(thing));
   }
   function openDeptPolicies(thing) {
-    // この部署の施策一覧を作る
+    // この部署の施策一覧を作る。一度実施した施策は「実施済み」で選べない（同じ手は二度打てない）。
     let list = DATA.policies.filter(p => p.dept === thing.dept).map(p => ({
-      policy: p, spent: false,
+      policy: p, spent: State.isPolicyDone(p.id),
       locked: p.requires && !State.flag(p.requires),
       lockMsg: p.id === 'rebut' ? '王国の誤解報道のあとで解放される' : 'まだ解放されていない',
     }));
     // 諜報室は過去調査の後、追加の情報施策が出る
     if (thing.dept === '諜報室' && State.reconUnlocked) {
-      DATA.reconExtra.forEach(p => { if (!State.flag(p.id)) list.push({ policy: p, spent: false, locked: false }); });
+      DATA.reconExtra.forEach(p => { if (!State.flag(p.id)) list.push({ policy: p, spent: State.isPolicyDone(p.id), locked: false }); });
     }
     UI.openPolicy(thing.dept, list,
       (policy) => execPolicy(policy),
@@ -205,6 +240,7 @@ const Game = (() => {
     // 施策の前後で可視状態の段階を比較し、好転したら「キラッ」を鳴らす（手応えの強化）
     const before = ['mayoi', 'nakama', 'seken'].map(m => State.stage(m));
     State.policyDone = true; State.lastPolicy = policy;
+    State.markPolicyDone(policy.id); // この施策は二度と打てない（実施済みに）
     policy.effect();
     stageUp = ['mayoi', 'nakama', 'seken'].some((m, i) => State.stage(m) > before[i]);
     if (policy.id === 'recon_past') State.reconUnlocked = true;
@@ -367,6 +403,7 @@ const Game = (() => {
         return;
       }
       if (phase === 'result') { if (k === ' ' || k === 'Enter' || k === 'z' || k === 'Z') { e.preventDefault(); if (resultTap) resultTap(); } return; }
+      if (phase === 'cutscene') { if (k === ' ' || k === 'Enter' || k === 'z' || k === 'Z') { e.preventDefault(); if (montageSkip) montageSkip(); } return; }
       if (phase === 'field') {
         const map = { ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down', ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' };
         if (map[k]) { e.preventDefault(); Field.tryMove(map[k]); }
@@ -386,6 +423,7 @@ const Game = (() => {
     document.getElementById('view-scene').addEventListener('click', () => {
       if (UI.dialogueActive()) return;
       if (phase === 'result' && resultTap) resultTap();
+      else if (phase === 'cutscene' && montageSkip) montageSkip();
     });
 
     // フィールドのタップ移動／調べる
@@ -396,6 +434,7 @@ const Game = (() => {
     if (UI.endingShown() || UI.helpOpen() || UI.policyOpen()) return;
     if (UI.dialogueActive()) { if (dir === 'act' || dir === 'down') UI.advance(); return; }
     if (phase === 'result') { if (dir === 'act' && resultTap) resultTap(); return; }
+    if (phase === 'cutscene') { if (dir === 'act' && montageSkip) montageSkip(); return; }
     if (phase !== 'field') return;
     if (dir === 'act') Field.interact();
     else Field.tryMove(dir);

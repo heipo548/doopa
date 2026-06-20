@@ -307,20 +307,33 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
   border-top: 1px solid var(--stone); padding-top: 10px; }
 
 /* ── エンディング ── */
-.ending-overlay { justify-content: center; align-items: center; background: rgba(6,4,10,0.92); }
+.ending-overlay { justify-content: center; align-items: center;
+  background: radial-gradient(120% 90% at 50% 30%, rgba(40,28,60,0.96), rgba(4,3,7,0.97)); }
 .ending-card {
-  width: calc(100% - 28px); max-width: 400px; max-height: 92%; overflow-y: auto;
+  width: calc(100% - 28px); max-width: 400px; max-height: 94%; overflow-y: auto;
   text-align: center; padding: 4px 0 18px;
+  animation: endIn 0.7s cubic-bezier(.2,.8,.2,1) both;
 }
-#ending-canvas { width: 100%; max-width: 340px; border-radius: 10px; border: 1px solid var(--stone); }
+@keyframes endIn { from { opacity: 0; transform: translateY(24px) scale(0.95); } to { opacity: 1; transform: none; } }
+#ending-canvas { width: 100%; max-width: 360px; border-radius: 10px; border: 2px solid var(--stone);
+  box-shadow: 0 6px 30px rgba(0,0,0,0.6); }
+.ending-card.good #ending-canvas { border-color: var(--gold); box-shadow: 0 0 34px rgba(255,215,106,0.3); }
+.ending-card.bad  #ending-canvas { border-color: var(--blood); box-shadow: 0 0 34px rgba(224,85,107,0.3); }
 .ending-badge {
-  display: inline-block; margin: 14px 0 4px; padding: 4px 16px; border-radius: 20px;
-  font-size: 12px; letter-spacing: 2px; background: var(--gold); color: #2a1f06; font-weight: bold;
+  display: inline-block; margin: 16px 0 4px; padding: 5px 20px; border-radius: 20px;
+  font-size: 12px; letter-spacing: 3px; background: var(--gold); color: #2a1f06; font-weight: bold;
+  animation: badgePop 0.5s ease 0.35s both;
 }
+@keyframes badgePop { from { opacity: 0; transform: scale(0.5); } 60% { transform: scale(1.12); } to { opacity: 1; transform: scale(1); } }
 .ending-badge.bad { background: var(--blood); color: #2a0a0e; }
-.ending-title { color: var(--ink); font-size: 24px; margin: 6px 18px 12px; }
-.ending-body { font-family: var(--font-read); color: var(--ink-dim); font-size: 14px; line-height: 1.85; margin: 0 22px 18px; text-align: left; white-space: pre-wrap; }
+.ending-title { color: var(--ink); font-size: 26px; margin: 8px 18px 14px; letter-spacing: 1px;
+  text-shadow: 0 2px 0 #1a1228, 0 0 22px rgba(255,215,106,0.4); animation: badgePop 0.6s ease 0.5s both; }
+.ending-card.bad .ending-title { text-shadow: 0 2px 0 #1a0810, 0 0 22px rgba(224,85,107,0.45); }
+.ending-body { font-family: var(--font-read); color: var(--ink-dim); font-size: 14px; line-height: 1.9; margin: 0 22px 18px; text-align: left; white-space: pre-wrap;
+  animation: fadeUp 0.7s ease 0.7s both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .ending-body b { color: var(--amber); }
+.ending-overlay .big-btn { animation: fadeUp 0.6s ease 1s both; }
 
 /* ── トースト ── */
 .toast {

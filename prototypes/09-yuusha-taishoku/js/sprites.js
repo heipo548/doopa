@@ -169,6 +169,18 @@ const Sprites = (() => {
   }
   function ground(c, col, y) { px(c, 0, y, 320, 240 - y, col); }
   function star(c, t) { for (let i = 0; i < 30; i++) { const x = (i * 53) % 320, y = (i * 29) % 120; const a = 0.4 + 0.6 * Math.abs(Math.sin(t / 600 + i)); c.fillStyle = `rgba(255,255,255,${a * 0.7})`; c.fillRect(x, y, 1, 1); } }
+  // 部署フォーカス（スポットライトで1人を照らす）
+  function deptFocus(c, char, accent, t) {
+    bg(c, '#0c0a16', '#050409');
+    const g = c.createRadialGradient(160, 118, 8, 160, 118, 150);
+    g.addColorStop(0, accent + '66'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = g; c.fillRect(0, 0, 320, 240);
+    c.fillStyle = 'rgba(255,255,255,0.06)'; c.beginPath(); c.ellipse(160, 200, 72, 18, 0, 0, Math.PI * 2); c.fill();
+    chibi(c, char, 160, 202, 7.2, t, false);
+    c.strokeStyle = accent; c.lineWidth = 3; c.strokeRect(7, 7, 306, 226);
+    // 四隅のアクセント
+    [[7, 7], [313, 7], [7, 233], [313, 233]].forEach(([x, y]) => { px(c, x - 5, y - 1, 11, 2, accent); px(c, x - 1, y - 5, 2, 11, accent); });
+  }
 
   function scene(c, key, t) {
     c.clearRect(0, 0, 320, 240);
@@ -268,45 +280,111 @@ const Sprites = (() => {
         const fy = 150 + Math.sin(t / 300) * 2; px(c, 150, fy, 18, 13, '#f2e6c8'); px(c, 153, fy + 3, 12, 1, '#3a2c1c'); px(c, 153, fy + 6, 9, 1, '#3a2c1c'); px(c, 153, fy + 9, 11, 1, '#3a2c1c');
         chibi(c, 'noel', 244, 188, 3, t, false); // 見ているノエル
         break; }
+      case 'bracelet': { // 和平の腕輪・クローズアップ（なぜ殴れないかを画で）
+        bg(c, '#1a0a14', '#070306');
+        const pulse = 0.45 + 0.55 * Math.abs(Math.sin(t / 170));
+        for (let i = 0; i < 14; i++) { const a = i * Math.PI / 7 + t / 1400; c.strokeStyle = `rgba(224,85,107,${0.10 * pulse})`; c.lineWidth = 2; c.beginPath(); c.moveTo(160, 116); c.lineTo(160 + Math.cos(a) * 220, 116 + Math.sin(a) * 220); c.stroke(); }
+        c.save(); c.translate(160, 120); c.rotate(-0.28);
+        px(c, -96, -20, 192, 42, '#6b4a86'); px(c, -96, -20, 192, 6, '#9166ad'); px(c, -96, 16, 192, 6, '#4a2f63'); // 前腕
+        px(c, -20, -30, 40, 62, '#caa84a'); px(c, -20, -30, 40, 6, '#ffe39a'); px(c, -20, 26, 40, 6, '#8a6a1a'); // 腕輪
+        px(c, -20, -4, 40, 8, '#a88a3a');
+        c.fillStyle = `rgba(255,${(70 + 130 * pulse) | 0},110,1)`; c.beginPath(); c.arc(0, 1, 12, 0, Math.PI * 2); c.fill(); // 宝玉
+        c.fillStyle = `rgba(255,255,255,${0.7 * pulse})`; c.beginPath(); c.arc(-4, -3, 3.5, 0, Math.PI * 2); c.fill();
+        c.restore();
+        // 下：明滅する結界に守られた村（消えかけ＝賭けるもの）
+        const vx = 160, vy = 210;
+        px(c, vx - 30, vy, 60, 6, '#243024'); px(c, vx - 18, vy - 12, 12, 12, '#5a4a3a'); px(c, vx + 6, vy - 12, 12, 12, '#5a4a3a'); px(c, vx - 14, vy - 16, 8, 4, '#b8472f'); px(c, vx + 10, vy - 16, 8, 4, '#b8472f');
+        c.strokeStyle = `rgba(120,200,255,${0.55 * (1 - pulse * 0.7)})`; c.lineWidth = 2; c.beginPath(); c.arc(vx, vy, 28, Math.PI, 0); c.stroke();
+        break; }
+      case 'focus_pr':      deptFocus(c, 'pazuzu', '#e07a4a', t); break;
+      case 'focus_hr':      deptFocus(c, 'ririmu', '#e0a23a', t); break;
+      case 'focus_welfare': deptFocus(c, 'ork',    '#5fae6a', t); break;
+      case 'focus_recon':   deptFocus(c, 'shadow', '#6a8aff', t); break;
       default: bg(c, '#241a38', '#0e0a16');
     }
   }
 
-  /* ── エンディング絵（320x180） ── */
+  /* ── エンディング絵（320x180・アニメ＆粒子つき） ── */
   function ending(c, key, t) {
     c.clearRect(0, 0, 320, 180);
     const bgE = (a, b) => { const g = c.createLinearGradient(0, 0, 0, 180); g.addColorStop(0, a); g.addColorStop(1, b); c.fillStyle = g; c.fillRect(0, 0, 320, 180); };
+    const starsE = (col) => { for (let i = 0; i < 26; i++) { const x = (i * 61) % 320, y = (i * 37) % 90; const a = 0.3 + 0.6 * Math.abs(Math.sin(t / 500 + i)); c.fillStyle = (col || `rgba(255,255,255,${a})`); c.fillRect(x, y, 1, 1); } };
     switch (key) {
-      case 'end_retire': // パン屋
-        bgE('#ffce8a', '#d98a4a'); px(c, 0, 130, 320, 50, '#8a5a2a');
-        px(c, 110, 60, 100, 70, '#f2d6a8'); px(c, 100, 52, 120, 10, '#b8472f'); px(c, 150, 90, 22, 40, '#6a4a2a');
-        px(c, 118, 74, 30, 10, '#e0556b'); // 看板
-        chibi(c, 'leon', 70, 168, 3.2, t, false);
-        // 花輪
-        c.strokeStyle = '#6fcf7f'; c.lineWidth = 3; c.beginPath(); c.arc(250, 100, 16, 0, Math.PI * 2); c.stroke();
-        break;
-      case 'end_disband': // それぞれの道
-        bgE('#3a2f5a', '#15101f'); px(c, 0, 140, 320, 40, '#241a38');
-        chibi(c, 'garud', 60, 165, 2.6, t, false); chibi(c, 'miria', 120, 165, 2.6, t, false);
-        chibi(c, 'noel', 180, 165, 2.6, t, false); chibi(c, 'leon', 250, 165, 2.6, t, false);
-        for (let i = 0; i < 4; i++) px(c, 50 + i * 60, 150, 1, 12, 'rgba(255,255,255,0.3)');
-        break;
-      case 'end_treaty': // 旗と日の出
-        bgE('#ffd76a', '#ff9a5a'); px(c, 0, 120, 320, 60, '#3a5a3a');
-        c.fillStyle = '#fff4c0'; c.beginPath(); c.arc(160, 120, 40, Math.PI, 0); c.fill();
-        px(c, 150, 70, 4, 60, '#5a3a1a'); px(c, 154, 70, 30, 18, '#e0556b'); px(c, 158, 76, 22, 8, '#fff');
-        break;
-      case 'end_meeting': // 会議室で握手手前
-        bgE('#241a38', '#0e0a16'); px(c, 0, 120, 320, 60, '#1a1430');
-        px(c, 110, 96, 100, 14, '#4a3a2a'); // テーブル
-        chibi(c, 'maou', 120, 96, 3, t, false); chibi(c, 'leon', 200, 96, 3, t, false);
-        break;
-      case 'end_fight': // バッドエンド：書類
-        bgE('#1a0e14', '#080406'); chibi(c, 'leon', 110, 150, 3.4, t, false); chibi(c, 'maou', 210, 150, 3.4, t, false);
-        // 腕輪の光
-        const g = 0.4 + 0.4 * Math.abs(Math.sin(t / 200)); c.fillStyle = `rgba(255,90,107,${g})`; c.fillRect(196, 130, 8, 4);
-        for (let i = 0; i < 6; i++) px(c, 30 + i * 50, 40 + (i % 2) * 20, 14, 18, '#e8e0d0'); // 舞う書類
-        break;
+      case 'end_retire': { // パン屋（夕日・湯気・舞う花びら）
+        bgE('#ffd79a', '#e08a4a');
+        c.fillStyle = '#fff0c0'; c.beginPath(); c.arc(270, 36, 22, 0, Math.PI * 2); c.fill(); // 夕日
+        px(c, 0, 132, 320, 48, '#9a6230'); px(c, 0, 132, 320, 3, '#c98a4a'); // 地面
+        // パン屋
+        px(c, 96, 56, 128, 78, '#f3d9aa'); px(c, 86, 46, 148, 12, '#b8472f'); // 屋根
+        for (let i = 0; i < 7; i++) px(c, 90 + i * 22, 46, 11, 12, i % 2 ? '#b8472f' : '#e8e0d0'); // ストライプ庇
+        px(c, 150, 92, 24, 42, '#7a4a26'); px(c, 168, 110, 3, 3, '#ffd76a'); // ドア
+        px(c, 110, 80, 24, 18, '#3a2a52'); px(c, 190, 80, 24, 18, '#3a2a52'); // 窓
+        px(c, 116, 64, 30, 9, '#e0556b'); px(c, 120, 66, 22, 2, '#fff'); // 看板「PAN」
+        // パン陳列＋湯気
+        for (let i = 0; i < 3; i++) { px(c, 112 + i * 28, 120, 14, 8, '#caa063'); const sy = 112 - (t / 30 + i * 40) % 30; c.fillStyle = `rgba(255,255,255,${0.18})`; c.fillRect(116 + i * 28, sy, 3, 6); }
+        chibi(c, 'leon', 60, 170, 3.4, t, false); px(c, 52, 158, 16, 10, '#f0f0f0'); // エプロン
+        // 花輪（魔王軍からの祝い）
+        c.strokeStyle = '#6fcf7f'; c.lineWidth = 4; c.beginPath(); c.arc(262, 120, 17, 0, Math.PI * 2); c.stroke();
+        for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + t / 800; px(c, 262 + Math.cos(a) * 17 - 1, 120 + Math.sin(a) * 17 - 1, 3, 3, i % 2 ? '#e0556b' : '#ffd76a'); }
+        px(c, 258, 100, 8, 5, '#e0556b'); // リボン
+        // 舞う花びら
+        for (let i = 0; i < 10; i++) { const x = (i * 71 + t / 20) % 320, y = (i * 53 + t / 12) % 170; c.fillStyle = `rgba(255,${150 + i * 8},190,0.8)`; c.fillRect(x, y, 2, 2); }
+        break; }
+      case 'end_disband': { // それぞれの道（夜・分かれ道・遠ざかる4人）
+        bgE('#2a2350', '#0e0a1c'); starsE();
+        // 分かれ道（消失点へ）
+        c.fillStyle = '#1a1530'; c.beginPath(); c.moveTo(160, 70); c.lineTo(20, 180); c.lineTo(300, 180); c.fill();
+        for (let i = 0; i < 4; i++) { c.strokeStyle = 'rgba(180,180,220,0.25)'; c.lineWidth = 1; c.beginPath(); c.moveTo(160, 72); c.lineTo(20 + i * 90, 180); c.stroke(); }
+        px(c, 156, 60, 8, 14, '#5a4a3a'); px(c, 150, 58, 20, 6, '#caa23a'); // 道標
+        // 遠ざかる4人（手前ほど大きく散る）
+        const wob = Math.sin(t / 220) * 1;
+        chibi(c, 'garud', 50, 172 + wob, 2.6, t, true); chibi(c, 'miria', 116, 150, 2.0, t, true);
+        chibi(c, 'noel', 208, 150, 2.0, t, true); chibi(c, 'leon', 280, 172 - wob, 2.6, t, true);
+        // 各自のランタン
+        [[50, 160], [116, 140], [208, 140], [280, 160]].forEach(([x, y]) => { c.fillStyle = `rgba(255,200,120,${0.5 + 0.3 * Math.sin(t / 200 + x)})`; c.beginPath(); c.arc(x + 6, y, 3, 0, Math.PI * 2); c.fill(); });
+        break; }
+      case 'end_treaty': { // 共存・夜明け（回る光条・はためく旗・鳩）
+        bgE('#ffe09a', '#ff8f5a');
+        // 回転する光条
+        c.save(); c.translate(160, 150);
+        for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6 + t / 1600; c.fillStyle = 'rgba(255,250,210,0.18)'; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(a - 0.06) * 240, Math.sin(a - 0.06) * 240); c.lineTo(Math.cos(a + 0.06) * 240, Math.sin(a + 0.06) * 240); c.fill(); }
+        c.restore();
+        c.fillStyle = '#fff6cc'; c.beginPath(); c.arc(160, 150, 46, Math.PI, 0); c.fill(); // 朝日
+        px(c, 0, 150, 320, 30, '#3f6a3f'); px(c, 0, 150, 320, 3, '#5fae6a'); // 緑の丘
+        // はためく旗
+        const sway = Math.sin(t / 200) * 4;
+        px(c, 150, 78, 4, 74, '#5a3a1a');
+        c.fillStyle = '#e0556b'; c.beginPath(); c.moveTo(154, 80); c.lineTo(196 + sway, 86); c.lineTo(196 + sway, 104); c.lineTo(154, 100); c.fill();
+        px(c, 160, 86, 22, 3, '#fff'); px(c, 160, 92, 16, 3, '#fff');
+        // 村の家
+        px(c, 60, 134, 16, 16, '#8a5a3a'); px(c, 244, 132, 18, 18, '#8a5a3a'); px(c, 58, 128, 20, 7, '#b8472f'); px(c, 242, 126, 22, 7, '#b8472f');
+        // 飛ぶ鳩
+        for (let i = 0; i < 4; i++) { const x = (60 + i * 70 + t / 18) % 340 - 10, y = 44 + Math.sin(t / 300 + i) * 8; const f = Math.sin(t / 90 + i) * 4; c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.moveTo(x - 5, y + f); c.lineTo(x, y); c.lineTo(x + 5, y + f); c.stroke(); }
+        break; }
+      case 'end_meeting': { // 最終面談・会議室（茶の湯気・あたたかい灯）
+        bgE('#3a2c4e', '#14102a');
+        c.fillStyle = 'rgba(255,200,120,0.16)'; c.beginPath(); c.arc(160, 70, 60, 0, Math.PI * 2); c.fill(); // ランプの光
+        px(c, 156, 20, 8, 26, '#3a2a1a'); px(c, 146, 44, 28, 10, '#ffd76a'); // 吊りランプ
+        px(c, 70, 120, 180, 16, '#5a4326'); px(c, 70, 116, 180, 4, '#7a5a36'); // テーブル
+        chibi(c, 'maou', 110, 122, 3.2, t, false); chibi(c, 'leon', 210, 122, 3.2, t, false);
+        chibi(c, 'belze', 285, 128, 2.2, t, false); // 隅のベルゼ
+        // 茶碗＋湯気
+        [140, 180].forEach(x => { px(c, x, 110, 9, 6, '#cfd6e8'); for (let i = 0; i < 3; i++) { const sy = 108 - (t / 26 + i * 22) % 26; c.fillStyle = 'rgba(255,255,255,0.22)'; c.fillRect(x + 4, sy, 2, 5); } });
+        px(c, 156, 108, 12, 4, '#e8e0d0'); // 書類（剣ではなく）
+        break; }
+      case 'end_fight': { // 討伐続行・法務部（書類の山・舞う紙・腕輪の光）
+        bgE('#241620', '#080406');
+        px(c, 0, 150, 320, 30, '#1a1018');
+        // 書類の山
+        for (let i = 0; i < 5; i++) px(c, 40 + i * 4, 120 - i * 6, 70 - i * 4, 8, i % 2 ? '#e8e0d0' : '#cfc7ba');
+        for (let i = 0; i < 5; i++) px(c, 210 + i * 4, 124 - i * 5, 64 - i * 4, 8, i % 2 ? '#e8e0d0' : '#cfc7ba');
+        // 「法務部」デスクの札
+        px(c, 132, 96, 56, 14, '#3a2c4a'); px(c, 138, 100, 44, 2, '#9ad'); px(c, 138, 105, 30, 2, '#9ad');
+        chibi(c, 'leon', 90, 150, 3.2, t, false); chibi(c, 'maou', 230, 150, 3.4, t, false);
+        const gl = 0.4 + 0.45 * Math.abs(Math.sin(t / 200)); c.fillStyle = `rgba(255,90,107,${gl})`; c.fillRect(218, 132, 9, 4); // 腕輪
+        // 延々と舞う書類
+        for (let i = 0; i < 9; i++) { const x = (i * 47 + t / 14) % 330 - 8, y = (i * 31 + t / 22) % 130 + 10, r = (t / 200 + i); c.save(); c.translate(x, y); c.rotate(r); c.fillStyle = 'rgba(232,224,214,0.9)'; c.fillRect(-7, -9, 14, 18); c.fillStyle = '#9a8'; c.fillRect(-4, -5, 8, 1); c.fillRect(-4, -1, 6, 1); c.restore(); }
+        break; }
       default: bgE('#241a38', '#0e0a16');
     }
   }
