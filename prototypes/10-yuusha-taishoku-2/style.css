@@ -1,0 +1,430 @@
+/* =========================================================================
+   勇者、退職させます。 — style.css
+   ねらい：ドット絵 × ダークファンタジー（魔王城）の色温度。
+   依存ゼロ・モバイル縦持ち優先。数値を出さない UI のための「状態チップ」を用意。
+   ========================================================================= */
+
+:root {
+  /* 魔王城のパレット（暗い紫＝石、琥珀＝松明、羊皮紙＝会話窓） */
+  --bg0:        #15101d;   /* 一番奥の闇 */
+  --bg1:        #1d1630;   /* 城の石壁 */
+  --bg2:        #2a2142;   /* 床・パネル */
+  --stone:      #3a2f54;
+  --ink:        #ece4ff;   /* 明るい文字 */
+  --ink-dim:    #b3a6cf;
+  --amber:      #ffb454;   /* 松明・アクセント */
+  --amber-deep: #d97a2b;
+  --blood:      #e0556b;   /* 危険・敵意 */
+  --leaf:       #6fcf7f;   /* 好転・福祉 */
+  --sky:        #6db5ff;   /* 情報・諜報 */
+  --gold:       #ffd76a;   /* 勝利 */
+  --parch:      #f2e6c8;   /* 羊皮紙 */
+  --parch-ink:  #3a2c1c;   /* 羊皮紙の文字 */
+  --shadow:     rgba(0,0,0,0.5);
+
+  /* タイトル・見出し・HUD などの“ドット感を出したい所”用 */
+  --font: 'DotGothic16', 'Yusei Magic', 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
+  /* 会話・説明など“長めに読む文字”用（読みやすさ優先） */
+  --font-read: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; padding: 0;
+  height: 100%;
+  background: var(--bg0);
+  color: var(--ink);
+  font-family: var(--font);
+  overscroll-behavior: none;
+  -webkit-user-select: none; user-select: none;
+}
+
+body {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100dvh;
+  /* 城の奥行きを感じる放射グラデ */
+  background:
+    radial-gradient(120% 80% at 50% -10%, #2a2142 0%, var(--bg0) 70%);
+  transition: background 0.6s ease;
+}
+body[data-scene="title"]   { background: radial-gradient(120% 90% at 50% 0%, #34204a 0%, #0d0814 75%); }
+body[data-scene="ending"]  { background: radial-gradient(120% 90% at 50% 20%, #20183a 0%, #08060e 80%); }
+
+/* ── ゲームフレーム（縦長 9:16 寄り。画面に収まるよう拡大縮小） ── */
+#stage {
+  position: relative;
+  width: min(100vw, 480px);
+  height: min(100dvh, 860px);
+  aspect-ratio: 9 / 16;
+  max-height: 100dvh;
+  background: var(--bg1);
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0,0,0,0.7), inset 0 0 60px rgba(0,0,0,0.4);
+  display: flex; flex-direction: column;
+}
+
+.view { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.hidden { display: none !important; }
+
+/* canvas は全部ドット感を保つ */
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+/* =========================================================================
+   タイトル
+   ========================================================================= */
+#view-title {
+  align-items: center; justify-content: center; text-align: center;
+  padding: 24px; gap: 10px;
+}
+.title-art canvas { width: 200px; height: 100px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6)); }
+.title-main {
+  font-size: clamp(22px, 7.4vw, 33px); margin: 6px 0 0; letter-spacing: 0;
+  color: var(--ink); white-space: nowrap;
+  text-shadow: 0 2px 0 #2a1640, 0 0 18px rgba(255,180,84,0.25);
+}
+.title-sub { color: var(--amber); font-size: 13px; margin: 0; }
+.title-tag {
+  font-family: var(--font-read); color: var(--ink-dim); font-size: 14px; line-height: 1.8; margin: 14px 0 6px;
+  border-top: 1px solid var(--stone); border-bottom: 1px solid var(--stone);
+  padding: 12px 8px;
+}
+.title-foot { color: var(--ink-dim); opacity: 0.6; font-size: 11px; margin-top: 8px; }
+
+.big-btn {
+  font-family: var(--font); font-size: 18px; color: #2a1206;
+  background: linear-gradient(180deg, var(--amber) 0%, var(--amber-deep) 100%);
+  border: none; border-radius: 10px; padding: 14px 28px; margin-top: 14px;
+  cursor: pointer; box-shadow: 0 4px 0 #8a4a17, 0 6px 14px rgba(0,0,0,0.4);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.big-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #8a4a17; }
+.text-btn {
+  font-family: var(--font); background: none; border: none; color: var(--ink-dim);
+  font-size: 14px; cursor: pointer; text-decoration: underline; padding: 6px;
+}
+
+/* =========================================================================
+   城フェーズ HUD
+   ========================================================================= */
+#hud {
+  flex: 0 0 auto; padding: 8px 10px 6px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.35), transparent);
+  z-index: 5;
+}
+.hud-top { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.hud-week { color: var(--gold); font-weight: bold; }
+.hud-distance { color: var(--ink-dim); margin-left: auto; }
+.hud-distance b { color: var(--blood); font-size: 15px; }
+.hud-help {
+  width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--stone);
+  background: var(--bg2); color: var(--ink-dim); font-family: var(--font);
+  cursor: pointer; font-size: 13px; line-height: 1; padding: 0;
+}
+
+/* 3つの可視状態チップ（数値を出さない＝顔＋状態名＋段階バー） */
+.state-bar { display: flex; gap: 6px; margin-top: 7px; }
+.state-chip {
+  flex: 1; background: var(--bg2); border: 1px solid var(--stone);
+  border-radius: 8px; padding: 5px 6px; min-width: 0;
+  transition: box-shadow 0.3s, border-color 0.3s;
+}
+.state-chip.pulse { animation: chipPulse 0.7s ease; }
+@keyframes chipPulse {
+  0% { box-shadow: 0 0 0 rgba(255,215,106,0); }
+  35% { box-shadow: 0 0 16px rgba(255,215,106,0.8); border-color: var(--gold); }
+  100% { box-shadow: 0 0 0 rgba(255,215,106,0); }
+}
+.chip-top { display: flex; align-items: center; gap: 4px; }
+.chip-face { width: 20px; height: 20px; flex: 0 0 auto; }
+.chip-label { font-size: 10px; color: var(--ink-dim); line-height: 1.15; }
+.chip-state { font-family: var(--font-read); font-weight: 700; font-size: 12px; color: var(--ink); margin-top: 3px; line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip-pips { display: flex; gap: 2px; margin-top: 4px; }
+.pip { flex: 1; height: 4px; border-radius: 2px; background: var(--stone); }
+.pip.on { background: var(--accent, var(--amber)); }
+.state-chip.s-mayoi  { --accent: var(--blood); }
+.state-chip.s-nakama { --accent: var(--amber); }
+.state-chip.s-seken  { --accent: var(--leaf); }
+
+/* =========================================================================
+   フィールド canvas
+   ========================================================================= */
+.canvas-wrap {
+  flex: 1 1 auto; position: relative; display: flex;
+  align-items: center; justify-content: center; min-height: 0;
+  padding: 4px;
+}
+#field-canvas, #scene-canvas {
+  width: 100%; height: 100%; object-fit: contain; display: block;
+}
+.field-label {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  background: rgba(20,12,30,0.92); border: 1px solid var(--amber);
+  color: var(--amber); padding: 6px 14px; border-radius: 20px; font-size: 13px;
+  font-family: var(--font-read); white-space: nowrap; pointer-events: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+.field-msg {
+  flex: 0 0 auto; min-height: 22px; text-align: center; font-size: 13px;
+  font-family: var(--font-read); color: var(--ink-dim); padding: 2px 12px;
+}
+
+/* ── タッチ操作 ── */
+.touch-controls { flex: 0 0 auto; padding: 4px 0 12px; text-align: center; }
+.dpad {
+  display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px);
+  justify-content: center; gap: 4px; margin: 0 auto;
+}
+.dbtn {
+  font-family: var(--font); background: var(--bg2); color: var(--ink);
+  border: 1px solid var(--stone); border-radius: 10px; font-size: 16px;
+  cursor: pointer; touch-action: manipulation;
+  box-shadow: 0 2px 0 #120c1e;
+}
+.dbtn:active { transform: translateY(2px); box-shadow: none; background: var(--stone); }
+.dbtn.up    { grid-area: 1 / 2; }
+.dbtn.left  { grid-area: 2 / 1; }
+.dbtn.act   { grid-area: 2 / 2; background: var(--amber-deep); color: #2a1206; font-size: 20px; }
+.dbtn.right { grid-area: 2 / 3; }
+.dbtn.down  { grid-area: 3 / 2; }
+.ctrl-hint { font-size: 10px; color: var(--ink-dim); opacity: 0.7; margin-top: 6px; padding: 0 8px; }
+
+/* =========================================================================
+   演出シーン
+   ========================================================================= */
+#view-scene { background: #0a0710; }
+.scene-caption {
+  flex: 0 0 auto; padding: 14px 18px 22px; text-align: center;
+  font-family: var(--font-read); font-size: 15px; line-height: 1.75; color: var(--ink); min-height: 40px;
+}
+
+/* =========================================================================
+   オーバーレイ（共通）
+   ========================================================================= */
+.overlay {
+  position: absolute; inset: 0; z-index: 20;
+  display: flex; flex-direction: column; justify-content: flex-end;
+}
+
+/* ── 会話ウィンドウ ── */
+.dialogue-overlay { justify-content: flex-end; }
+.dialogue-box {
+  position: relative; margin: 10px auto; padding: 12px;
+  max-width: 560px; /* §12：横に広げすぎない（読みやすさ優先） */
+  background: linear-gradient(180deg, #2a2142, #1d1630);
+  border: 2px solid var(--amber-deep); border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+  display: flex; gap: 10px; align-items: flex-start;
+  min-height: 116px;
+}
+.dia-portrait {
+  flex: 0 0 auto; width: 52px; height: 52px; border-radius: 8px;
+  background: #120c1e; border: 1px solid var(--stone); overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+#dia-face { width: 48px; height: 48px; image-rendering: pixelated; }
+.dia-body { flex: 1 1 auto; min-width: 0; }
+.dia-name { color: var(--amber); font-size: 13px; margin-bottom: 4px; }
+.dia-text { font-family: var(--font-read); color: var(--ink); font-size: 16px; line-height: 1.7;
+  min-height: 52px; white-space: pre-wrap; letter-spacing: 0.02em; }
+.dia-next {
+  position: absolute; right: 14px; bottom: 10px; color: var(--amber);
+  animation: bob 0.9s infinite; font-size: 14px;
+}
+.dia-next.hidden { display: none; }
+@keyframes bob { 0%,100% { transform: translateY(0); opacity:0.6 } 50% { transform: translateY(3px); opacity:1 } }
+
+/* 選択肢 */
+.dia-choices { position: absolute; left: 0; right: 0; bottom: 138px; padding: 0 14px;
+  display: flex; flex-direction: column; gap: 8px; }
+.dia-choice {
+  font-family: var(--font-read); text-align: left; font-size: 15px; color: var(--ink);
+  background: rgba(30,22,48,0.96); border: 1px solid var(--stone);
+  border-left: 4px solid var(--amber); border-radius: 8px; padding: 11px 14px;
+  cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  transition: transform 0.06s, background 0.15s;
+}
+.dia-choice:active { transform: scale(0.985); }
+.dia-choice:hover { background: var(--stone); }
+.dia-choice .hint { display: block; font-size: 11px; color: var(--ink-dim); margin-top: 3px; }
+
+/* ── 施策メニュー ── */
+.policy-overlay { justify-content: center; align-items: center; background: rgba(8,5,14,0.7); }
+.policy-panel {
+  width: calc(100% - 24px); max-width: 380px; max-height: 80%;
+  background: var(--bg1); border: 2px solid var(--stone); border-radius: 14px;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+}
+.policy-head {
+  display: flex; align-items: center; padding: 12px 14px;
+  background: linear-gradient(180deg, #34264e, #251c3c); border-bottom: 1px solid var(--stone);
+}
+.policy-dept { font-size: 15px; color: var(--amber); flex: 1; }
+.x-btn {
+  font-family: var(--font); background: none; border: none; color: var(--ink-dim);
+  font-size: 18px; cursor: pointer; padding: 2px 6px; line-height: 1;
+}
+.policy-list { overflow-y: auto; padding: 8px; -webkit-overflow-scrolling: touch; }
+.policy-item {
+  width: 100%; text-align: left; font-family: var(--font);
+  background: var(--bg2); border: 1px solid var(--stone); border-radius: 10px;
+  padding: 11px 12px; margin-bottom: 8px; cursor: pointer; color: var(--ink);
+  transition: transform 0.06s, border-color 0.15s;
+}
+.policy-item:active { transform: scale(0.99); }
+.policy-item:hover { border-color: var(--amber); }
+.policy-item.spent { opacity: 0.4; pointer-events: none; }
+.policy-item.locked { opacity: 0.55; }
+.pi-title { font-family: var(--font-read); font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+.pi-aim { font-size: 11px; padding: 1px 7px; border-radius: 10px; color: #14100c; font-weight: bold; }
+.aim-yuusha { background: var(--blood); }
+.aim-nakama { background: var(--amber); }
+.aim-seken  { background: var(--leaf); }
+.aim-recon  { background: var(--sky); }
+.pi-desc { font-family: var(--font-read); font-size: 13px; color: var(--ink-dim); margin-top: 5px; line-height: 1.6; }
+.pi-eff { font-family: var(--font-read); font-size: 11.5px; color: var(--leaf); margin-top: 4px; }
+.pi-risk { font-size: 11px; color: var(--blood); margin-top: 4px; opacity: 0.9; }
+.pi-tag  { font-size: 10px; color: var(--sky); margin-top: 4px; }
+.policy-foot { padding: 9px 12px; font-size: 11px; color: var(--ink-dim); border-top: 1px solid var(--stone); text-align: center; }
+.policy-foot b { color: var(--amber); }
+
+/* ── ヘルプ ── */
+.help-overlay { justify-content: center; align-items: center; background: rgba(8,5,14,0.82); }
+.help-panel {
+  position: relative; width: calc(100% - 28px); max-width: 380px; max-height: 86%;
+  overflow-y: auto; background: var(--bg1); border: 2px solid var(--amber-deep);
+  border-radius: 14px; padding: 18px 18px 24px; line-height: 1.7;
+}
+.help-panel { font-family: var(--font-read); }
+.help-panel h2 { font-family: var(--font); color: var(--amber); font-size: 15px; margin: 14px 0 6px; }
+.help-panel h2:first-of-type { margin-top: 6px; }
+.help-panel p { font-size: 13.5px; color: var(--ink); margin: 6px 0; }
+.help-panel i { color: var(--blood); font-style: normal; }
+.help-panel b { color: var(--gold); }
+.help-panel ul { margin: 6px 0; padding-left: 4px; list-style: none; }
+.help-panel li { font-size: 13.5px; margin: 5px 0; }
+.help-mini { font-size: 11px !important; color: var(--ink-dim) !important; margin-top: 12px !important;
+  border-top: 1px solid var(--stone); padding-top: 10px; }
+
+/* ── ニュース掲示板（カード形式・§10） ── */
+.news-overlay { justify-content: center; align-items: center; background: rgba(8,5,14,0.82); }
+.news-panel {
+  width: calc(100% - 24px); max-width: 420px; max-height: 86%;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--bg1); border: 2px solid var(--stone); border-radius: 14px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+}
+.news-head-bar { display: flex; align-items: center; padding: 12px 14px; font-size: 15px; color: var(--amber);
+  background: linear-gradient(180deg, #34264e, #251c3c); border-bottom: 1px solid var(--stone); }
+.news-head-bar span { flex: 1; }
+.news-list { overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 9px; -webkit-overflow-scrolling: touch; }
+.news-card { background: var(--bg2); border: 1px solid var(--stone); border-left: 4px solid var(--amber);
+  border-radius: 9px; padding: 10px 12px; font-family: var(--font-read); }
+.news-card:first-child { border-left-color: var(--gold); box-shadow: 0 0 14px rgba(255,215,106,0.12); }
+.news-label { font-size: 11px; color: var(--amber); letter-spacing: 1px; margin-bottom: 3px; }
+.news-head { font-size: 14px; font-weight: 700; color: var(--ink); line-height: 1.45; }
+.news-body { font-size: 12.5px; color: var(--ink-dim); line-height: 1.6; margin-top: 4px; }
+.news-foot { padding: 9px 12px; font-size: 11px; color: var(--ink-dim); border-top: 1px solid var(--stone); text-align: center; }
+
+/* ── エンディング ── */
+.ending-overlay { justify-content: center; align-items: center;
+  background: radial-gradient(120% 90% at 50% 30%, rgba(40,28,60,0.96), rgba(4,3,7,0.97)); }
+.ending-card {
+  width: calc(100% - 28px); max-width: 400px; max-height: 94%; overflow-y: auto;
+  text-align: center; padding: 4px 0 18px;
+  animation: endIn 0.7s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes endIn { from { opacity: 0; transform: translateY(24px) scale(0.95); } to { opacity: 1; transform: none; } }
+#ending-canvas { width: 100%; max-width: 360px; border-radius: 10px; border: 2px solid var(--stone);
+  box-shadow: 0 6px 30px rgba(0,0,0,0.6); }
+.ending-card.good #ending-canvas { border-color: var(--gold); box-shadow: 0 0 34px rgba(255,215,106,0.3); }
+.ending-card.bad  #ending-canvas { border-color: var(--blood); box-shadow: 0 0 34px rgba(224,85,107,0.3); }
+.ending-badge {
+  display: inline-block; margin: 16px 0 4px; padding: 5px 20px; border-radius: 20px;
+  font-size: 12px; letter-spacing: 3px; background: var(--gold); color: #2a1f06; font-weight: bold;
+  animation: badgePop 0.5s ease 0.35s both;
+}
+@keyframes badgePop { from { opacity: 0; transform: scale(0.5); } 60% { transform: scale(1.12); } to { opacity: 1; transform: scale(1); } }
+.ending-badge.bad { background: var(--blood); color: #2a0a0e; }
+.ending-title { color: var(--ink); font-size: 26px; margin: 8px 18px 14px; letter-spacing: 1px;
+  text-shadow: 0 2px 0 #1a1228, 0 0 22px rgba(255,215,106,0.4); animation: badgePop 0.6s ease 0.5s both; }
+.ending-card.bad .ending-title { text-shadow: 0 2px 0 #1a0810, 0 0 22px rgba(224,85,107,0.45); }
+.ending-body { font-family: var(--font-read); color: var(--ink-dim); font-size: 14px; line-height: 1.9; margin: 0 22px 18px; text-align: left; white-space: pre-wrap;
+  animation: fadeUp 0.7s ease 0.7s both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.ending-body b { color: var(--amber); }
+.ending-overlay .big-btn { animation: fadeUp 0.6s ease 1s both; }
+
+/* ── トースト ── */
+.toast {
+  position: absolute; left: 50%; top: 64px; transform: translate(-50%, -16px);
+  background: rgba(20,12,30,0.95); border: 1px solid var(--amber); color: var(--amber);
+  padding: 8px 16px; border-radius: 20px; font-size: 13px; z-index: 40;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; white-space: nowrap; max-width: 90%;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ── 週送りの幕 ── */
+.curtain {
+  position: absolute; inset: 0; z-index: 50; background: #08060e;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gold); font-size: 20px; letter-spacing: 2px;
+  opacity: 0; transition: opacity 0.5s; pointer-events: none;
+}
+.curtain.show { opacity: 1; pointer-events: all; }
+
+/* 小さい画面で d-pad を少し縮める */
+@media (max-height: 720px) {
+  .dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
+  .dbtn { font-size: 14px; }
+  .title-art canvas { width: 160px; height: 80px; }
+}
+
+/* ═══════════ proto#10 追加：怖さ・承認印・資料棚 ═══════════ */
+
+/* §3：施策メニューの「担当NPCの怖さの一言」 */
+.pi-fear { font-family: var(--font-read); font-size: 11px; color: var(--ink-dim);
+  margin-top: 5px; padding-left: 7px; border-left: 2px solid var(--stone); line-height: 1.5; font-style: italic; }
+.pi-fear-who { color: var(--amber); font-style: normal; opacity: 0.8; }
+
+/* §2：魔王の承認印（ドンッ）。決定の瞬間、朱の角印が振り下ろされる */
+/* 承認印の約1秒は入力を受け止める実モーダル（下層への素通りを塞ぐ）。閉じる操作は不要（自動で消える） */
+.stamp-overlay { z-index: 60; justify-content: center; align-items: center;
+  background: rgba(8,5,14,0.55); pointer-events: all; }
+.stamp-inner { display: flex; flex-direction: column; align-items: center; gap: 6px;
+  animation: stampSlam 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+@keyframes stampSlam {
+  0%   { transform: translateY(-46px) scale(2.0) rotate(-12deg); opacity: 0; }
+  55%  { transform: translateY(0) scale(0.92) rotate(-7deg); opacity: 1; }
+  70%  { transform: translateY(0) scale(1.06) rotate(-9deg); }
+  100% { transform: translateY(0) scale(1) rotate(-8deg); opacity: 1; }
+}
+#stamp-canvas { width: 150px; height: 150px; image-rendering: pixelated;
+  filter: drop-shadow(0 3px 8px rgba(197,41,43,0.5)); }
+.stamp-label { font-family: var(--font); color: #e85a5c; font-size: 17px; letter-spacing: 2px;
+  text-shadow: 0 2px 0 #2a0a0c; }
+.stamp-sub { font-family: var(--font); color: var(--ink-dim); font-size: 10px; letter-spacing: 3px; opacity: 0.75; }
+
+/* §8：資料棚（集めた書類をカードで読む） */
+.docs-overlay { justify-content: center; align-items: center; background: rgba(8,5,14,0.82); }
+.docs-panel {
+  width: min(92%, 540px); max-height: 82%; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #241c38, #181226);
+  border: 2px solid var(--stone); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+}
+.docs-head-bar { display: flex; align-items: center; padding: 12px 14px; font-size: 15px; color: var(--amber);
+  border-bottom: 1px solid var(--stone); }
+.docs-head-bar span { flex: 1; }
+.docs-list { overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 9px; -webkit-overflow-scrolling: touch; }
+.doc-card { background: var(--parch); color: var(--parch-ink); border-radius: 6px; padding: 10px 12px;
+  border-left: 5px solid var(--amber-deep); box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.doc-label { font-family: var(--font); font-size: 13px; color: #6a4a1a; margin-bottom: 5px; }
+.doc-stat { font-family: var(--font-read); font-size: 13.5px; line-height: 1.55; }
+.doc-note { font-family: var(--font-read); font-size: 11.5px; line-height: 1.5; margin-top: 6px;
+  color: #5a4a36; border-top: 1px dashed #c2b48a; padding-top: 5px; }
+.docs-empty { font-family: var(--font-read); color: var(--ink-dim); font-size: 13px; line-height: 1.7;
+  text-align: center; padding: 28px 18px; }
+.docs-foot { font-family: var(--font-read); font-size: 11px; color: var(--ink-dim);
+  padding: 9px 14px; border-top: 1px solid var(--stone); opacity: 0.85; }
