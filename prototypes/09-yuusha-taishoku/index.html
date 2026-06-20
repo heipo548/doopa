@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>勇者、退職させます。 — 魔王は勇者を倒せない。だから、勇者が戦う理由をなくす。</title>
+  <meta name="description" content="DOOPA プロト#09（体験版）。あなたは和平の腕輪で勇者を攻撃できない魔王。魔王城を歩き、広報・人事・福祉・諜報の施策で、勇者パーティーの心と世間の見方を変えていく。数値は出ない——勇者たちの会話と表情で『効いてる』を読む、2Dドットの魔王軍運営アドベンチャー。" />
+
+  <!-- ドット風の等幅日本語フォント（DotGothic16）。読み込めない/オフラインでも system フォントへ自動フォールバック（依存ゼロを保つ）。 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Yusei+Magic&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<!-- data-scene に現在の画面（title/field/scene/ending）を入れる＝背景の色温度が変わる -->
+<body data-scene="boot">
+
+  <!-- ════════ ゲーム本体（縦長の固定フレーム。中身を画面に合わせて拡大縮小） ════════ -->
+  <div id="stage">
+
+    <!-- ── タイトル ── -->
+    <section id="view-title" class="view">
+      <div class="title-art">
+        <canvas id="title-canvas" width="240" height="120" aria-hidden="true"></canvas>
+      </div>
+      <h1 class="title-main">勇者、退職させます。</h1>
+      <p class="title-sub">2Dドット・魔王軍運営アドベンチャー　体験版</p>
+      <p class="title-tag">魔王は勇者を倒せない。<br>だから、勇者が戦う理由をなくす。</p>
+      <button id="btn-start" class="big-btn">▶ はじめる</button>
+      <button id="btn-continue" class="text-btn hidden">つづきから</button>
+      <p class="title-foot">DOOPA proto#09 ／ 1周 15〜25分</p>
+    </section>
+
+    <!-- ── 城フェーズ（見下ろしマップ） ── -->
+    <section id="view-field" class="view hidden">
+      <!-- 上部HUD：週・距離・3つの可視状態（数値は出さない＝状態名＋顔） -->
+      <div id="hud">
+        <div class="hud-top">
+          <span id="hud-week" class="hud-week">第1週</span>
+          <span id="hud-distance" class="hud-distance" title="勇者パーティーの接近">勇者まで <b>10</b></span>
+          <button id="hud-mute" class="hud-help" title="音 オン/オフ" aria-label="音 オン・オフ">🔊</button>
+          <button id="hud-help" class="hud-help" title="あらすじ・操作">？</button>
+        </div>
+        <div id="state-bar" class="state-bar">
+          <!-- ui.js が3つの状態チップを描く -->
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="field-canvas" width="320" height="240" aria-label="魔王城"></canvas>
+        <!-- 近くで調べられる対象のラベル -->
+        <div id="field-label" class="field-label hidden"></div>
+      </div>
+
+      <div id="field-msg" class="field-msg" aria-live="polite"></div>
+
+      <!-- 仮想十字キー＋決定（スマホ用。PCは WASD/矢印・Space でも操作） -->
+      <div class="touch-controls">
+        <div class="dpad">
+          <button class="dbtn up"    data-dir="up"    aria-label="上">▲</button>
+          <button class="dbtn left"  data-dir="left"  aria-label="左">◀</button>
+          <button class="dbtn act"   data-dir="act"   aria-label="決定">●</button>
+          <button class="dbtn right" data-dir="right" aria-label="右">▶</button>
+          <button class="dbtn down"  data-dir="down"  aria-label="下">▼</button>
+        </div>
+        <div class="ctrl-hint">うごく：タップ / WASD・やじるし　しらべる：ちかづいて ● / Space</div>
+      </div>
+    </section>
+
+    <!-- ── 演出・勇者観察などフルスクリーン演出 ── -->
+    <section id="view-scene" class="view hidden">
+      <canvas id="scene-canvas" width="320" height="240" aria-label="演出"></canvas>
+      <div id="scene-caption" class="scene-caption"></div>
+    </section>
+
+  </div>
+
+  <!-- ════════ オーバーレイ群（DOMで重ねる。hidden でトグル） ════════ -->
+
+  <!-- 会話ウィンドウ（NPC・ベルゼ・勇者観察・イベント共通） -->
+  <div id="ov-dialogue" class="overlay dialogue-overlay hidden">
+    <div class="dialogue-box">
+      <div id="dia-portrait" class="dia-portrait">
+        <canvas id="dia-face" width="48" height="48"></canvas>
+      </div>
+      <div class="dia-body">
+        <div id="dia-name" class="dia-name"></div>
+        <div id="dia-text" class="dia-text" aria-live="polite"></div>
+      </div>
+      <div id="dia-next" class="dia-next">▼</div>
+    </div>
+    <!-- 選択肢（チュートリアルや最終面談で使う） -->
+    <div id="dia-choices" class="dia-choices hidden"></div>
+  </div>
+
+  <!-- 施策メニュー（各部署で開く） -->
+  <div id="ov-policy" class="overlay policy-overlay hidden">
+    <div class="policy-panel">
+      <div class="policy-head">
+        <span id="policy-dept" class="policy-dept"></span>
+        <button id="policy-close" class="x-btn" aria-label="とじる">✕</button>
+      </div>
+      <div id="policy-list" class="policy-list"></div>
+      <div class="policy-foot">1ターンに実行できる施策は <b>1つだけ</b>。</div>
+    </div>
+  </div>
+
+  <!-- あらすじ／ヘルプ -->
+  <div id="ov-help" class="overlay help-overlay hidden">
+    <div class="help-panel">
+      <button id="help-close" class="x-btn" aria-label="とじる">✕</button>
+      <h2>あらすじ</h2>
+      <p>あなたは和平を選んだ<b>魔王</b>。だが腕の<b>「和平の腕輪」</b>が誓約をかける——
+        <i>魔王が人間を傷つけた時、魔族の村を守る結界が消える。</i>だから勇者を攻撃できない。</p>
+      <p>魔王軍の支援活動（村の診療所など）は、王国に<b>「侵略準備」</b>と誤解され、勇者レオンが討伐に向かっている。</p>
+      <h2>あなたのやること</h2>
+      <p>毎ターン、考えるのは3つだけ。</p>
+      <ul>
+        <li>🗡 <b>勇者本人を揺らす</b>（迷い）</li>
+        <li>🍻 <b>仲間から崩す</b>（不満）</li>
+        <li>🏘 <b>世間を味方につける</b>（評判）</li>
+      </ul>
+      <p>各部署のNPCに話しかけ、施策を1つ選ぶ。<b>水晶部屋</b>で勇者たちの会話を見て「効いてるか」を読む。
+        数値は出ない。<b>10週後</b>に勇者が城へ着く前に、討伐意欲をなくすか、パーティーを解散させるか、評判を変えて命令を止めよう。</p>
+      <p class="help-mini">操作：移動＝WASD/矢印・画面タップ／調べる＝近づいて Space・●</p>
+    </div>
+  </div>
+
+  <!-- エンディングカード -->
+  <div id="ov-ending" class="overlay ending-overlay hidden">
+    <div class="ending-card">
+      <canvas id="ending-canvas" width="320" height="180"></canvas>
+      <div id="ending-badge" class="ending-badge"></div>
+      <h2 id="ending-title" class="ending-title"></h2>
+      <div id="ending-body" class="ending-body"></div>
+      <button id="ending-replay" class="big-btn">もう一度（タイトルへ）</button>
+    </div>
+  </div>
+
+  <!-- 一時メッセージ -->
+  <div id="toast" class="toast"></div>
+
+  <!-- 週送りの幕（暗転トランジション） -->
+  <div id="curtain" class="curtain hidden"><span id="curtain-text"></span></div>
+
+  <!-- ════════ スクリプト読み込み順（contract）：
+       data → audio → state → sprites → field → crystal → ui → main ════════ -->
+  <script src="js/data.js?v=1"></script>
+  <script src="js/audio.js?v=1"></script>
+  <script src="js/state.js?v=1"></script>
+  <script src="js/sprites.js?v=1"></script>
+  <script src="js/field.js?v=1"></script>
+  <script src="js/crystal.js?v=1"></script>
+  <script src="js/ui.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+</body>
+</html>
