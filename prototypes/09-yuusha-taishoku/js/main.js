@@ -62,6 +62,8 @@ const Game = (() => {
   function runTutorial() {
     if (State.tutorialDone) { phase = 'field'; return; }
     phase = 'dialogue'; Field.lock(true);
+    // 導入は玉座の間の絵を背景に（情景を想像しやすく）
+    UI.show('scene'); UI.setSceneDraw((c, tt) => Sprites.scene(c, 'throne_meeting', tt)); UI.sceneCaption('— 魔王城・玉座の間／定例会議 —');
     const intro = [
       { who: 'belze', text: '次の議題です。村の診療所から、回復魔力の供給量を増やしてほしいと要望が来ています。' },
       { who: 'maou',  text: '冬前だからな。通しておけ。' },
@@ -110,12 +112,13 @@ const Game = (() => {
     UI.runDialogue([
       { who: 'belze', text: 'では——勇者を倒すのではなく、勇者が「戦う理由」を、なくしましょう。' },
       { who: 'narr',  text: '〘 勇者を倒すのではなく、勇者が戦う理由をなくす。〙' },
-      { who: 'belze', text: '各部署をまわって、施策を1つ。水晶で勇者のようすを見て、私のところへ。' },
-      { who: 'belze', text: 'さあ、魔王様。あなたの“運営”を、はじめましょう。' },
+      { who: 'belze', text: '勝ち筋は3つ。上の3つのゲージを、どれかひとつ「最大」にできれば、勇者は引き返します。' },
+      { who: 'belze', text: '①勇者の迷い … 最大にすれば、勇者は剣を置く（退職）。\n②仲間の不満 … 最大にすれば、パーティーは解散。\n③世間の評判 … 最大にすれば、王国が討伐を中止。' },
+      { who: 'belze', text: '広報・人事・福祉・諜報。各部署をまわって、1週に施策を1つ。水晶で勇者のようすを見て、私のところで週を進めてください。' },
+      { who: 'belze', text: 'さあ、魔王様。あなたの“運営”を、はじめましょう。勇者の到着まで、あと10週です。' },
     ], () => {
       State.tutorialDone = true; State.save();
-      Field.lock(false); phase = 'field';
-      UI.fieldMsg('各部署で施策を1つ。水晶で観察し、玉座のベルゼで次の週へ。');
+      backToField('各部署で施策を1つ。水晶で観察し、玉座のベルゼで次の週へ。');
     });
   }
 

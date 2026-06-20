@@ -57,7 +57,8 @@ DATA.map = {
 DATA.states = {
   mayoi:  {
     label: '勇者の迷い', cls: 's-mayoi', icon: '🗡',
-    stages: ['討伐一直線', '違和感', '迷い', '葛藤', '剣を置きそう'],
+    // 段階が上がるほど勇者は揺らぐ。最初は「迷いゼロ＝まっすぐ討伐に来る」状態。
+    stages: ['迷いゼロ', '違和感', '迷いはじめ', '葛藤', '剣を置きそう'],
     faces:  ['angry', 'neutral', 'think', 'sad', 'falter'],
   },
   nakama: {
@@ -318,7 +319,7 @@ DATA.events = [
     id: 'monologue', once: true,
     cond: () => State.stage('mayoi') >= 2,
     run() { State.setFlag('mayoi_open', true); State.add('mayoi', 6); }, // 以後、迷いが進みやすい
-    scene: 'campfire',
+    scene: 'monologue',
     lines: [
       { who: 'narr', text: '夜。焚き火のそばで、勇者がひとり、口をひらいた。' },
       { who: 'leon', text: '俺は、魔王を倒せば何者かになれると思っていた。' },
@@ -331,7 +332,7 @@ DATA.events = [
     id: 'flyer_keep', once: true,
     cond: () => State.stage('nakama') >= 2,
     run() { State.setFlag('warrior_flyer', true); State.add('nakama', 6); }, // 人事施策が強化
-    scene: 'campfire',
+    scene: 'flyer_keep',
     lines: [
       { who: 'narr',  text: '戦士ガルドが、魔王軍の求人広告を——捨てずに、持っていた。' },
       { who: 'garud', text: 'いや、見るだけだ。見るだけなら、裏切りじゃない。' },

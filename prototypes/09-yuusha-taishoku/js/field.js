@@ -177,12 +177,13 @@ const Field = (() => {
         else { ctx.fillStyle = '#241b3a'; ctx.fillRect(x * T + 1, y * T + 1, T - 2, T - 2); }
       }
     }
-    // 部屋名の小さな看板
-    ctx.font = '7px DotGothic16, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    // 部屋名の小さな看板（読みやすいサンセリフで）
+    ctx.font = 'bold 9px "Hiragino Sans","Yu Gothic",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
     M.rooms.forEach(r => {
-      const cx = (r.rx + r.rw / 2) * T, ty = r.ry * T + 8;
-      ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(cx - r.name.length * 4 - 2, ty - 8, r.name.length * 8 + 4, 10);
-      ctx.fillStyle = '#cdbce8'; ctx.fillText(r.name, cx, ty);
+      const cx = (r.rx + r.rw / 2) * T, ty = r.ry * T + 9;
+      const w = ctx.measureText(r.name).width;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(cx - w / 2 - 3, ty - 9, w + 6, 12);
+      ctx.fillStyle = '#e8ddff'; ctx.fillText(r.name, cx, ty);
     });
     // 松明（玉座の左右）でゆらぎ
     [[1, 6], [18, 6], [1, 8], [18, 8]].forEach(([tx, ty]) => {

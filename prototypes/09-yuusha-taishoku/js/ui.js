@@ -211,7 +211,13 @@ const UI = (() => {
             (item.policy.risk ? `<div class="pi-risk">⚠ ${item.policy.risk}</div>` : '') +
             (item.policy.tag ? `<div class="pi-tag">✦ ${item.policy.tag}</div>` : ''));
       if (!item.locked && !item.spent) {
-        b.addEventListener('click', () => { SFX.play('confirm'); const p = item.policy; closePolicy(true); policyOnPick && policyOnPick(p); });
+        b.addEventListener('click', () => {
+          SFX.play('confirm');
+          const p = item.policy;
+          const cb = policyOnPick;   // closePolicy が null 化する前に必ず退避（これを忘れると施策が実行されず固まる）
+          closePolicy(true);
+          if (cb) cb(p);
+        });
       }
       box.appendChild(b);
     });

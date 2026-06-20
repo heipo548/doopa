@@ -243,6 +243,31 @@ const Sprites = (() => {
         px(c, 146, 214, 28, 4, '#4a2f1a');
         chibi(c, 'leon', 110, 210, 3.2, t, false); chibi(c, 'garud', 210, 212, 3.2, t, false);
         break; }
+      case 'throne_meeting': { // 玉座の間・定例会議（導入の絵）
+        bg(c, '#2a2142', '#140e22'); ground(c, '#1d1630', 182);
+        px(c, 34, 36, 12, 150, '#241a3a'); px(c, 274, 36, 12, 150, '#241a3a'); // 柱
+        px(c, 92, 30, 18, 70, '#3a1a4a'); px(c, 210, 30, 18, 70, '#3a1a4a'); // 旗
+        px(c, 96, 38, 10, 26, '#e0556b'); px(c, 214, 38, 10, 26, '#e0556b');
+        throne(c, 160, 150); chibi(c, 'maou', 160, 146, 3.2, t, false);
+        chibi(c, 'belze', 214, 168, 2.8, t, false);        // 軍師
+        const sx = 74 + Math.max(0, Math.sin(t / 320)) * 6; chibi(c, 'soldier', sx, 172, 2.8, t, true); // 駆け込む兵士
+        [58, 262].forEach(x => { px(c, x - 1, 58, 2, 24, '#5a3a1a'); const fl = 3 + Math.sin(t / 120 + x) * 2; c.fillStyle = '#ff8a3a'; c.beginPath(); c.moveTo(x, 52); c.lineTo(x - fl, 60); c.lineTo(x + fl, 60); c.fill(); });
+        break; }
+      case 'monologue': { // 勇者ひとり、焚き火を見つめる
+        bg(c, '#0c0a1a', '#050409'); star(c, t);
+        const fl = 7 + Math.sin(t / 110) * 3;
+        c.fillStyle = 'rgba(255,140,60,' + (0.07 + 0.05 * Math.sin(t / 120)) + ')'; c.fillRect(0, 70, 320, 130); // 火明かりのにじみ
+        c.fillStyle = '#ff8a3a'; c.beginPath(); c.moveTo(120, 168); c.lineTo(120 - fl, 188); c.lineTo(120 + fl, 188); c.fill();
+        c.fillStyle = '#ffd76a'; c.beginPath(); c.moveTo(120, 176); c.lineTo(120 - fl / 2, 188); c.lineTo(120 + fl / 2, 188); c.fill();
+        px(c, 104, 187, 32, 4, '#4a2f1a');
+        chibi(c, 'leon', 198, 178, 5.2, t, false); // 大きめの勇者（横顔の寄り）
+        break; }
+      case 'flyer_keep': { // 戦士がこっそり求人を持っている
+        bg(c, '#0e0c1c', '#06050c'); star(c, t); ground(c, '#1a1626', 182);
+        chibi(c, 'garud', 130, 182, 5, t, false);
+        const fy = 150 + Math.sin(t / 300) * 2; px(c, 150, fy, 18, 13, '#f2e6c8'); px(c, 153, fy + 3, 12, 1, '#3a2c1c'); px(c, 153, fy + 6, 9, 1, '#3a2c1c'); px(c, 153, fy + 9, 11, 1, '#3a2c1c');
+        chibi(c, 'noel', 244, 188, 3, t, false); // 見ているノエル
+        break; }
       default: bg(c, '#241a38', '#0e0a16');
     }
   }
