@@ -36,7 +36,7 @@ const Game = (() => {
   /* ── 新規ゲーム ── */
   function newGame() {
     State.reset();
-    newsLog = ['王国、新たな勇者レオンを任命。「魔王討伐」を布告。'];
+    newsLog = [{ label: '王国発表', head: '新たな勇者レオンを任命', body: '王国は「魔王軍が侵略準備を進めている」として、討伐を布告した。' }];
     UI.syncStages();
     setDistance();
     Field.setPlayer(DATA.map.start[0], DATA.map.start[1]);
@@ -46,7 +46,7 @@ const Game = (() => {
     runTutorial();
   }
   function startLoaded() {
-    newsLog = ['（前回のつづき）'];
+    newsLog = [{ label: '魔王軍内部', head: '（前回のつづき）', body: '定例会議は、まだ続いている。' }];
     UI.syncStages(); setDistance();
     Field.setPlayer(DATA.map.start[0], DATA.map.start[1]);
     UI.show('field'); UI.renderHUD();
@@ -190,41 +190,81 @@ const Game = (() => {
     });
   }
 
-  /* 部署NPC：施策メニュー */
+  /* 部署NPC：あいさつ（前週への反応つき）→ 施策メニュー */
   function talkDept(thing) {
     phase = 'dialogue';
     if (State.policyDone) {
-      UI.runDialogue([
-        { who: thing.char, text: deptBusyLine(thing) },
-      ], unlockField);
+      UI.runDialogue([{ who: thing.char, text: deptBusyLine(thing) }], unlockField);
       return;
     }
-    const greet = deptGreet(thing);
-    UI.runDialogue([{ who: thing.char, text: greet }], () => openDeptPolicies(thing));
+    const lines = [{ who: thing.char, text: deptGreet(thing) }];
+    const react = deptReaction(thing);   // §6：前週の施策・現在地への反応
+    if (react) lines.push({ who: thing.char, text: react });
+    UI.runDialogue(lines, () => openDeptPolicies(thing));
   }
   function openDeptPolicies(thing) {
-    // この部署の施策一覧を作る。一度実施した施策は「実施済み」で選べない（同じ手は二度打てない）。
+    // 実施済み施策は「実施済み」で選べない（同じ手は二度打てない）。
     let list = DATA.policies.filter(p => p.dept === thing.dept).map(p => ({
       policy: p, spent: State.isPolicyDone(p.id),
       locked: p.requires && !State.flag(p.requires),
       lockMsg: p.id === 'rebut' ? '王国の誤解報道のあとで解放される' : 'まだ解放されていない',
     }));
-    // 諜報室は過去調査の後、追加の情報施策が出る
     if (thing.dept === '諜報室' && State.reconUnlocked) {
       DATA.reconExtra.forEach(p => { if (!State.flag(p.id)) list.push({ policy: p, spent: State.isPolicyDone(p.id), locked: false }); });
     }
     UI.openPolicy(thing.dept, list,
-      (policy) => execPolicy(policy),
+      (policy) => confirmPolicy(policy, thing),  // §14：実行前に確認
       () => unlockField()
     );
   }
+  // §14：担当NPCの最後の一言 → 実行/やめる
+  function confirmPolicy(policy, thing) {
+    phase = 'dialogue';
+    const confirm = (policy.confirm && policy.confirm.length) ? policy.confirm.slice()
+      : [{ who: thing.char, text: '……いきますか。' }];
+    UI.runDialogue(confirm, null, {
+      choices: [
+        { id: 'go', label: '▶ 実行する', hint: policy.title },
+        { id: 'cancel', label: '× やめる（他の手を見る）' },
+      ],
+      onChoice: (ch) => { if (ch.id === 'go') execPolicy(policy); else openDeptPolicies(thing); },
+    });
+  }
   function deptGreet(thing) {
     return {
-      pazuzu: 'よっ、魔王様！広報のパズズですよ。世間ウケなら任せて——炎上だけは勘弁してくださいね。',
-      ririmu: 'あら魔王様。人事のリリムよ。いい人材はね、今の職場の不満を“数字”で見せられた瞬間に、ぐらっとくるの。——勇者ご一行、けっこう揺れてるわよ。',
-      ork:    'おお魔王様。福祉のオークだ。こわい顔ですまんな。村の連中の暮らし、よくしてやりたくてな。',
-      shadow: '……シャドウだ。知りたいことが、あるなら。言え。',
+      pazuzu: 'よっ、魔王様！広報のパズズです。広報はタイミング。正しいことも、出す順番を間違えると燃えます。',
+      ririmu: 'あら魔王様。人事のリリムよ。人は理念だけでは旅できないの。家賃、食費、将来不安——そこが入口。',
+      ork:    'おお魔王様。福祉のオークだ。治療を求める相手に、人間も魔族もありません。ただ、旗を立てすぎると基地に見える。',
+      shadow: '……シャドウだ。情報は遅い。だが、最後に刺さる。',
     }[thing.char] || '……';
+  }
+  // §6：前週の施策結果・現在地・フラグに応じた担当NPCの反応（無ければ null）
+  function deptReaction(thing) {
+    const la = State.lastAction, lr = State.lastResult, loc = State.location();
+    if (thing.char === 'pazuzu') {
+      if (la === 'apology' && lr === 'success') return '会見、効いています。勇者レオンが最後まで見ていたようで。「謝れる魔王」、向こうから出た見出しです。';
+      if (la === 'apology' && lr === 'fail') return '見出しが最悪です。“魔王、責任転嫁”。……泣いていいですか。';
+      if (State.flag('kingdomMisreported') && !State.flag('rebuttalSucceeded')) return '王国が“診療所は前線基地”と言い始めました。診療記録と村人証言があれば、反論できます。';
+    }
+    if (thing.char === 'ririmu') {
+      if (la === 'warrior_ad' && lr === 'success') return '戦士様、求人を捨てていません。ポケットに入れました。あれはもう、半分応募よ。';
+      if (la === 'warrior_ad' && lr === 'fail') return '少し早かったわね。団結している相手に求人を投げると、ただの敵対行為。';
+      if (State.flag('warriorComplainedAboutPay')) return '戦士様、報酬の話をしていましたね。今、求人を出せば——ただの広告ではなく“答え”になるわ。';
+      if (loc === 'forestRoad') return '旅が長引くと、本音が出ます。今なら、戦士様に待遇の話が刺さるかも。';
+    }
+    if (thing.char === 'ork') {
+      if (la === 'clinic' && lr === 'success') return '昨夜、人間の母親が子どもを連れてきました。礼は、小さな会釈だけ。それで十分です。';
+      if (la === 'clinic' && lr === 'fail') return '診療所を前線基地と呼ばれました。包帯と薬草しか、置いていないのですが。';
+      if (la === 'orphan' && lr === 'success') return '僧侶様は、魔族の子どもたちと目を合わせていました。もう、以前と同じ目では見られないはず。';
+      if (loc === 'startVillage') return '村人に直接届く施策なら、今が一番伝わりやすいはずです。';
+      if (loc === 'churchCity') return '僧侶様には届くかもしれません。ですが、教会からは強く反発されるでしょう。';
+    }
+    if (thing.char === 'shadow') {
+      if (State.flag('recon_father')) return '勇者は、あなたを見ていない。父親の背中を、見ている。';
+      if (State.flag('recon_kingdom')) return '王国は、嘘をつく時だけ書類が丁寧だ。';
+      if (State.turn >= 9) return '集めた情報は、剣より遅い。だが、剣が届く前に、心へ届くこともある。';
+    }
+    return null;
   }
   function deptBusyLine(thing) {
     return {
@@ -235,43 +275,49 @@ const Game = (() => {
     }[thing.char] || '今週はもう手を打った。';
   }
 
-  /* ════════════ 施策の実行 → 演出 → 観察 ════════════ */
+  /* ════════════ 施策の実行 → 演出 → 観察（Ver.3.0：結果分岐） ════════════ */
+  let stageUp = false;
+  let lastOutcome = null; // 直近に実行した施策の結果（観察の核）
+  function locDescLine() { return { who: 'narr', text: `水晶に、${DATA.locations[State.location()].name}の勇者一行が映る。` }; }
+
   function execPolicy(policy) {
-    // 施策の前後で可視状態の段階を比較し、好転したら「キラッ」を鳴らす（手応えの強化）
     const before = ['mayoi', 'nakama', 'seken'].map(m => State.stage(m));
     State.policyDone = true; State.lastPolicy = policy;
-    State.markPolicyDone(policy.id); // この施策は二度と打てない（実施済みに）
-    policy.effect();
+    State.markPolicyDone(policy.id);
+    // 結果判定（success / fail / mixed / setup）。evaluate が無い施策は最初の outcome を使う
+    const firstKey = policy.outcomes.success ? 'success' : Object.keys(policy.outcomes)[0];
+    const resKey = (policy.evaluate ? policy.evaluate() : firstKey);
+    const outcome = policy.outcomes[resKey] || policy.outcomes[firstKey];
+    outcome.apply();
+    State.lastAction = policy.id;
+    State.lastResult = policy.outcomes[resKey] ? resKey : firstKey;
+    lastOutcome = outcome;
     stageUp = ['mayoi', 'nakama', 'seken'].some((m, i) => State.stage(m) > before[i]);
     if (policy.id === 'recon_past') State.reconUnlocked = true;
-    if (policy.news) newsLog.unshift(policy.news);
+    if (outcome.news) newsLog.unshift(outcome.news);
     setDistance();
-    // ターン途中はセーブしない（中断後は常に週頭から再開＝「1ターン1施策」を守る）
-
     // 演出シーン
     phase = 'result';
-    UI.show('scene'); UI.setSceneDraw((c, tt) => Sprites.scene(c, policy.result.scene, tt));
-    UI.sceneCaption(policy.result.cap + '\n（タップで つづく）');
-    SFX.play('effect');
-    resultTap = () => {
-      resultTap = null;
-      // 観察フェーズ：水晶ごしの会話
-      observeAfterPolicy(policy);
-    };
+    UI.show('scene'); UI.setSceneDraw((c, tt) => Sprites.scene(c, outcome.scene, tt));
+    UI.sceneCaption(outcome.cap + '\n（タップで つづく）');
+    SFX.play(State.lastResult === 'fail' ? 'cancel' : 'effect');
+    resultTap = () => { resultTap = null; observeAfterPolicy(outcome); };
   }
-  let stageUp = false;
-  function observeAfterPolicy(policy) {
+  // §7：現在地描写 → 勇者会話 → 状態変化通知 → 次の一手ヒント
+  function observeAfterPolicy(outcome) {
     phase = 'observe';
     UI.show('scene'); UI.setSceneDraw((c, tt) => Crystal.drawParty(c, tt)); UI.sceneCaption('— 水晶玉、勇者パーティー —');
-    UI.runDialogue(policy.talk, () => {
+    let lines = [locDescLine()].concat(outcome.talk);
+    if (outcome.notify) lines.push({ who: 'narr', text: '【 ' + outcome.notify + ' 】' });
+    lines = lines.concat(DATA.crystalHint());
+    UI.runDialogue(lines, () => {
       UI.renderHUD();
-      if (stageUp) { SFX.play('good'); UI.toast('手応えあり——状態が動いた'); stageUp = false; }
+      if (stageUp) { SFX.play('good'); stageUp = false; }
+      if (outcome.notify) UI.toast(outcome.notify);
       State.observedThisTurn = true;
-      // 状態が最大ならエンディング
       const end = State.reachedEnding();
       if (end) { goEnding(end); return; }
-      // フィールドへ戻る
-      backToField('効いているか？　玉座のベルゼで、次の週へ。');
+      backToField('効いているか？　次の一手を考え、玉座のベルゼで週を進めよう。');
     });
   }
   function backToField(msg) {
@@ -283,7 +329,14 @@ const Game = (() => {
   function observeCrystal() {
     phase = 'observe';
     UI.show('scene'); UI.setSceneDraw((c, tt) => Crystal.drawParty(c, tt)); UI.sceneCaption('— 水晶玉、勇者パーティー —');
-    const lines = (State.lastPolicy && !State.observedThisTurn) ? State.lastPolicy.talk : Crystal.ambientLines();
+    let lines = [locDescLine()];
+    if (lastOutcome && !State.observedThisTurn) {
+      lines = lines.concat(lastOutcome.talk);
+      if (lastOutcome.notify) lines.push({ who: 'narr', text: '【 ' + lastOutcome.notify + ' 】' });
+    } else {
+      lines = lines.concat(Crystal.ambientLines());
+    }
+    lines = lines.concat(DATA.crystalHint());
     UI.runDialogue(lines, () => {
       State.observedThisTurn = true;
       const end = State.reachedEnding();
@@ -292,12 +345,10 @@ const Game = (() => {
     });
   }
 
-  /* 掲示板：ニュース */
+  /* 掲示板：ニュースをカードで読む（§10：攻略情報化） */
   function showBoard() {
     phase = 'dialogue';
-    const lines = newsLog.slice(0, 3).map(n => ({ who: 'narr', text: '📰 ' + n }));
-    lines.unshift({ who: 'narr', text: '— ニュース掲示板 —' });
-    UI.runDialogue(lines, () => backToField());
+    UI.showNews(newsLog.slice(0, 5), () => backToField());
   }
 
   /* ════════════ 次の週へ ════════════ */
@@ -306,7 +357,7 @@ const Game = (() => {
     if (State.turn >= 10) { finale(); return; }
     UI.curtain(`第${State.turn + 1}週`, () => {
       State.turn++;
-      State.policyDone = false; State.observedThisTurn = false; State.lastPolicy = null;
+      State.policyDone = false; State.observedThisTurn = false; State.lastPolicy = null; lastOutcome = null;
       setDistance();
       fireEvent(); // 条件を満たすイベントが1つあれば仕込む（演出は curtain 後）
       State.save();
@@ -355,33 +406,33 @@ const Game = (() => {
     ], presentMeetingOptions);
   }
   function presentMeetingOptions() {
-    // 条件を満たす説得選択肢 ＋ いつでも選べる「かかってこい」
-    const ok = DATA.meetingOptions.filter(o => !o.bad && (o.needFlag ? State.flag(o.needFlag) : State.score(o.needScore[0]) >= o.needScore[1]));
-    const choices = ok.map(o => ({ id: o.id, label: o.label, hint: o.hint }));
-    if (choices.length === 0) choices.push({ id: 'none', label: '「……とにかく、話を聞いてくれ」', hint: '手札がない' });
-    choices.push({ id: 'sword', label: '「とにかく、かかってこい」', hint: '魔王なのに？' });
-    UI.runDialogue([{ who: 'maou', text: 'お前に、伝えたいことがある。' }], null, {
+    // need() を満たした選択肢だけ解放（§19）。bracelet は常時、sword も常時。
+    const opts = DATA.meetingOptions.filter(o => o.bad || (o.need && o.need()));
+    const choices = opts.map(o => ({ id: o.id, label: o.label, hint: o.hint }));
+    UI.runDialogue([{ who: 'maou', text: '剣を抜く前に。お前に、伝えたいことがある。' }], null, {
       choices,
       onChoice: (ch) => resolveMeeting(ch.id),
     });
   }
   function resolveMeeting(optId) {
-    if (optId === 'sword' || optId === 'none' || !State.meetingSucceeds(optId)) {
-      // 失敗：討伐続行（E）
+    const opt = DATA.meetingOptions.find(o => o.id === optId);
+    if (!opt || opt.bad) {
       UI.runDialogue([
-        { who: 'leon', text: optId === 'sword' ? '問答無用だ。覚悟しろ、魔王！' : '……悪いが、剣を、収めるわけにはいかない。' },
+        { who: 'leon', text: '問答無用だ。覚悟しろ、魔王！' },
         { who: 'narr', text: '勇者が剣を抜いた。魔王の和平の腕輪が、光る。' },
       ], () => goEnding('E'));
       return;
     }
-    // 成功：最終面談成功（D）
-    const win = {
-      father:  [{ who: 'leon', text: '……父さんは、関係ない。これは、俺が……俺が、決めることだ。' }, { who: 'leon', text: '（剣を握る手が、ゆっくりとほどけていく。）' }],
-      kingdom: [{ who: 'leon', text: '王国が……知っていて、嘘を？　……確かめさせてくれ。それまで、剣は、抜かない。' }],
-      witness: [{ who: 'leon', text: 'あの村人たちが、嘘をついているとは——思えない。' }],
-      party:   [{ who: 'garud', text: '……レオン。俺たちはもう、戦いたくねえんだ。' }, { who: 'leon', text: '……そう、か。' }],
-    }[optId] || [{ who: 'leon', text: '……一度、ちゃんと、話を聞かせてくれ。' }];
-    UI.runDialogue(win, () => goEnding('D'));
+    const ending = opt.resolve ? opt.resolve() : opt.ending;
+    if (ending === 'E') {
+      // §19-4：手札がなく、腕輪の話だけでは止められない
+      UI.runDialogue((opt.win || []).concat([
+        { who: 'leon', text: '……それでも、俺は進む。進まないと、俺には、何も残らない。' },
+        { who: 'narr', text: '勇者が何に縛られているのか、魔王は知らなかった。——勇者は、剣を抜いた。' },
+      ]), () => goEnding('E'));
+      return;
+    }
+    UI.runDialogue(opt.win || [{ who: 'leon', text: '……一度、ちゃんと、話を聞かせてくれ。' }], () => goEnding(ending));
   }
 
   /* ════════════ エンディング ════════════ */
@@ -397,6 +448,7 @@ const Game = (() => {
       const k = e.key;
       if (UI.endingShown()) return;
       if (UI.helpOpen()) { if (k === 'Escape') UI.closeHelp(); return; }
+      if (UI.newsOpen()) { if (k === 'Escape' || k === ' ' || k === 'Enter') UI.closeNews(); return; }
       if (UI.policyOpen()) { if (k === 'Escape') UI.closePolicy(); return; }
       if (UI.dialogueActive()) {
         if (k === ' ' || k === 'Enter' || k === 'ArrowDown' || k === 'z' || k === 'Z') { e.preventDefault(); UI.advance(); }

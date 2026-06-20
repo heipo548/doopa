@@ -19,7 +19,7 @@ const UI = (() => {
       'hud-week', 'hud-distance', 'hud-help', 'hud-mute', 'state-bar', 'field-msg', 'field-label',
       'ov-dialogue', 'dia-face', 'dia-name', 'dia-text', 'dia-next', 'dia-choices',
       'ov-policy', 'policy-dept', 'policy-list', 'policy-close',
-      'ov-help', 'help-close',
+      'ov-help', 'help-close', 'ov-news', 'news-list', 'news-close',
       'ov-ending', 'ending-canvas', 'ending-badge', 'ending-title', 'ending-body', 'ending-replay',
       'toast', 'curtain', 'curtain-text', 'scene-canvas', 'scene-caption']
       .forEach(id => { E[id] = $(id); });
@@ -37,6 +37,7 @@ const UI = (() => {
       if (!m) { SFX.init(); SFX.bgm('castle'); } // 解除時はBGMを戻す
     });
     E['help-close'].addEventListener('click', () => { E['ov-help'].classList.add('hidden'); SFX.play('cancel'); });
+    E['news-close'].addEventListener('click', () => closeNews());
     E['policy-close'].addEventListener('click', () => { closePolicy(); });
 
     buildChips();
@@ -208,6 +209,7 @@ const UI = (() => {
         (item.locked ? '' : `<span class="pi-aim ${aimCls}">${aimLabel}</span>`) + `</div>` +
         (item.locked ? `<div class="pi-desc">🔒 ${item.lockMsg || 'まだ解放されていない'}</div>`
           : `<div class="pi-desc">${item.policy.desc}</div>` +
+            (item.policy.preview && item.policy.preview.effective ? `<div class="pi-eff">◎ 効きそう：${item.policy.preview.effective}</div>` : '') +
             (item.policy.risk ? `<div class="pi-risk">⚠ ${item.policy.risk}</div>` : '') +
             (item.policy.tag ? `<div class="pi-tag">✦ ${item.policy.tag}</div>` : ''));
       if (!item.locked && !item.spent) {
@@ -230,6 +232,25 @@ const UI = (() => {
     policyOnPick = null; policyOnClose = null;
   }
   function policyOpen() { return !E['ov-policy'].classList.contains('hidden'); }
+
+  /* ── ニュース掲示板（カード形式・§10） ── */
+  const NEWS_ICON = { '王国発表': '⚔', '村人の声': '🏘', '冒険者界隈': '🍻', '教会声明': '✝', '魔王軍内部': '🏛' };
+  let newsOnClose = null;
+  function showNews(cards, onClose) {
+    newsOnClose = onClose || null;
+    const box = E['news-list']; box.innerHTML = '';
+    (cards || []).forEach(c => {
+      const card = (typeof c === 'string') ? { label: 'ニュース', head: c, body: '' } : c;
+      const el = document.createElement('div'); el.className = 'news-card';
+      const icon = NEWS_ICON[card.label] || '📰';
+      el.innerHTML = `<div class="news-label">${icon} ${card.label}</div>` +
+        `<div class="news-head">${card.head}</div>` + (card.body ? `<div class="news-body">${card.body}</div>` : '');
+      box.appendChild(el);
+    });
+    E['ov-news'].classList.remove('hidden'); SFX.play('select');
+  }
+  function closeNews() { E['ov-news'].classList.add('hidden'); const cb = newsOnClose; newsOnClose = null; SFX.play('cancel'); if (cb) cb(); }
+  function newsOpen() { return !E['ov-news'].classList.contains('hidden'); }
 
   /* ── ヘルプ ── */
   function openHelp() { E['ov-help'].classList.remove('hidden'); SFX.play('select'); }
@@ -260,12 +281,13 @@ const UI = (() => {
   function endingShown() { return endingActive; }
 
   /* ── 何らかのオーバーレイが開いているか（フィールド入力を止める判定に使う） ── */
-  function anyOverlay() { return dia.active || policyOpen() || helpOpen() || endingActive; }
+  function anyOverlay() { return dia.active || policyOpen() || helpOpen() || newsOpen() || endingActive; }
 
   return {
     init, show, getView, renderHUD, syncStages, fieldLabel, fieldMsg, toast, curtain,
     runDialogue, advance, showChoices, dialogueActive,
     openPolicy, closePolicy, policyOpen, openHelp, helpOpen, closeHelp,
+    showNews, closeNews, newsOpen,
     setSceneDraw, getSceneDraw, sceneCaption, showEnding, drawEnding, endingShown, anyOverlay,
     get E() { return E; },
   };

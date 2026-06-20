@@ -181,6 +181,13 @@ const Sprites = (() => {
     // 四隅のアクセント
     [[7, 7], [313, 7], [7, 233], [313, 233]].forEach(([x, y]) => { px(c, x - 5, y - 1, 11, 2, accent); px(c, x - 1, y - 5, 2, 11, accent); });
   }
+  // 小さな吹き出し記号（シーン内で使う）
+  function emoteS(c, x, y, sym, t) {
+    const fy = y + Math.sin((t || 0) / 250) * 2;
+    c.fillStyle = 'rgba(20,14,30,0.85)'; c.fillRect(x - 9, fy - 11, 18, 16);
+    c.font = '12px "Hiragino Sans",sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#ffe6a0'; c.fillText(sym, x, fy - 2);
+  }
 
   function scene(c, key, t) {
     c.clearRect(0, 0, 320, 240);
@@ -300,6 +307,32 @@ const Sprites = (() => {
       case 'focus_hr':      deptFocus(c, 'ririmu', '#e0a23a', t); break;
       case 'focus_welfare': deptFocus(c, 'ork',    '#5fae6a', t); break;
       case 'focus_recon':   deptFocus(c, 'shadow', '#6a8aff', t); break;
+      case 'clinic_fail': { // 診療所の前に王国兵＋“前線基地”ポスター
+        bg(c, '#2a1818', '#100808'); ground(c, '#241818', 180);
+        px(c, 96, 96, 120, 84, '#e0d0c0'); px(c, 92, 88, 128, 10, '#6fcf7f'); px(c, 150, 130, 20, 50, '#6a4a3a');
+        px(c, 132, 116, 4, 6, '#fff'); px(c, 134, 116, 1, 6, '#6fcf7f'); // 十字
+        chibi(c, 'soldier', 70, 188, 3.4, t, false); chibi(c, 'soldier', 250, 190, 3.4, t, false);
+        px(c, 40, 60, 40, 30, '#7a3a2a'); px(c, 46, 66, 28, 5, '#e0556b'); px(c, 46, 76, 22, 3, '#e8d8d0'); // 反魔王ポスター
+        break; }
+      case 'flyer_fail': { // 勇者がチラシを焚き火へ
+        bg(c, '#160e12', '#070406'); star(c, t);
+        const fl = 6 + Math.sin(t / 110) * 2; c.fillStyle = '#ff8a3a'; c.beginPath(); c.moveTo(160, 196); c.lineTo(160 - fl, 212); c.lineTo(160 + fl, 212); c.fill();
+        px(c, 146, 211, 28, 4, '#4a2f1a');
+        chibi(c, 'leon', 120, 196, 4, t, false); chibi(c, 'garud', 220, 200, 3.2, t, false);
+        const py2 = 150 + (t / 18 % 40); px(c, 156, py2, 14, 9, '#f2e6c8'); // 落ちていくチラシ
+        break; }
+      case 'press_fail': { // 会見・記者に詰められしどろもどろ
+        bg(c, '#241a30', '#0e0a16'); ground(c, '#1a1430', 185);
+        px(c, 130, 120, 60, 12, '#4a3a6a'); chibi(c, 'maou', 160, 120, 4, t, false);
+        px(c, 156, 96, 4, 3, '#cfe6ff'); px(c, 150, 98, 16, 2, 'rgba(160,200,255,0.5)'); // 汗
+        for (let i = 0; i < 6; i++) { const on = (Math.floor(t / 140) % 6) === i; px(c, 28 + i * 48, 150, 9, 7, on ? '#fff' : '#3a3a4a'); if (on) { c.fillStyle = 'rgba(255,255,255,0.3)'; c.fillRect(0, 0, 320, 240); } chibi(c, 'soldier', 30 + i * 48, 200, 2, t, false); }
+        break; }
+      case 'rebut_fail': { // 反論失敗・王国の追加ポスターが優勢
+        bg(c, '#241622', '#0e0a14'); ground(c, '#201826', 185);
+        px(c, 60, 64, 80, 86, '#3a2c4a'); px(c, 70, 74, 60, 8, '#6db5ff'); px(c, 70, 90, 44, 4, '#cfd6e8'); // 魔王軍（小）
+        px(c, 168, 56, 92, 96, '#7a3a2a'); px(c, 178, 66, 72, 10, '#e0556b'); px(c, 178, 82, 56, 4, '#e8d8d0'); px(c, 178, 92, 60, 4, '#e8d8d0'); // 王国（大・優勢）
+        chibi(c, 'villager', 110, 196, 3, t, false); emoteS(c, 110, 168, '？', t);
+        break; }
       default: bg(c, '#241a38', '#0e0a16');
     }
   }
@@ -384,6 +417,19 @@ const Sprites = (() => {
         const gl = 0.4 + 0.45 * Math.abs(Math.sin(t / 200)); c.fillStyle = `rgba(255,90,107,${gl})`; c.fillRect(218, 132, 9, 4); // 腕輪
         // 延々と舞う書類
         for (let i = 0; i < 9; i++) { const x = (i * 47 + t / 14) % 330 - 8, y = (i * 31 + t / 22) % 130 + 10, r = (t / 200 + i); c.save(); c.translate(x, y); c.rotate(r); c.fillStyle = 'rgba(232,224,214,0.9)'; c.fillRect(-7, -9, 14, 18); c.fillStyle = '#9a8'; c.fillRect(-4, -5, 8, 1); c.fillRect(-4, -1, 6, 1); c.restore(); }
+        break; }
+      case 'end_hire': { // 勇者、転職（魔王軍に新部署・レオン課長）
+        bgE('#2a2150', '#140e2c'); px(c, 0, 130, 320, 50, '#1f1740');
+        // デスクとレオン課長
+        px(c, 60, 108, 90, 14, '#5a4326'); px(c, 60, 104, 90, 4, '#7a5a36');
+        chibi(c, 'leon', 105, 110, 3.2, t, false);
+        px(c, 92, 96, 30, 9, '#e8e0d0'); px(c, 96, 99, 22, 1, '#3a2c1c'); // 名札「渉外課」
+        // 魔王軍の同僚たち
+        chibi(c, 'maou', 210, 130, 2.8, t, false); chibi(c, 'pazuzu', 250, 132, 2.4, t, false); chibi(c, 'ork', 285, 134, 2.4, t, false);
+        // 書類の受け渡し
+        const fy = 96 + Math.sin(t / 300) * 3; px(c, 150, fy, 14, 9, '#f2e6c8');
+        // 紙吹雪（祝い）
+        for (let i = 0; i < 12; i++) { const x = (i * 59 + t / 22) % 320, y = (i * 41 + t / 16) % 130; c.fillStyle = ['#ffd76a', '#e0556b', '#6fcf7f', '#6db5ff'][i % 4]; c.fillRect(x, y, 2, 3); }
         break; }
       default: bgE('#241a38', '#0e0a16');
     }

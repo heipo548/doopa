@@ -30,11 +30,24 @@ const State = {
     this.reconUnlocked = false;
     this.tutorialDone = false;
     this.donePolicies = {}; // 実施済み施策（同じ手は二度打てない）
+    this.lastAction = null; // 直前ターンに選んだ施策ID
+    this.lastResult = null; // 直前ターンの結果（success/mixed/fail/setup）
   },
 
   /* 実施済み施策（1回限り） */
   markPolicyDone(id) { this.donePolicies[id] = true; },
   isPolicyDone(id) { return !!this.donePolicies[id]; },
+
+  /* 勇者の現在地（週で進行）。村→街道→教会→ダンジョン→城前 */
+  location() { return DATA.locationOrder[Math.min(4, Math.floor((this.turn - 1) / 2))]; },
+  /* 王国の警戒（0-4。hidden.kingdomAlert をクランプ） */
+  alert() { return Math.max(0, Math.min(4, this.get('kingdomAlert'))); },
+  /* 何かしら積み上げがあるか（最終面談 bracelet が D に届くかの判定に使う） */
+  engaged() {
+    if (this.stage('mayoi') >= 2 || this.stage('nakama') >= 2 || this.stage('seken') >= 3) return true;
+    return ['heroSawApology', 'clinicBuilt', 'recon_father', 'recon_kingdom', 'rebuttalSucceeded',
+      'priestDoubtsChurch', 'warriorKeptFlyer', 'mageReceivedResearch'].some(f => this.flag(f));
+  },
 
   /* 可視メーターを動かす（0-100でクランプ） */
   add(meter, delta) {
@@ -77,7 +90,7 @@ const State = {
         turn: this.turn, distance: this.distance, meters: this.meters,
         hidden: this.hidden, flags: this.flags, doneEvents: this.doneEvents,
         reconUnlocked: this.reconUnlocked, tutorialDone: this.tutorialDone,
-        donePolicies: this.donePolicies,
+        donePolicies: this.donePolicies, lastAction: this.lastAction, lastResult: this.lastResult,
       };
       localStorage.setItem(this.KEY, JSON.stringify(data));
     } catch (e) { /* プライベートモード等は黙って無視 */ }
@@ -94,7 +107,7 @@ const State = {
         turn: d.turn, distance: d.distance, meters: d.meters,
         hidden: d.hidden || {}, flags: d.flags || {}, doneEvents: d.doneEvents || {},
         reconUnlocked: !!d.reconUnlocked, tutorialDone: !!d.tutorialDone,
-        donePolicies: d.donePolicies || {},
+        donePolicies: d.donePolicies || {}, lastAction: d.lastAction || null, lastResult: d.lastResult || null,
       });
       // ターン途中の保存はしない方針なので、施策フラグはリセット
       this.policyDone = false; this.observedThisTurn = false; this.lastPolicy = null;
